@@ -1,0 +1,13 @@
+default:
+  tags:
+    - WACC
+
+build-job:
+  stage: build
+  script:
+    - mvn compile
+
+test-job:
+  stage: test
+  script:
+    - mvn test
