@@ -82,7 +82,7 @@ input stream as the EOF character in the file does this for you.
 > compile <
 
 This script currently writes a TODO: message to the console, but you should
-update it to call the the main class of your compiler with appropriate 
+update it to call the the ic.doc.group15.main class of your compiler with appropriate
 arguments. Note that the lab's automated testing service will be using this 
 script as the access point to your compiler.
 
