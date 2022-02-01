@@ -9,11 +9,6 @@ OPEN_PARENTHESES: '(' ;
 CLOSE_PARENTHESES: ')' ;
 
 //numbers
-fragment DIGIT: '0'..'9' ; 
+fragment DIGIT: '0'..'9' ;
 
 INTEGER: DIGIT+ ;
-
-
-
-
-

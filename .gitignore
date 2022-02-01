@@ -7,3 +7,4 @@ src/antlr
 
 #ignore other junk files
 *~
+target/
