@@ -26,4 +26,4 @@ test:
 clean:
 	$(RM) $(ANTLR_DIR_1) $(ANTLR_DIR_2) $(OUTPUT_DIR)
 
-.PHONY: all clean
+.PHONY: all test clean
