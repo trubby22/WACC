@@ -10,7 +10,7 @@ fun tree(input: CharStream): String {
     val lexer = BasicLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = BasicParser(tokens)
-    val tree = parser.prog()
+    val tree = parser.program()
 
     return tree.toStringTree(parser);
 }

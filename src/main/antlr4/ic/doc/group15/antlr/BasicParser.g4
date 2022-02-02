@@ -13,3 +13,7 @@ expr: expr binaryOper expr
 
 // EOF indicates that the program must consume to the end of the input.
 prog: (expr)*  EOF ;
+
+stat: SKIP_STAT ;
+
+program: BEGIN stat END EOF ;
