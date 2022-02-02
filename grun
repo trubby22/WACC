@@ -1,0 +1,4 @@
+#!/bin/sh
+
+MAINCLASS="org.antlr.v4.gui.TestRig"
+mvn -q exec:java -Dexec.mainClass=$MAINCLASS -Dexec.args="$*"
