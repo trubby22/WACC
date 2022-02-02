@@ -24,4 +24,9 @@ class TestMain {
                 "<EOF>)", tree(input2))
     }
 
+    @Test
+    fun breakingTest() {
+        assertEquals(true, false)
+    }
+
 }
