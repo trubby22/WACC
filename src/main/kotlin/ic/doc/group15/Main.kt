@@ -4,13 +4,17 @@ import ic.doc.group15.antlr.BasicLexer
 import ic.doc.group15.antlr.BasicParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.CharStream
 
-fun main() {
-    val input = CharStreams.fromStream(System.`in`)
+fun tree(input: CharStream): String {
     val lexer = BasicLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = BasicParser(tokens)
     val tree = parser.prog()
 
-    println(tree.toStringTree(parser))
+    return tree.toStringTree(parser);
+}
+
+fun main() {
+    println(tree(CharStreams.fromStream(System.`in`)))
 }
