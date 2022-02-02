@@ -14,7 +14,7 @@
         <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <main.class>Main</main.class>
+        <main.class>ic.doc.group15.MainKt</main.class>
     </properties>
     <dependencies>
         <dependency>
