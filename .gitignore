@@ -9,3 +9,16 @@ src/antlr
 *~
 target/
 gen/
+
+# MacOs
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# ANTLR
+*.antlr/
+
+# test input
+test.wacc

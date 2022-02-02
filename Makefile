@@ -2,33 +2,28 @@
 
 # Useful locations
 
-ANTLR_DIR	 := antlr_config
-SOURCE_DIR	 := src
-ANTLR_SOURCE_DIR := $(SOURCE_DIR)/antlr
-OUTPUT_DIR	 := bin
+ANTLR_DIR_1 := src/antlr
+ANTLR_DIR_2 := src/main/antlr4/ic/doc/group15/antlr/.antlr
+OUTPUT_DIR	:= target
 
 # Project tools
 
-ANTLR	:= antlrBuild
-MKDIR	:= mkdir -p
-JAVAC	:= javac
+MVN := mvn
 RM	:= rm -rf
-
-# Configure project Java flags
-
-JFLAGS	:= -sourcepath $(SOURCE_DIR) -d $(OUTPUT_DIR) -cp lib/antlr-4.9.3-complete.jar 
-
 
 # The make rules:
 
-# run the antlr build script then attempts to compile all .java files within src/antlr
+# using only 'mvn package' doesn't work because then maven complains that it couldn't find class ic.doc.group15.MainKt
 all:
-	cd $(ANTLR_DIR) && ./$(ANTLR) 
-	$(MKDIR) $(OUTPUT_DIR)
-	$(JAVAC) $(JFLAGS) $(ANTLR_SOURCE_DIR)/*.java
+	$(MVN) compile
+	$(MVN) package
+
+test:
+	$(MVN) test
 
 # clean up all of the compiled files
+# there's a bug that causes you to have to run 'make clean' twice to remove all folders
 clean:
-	$(RM) $(OUTPUT_DIR) $(SOURCE_DIR)/antlr
+	$(RM) $(ANTLR_DIR_1) $(ANTLR_DIR_2) $(OUTPUT_DIR)
 
 .PHONY: all clean
