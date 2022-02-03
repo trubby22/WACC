@@ -28,29 +28,51 @@ class TestMain {
 //        }
 //    }
 
-    @Test
-    fun checkThatValidProgramsDoNotProduceErrorMessages() {
-        println("Starting test")
-        val res = Files.walk(Paths.get("wacc_examples/valid/advanced"))
-            .filter(Files::isRegularFile)
-            .filter { path -> path.toString().endsWith(".wacc") }
-            .map {
-                checkThatValidProgramDoesNotProduceErrorMessages(
-                it.toString())
-            }
-            .reduce { a, b -> a && b }
-            .orElse(false)
-
-        println("Test finished")
-        if (!res) {
-            throw Error()
-        }
-    }
-
 //    @Test
-//    fun learnAboutGitLabShell() {
+//    fun checkThatValidProgramsDoNotProduceErrorMessages() {
+//        println("Starting test")
+//        val res = Files.walk(Paths.get("wacc_examples/valid/advanced"))
+//            .filter(Files::isRegularFile)
+//            .filter { path -> path.toString().endsWith(".wacc") }
+//            .map {
+//                checkThatValidProgramDoesNotProduceErrorMessages(
+//                it.toString())
+//            }
+//            .reduce { a, b -> a && b }
+//            .orElse(false)
 //
+//        println("Test finished")
+//        if (!res) {
+//            throw Error()
+//        }
 //    }
+
+    @Test
+    fun learnAboutGitLabShell() {
+        val pbs = listOf(
+            ProcessBuilder("/bin/bash", "-c", "ls"),
+            ProcessBuilder("/bin/bash", "-c", "pwd"),
+            ProcessBuilder("/bin/bash", "-c", "which java"),
+            ProcessBuilder("/bin/bash", "-c", "which ruby"),
+            ProcessBuilder("/bin/bash", "-c", "ls target"),
+        )
+
+        pbs.stream().forEach {
+            try {
+                val process = it.start()
+                val exitCode = process.waitFor()
+                assertEquals(0, exitCode)
+                println(IOUtils.toString(
+                    process.inputStream,
+                    StandardCharsets.UTF_8.name()
+                ).trim())
+                println()
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+        }
+
+    }
 
     private fun checkThatValidProgramDoesNotProduceErrorMessages(path: String):
             Boolean {
