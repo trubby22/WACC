@@ -1,5 +1,11 @@
 lexer grammar BasicLexer;
 
+//whitespace
+WS: [ \n\t\r]+ -> skip;
+
+//comment
+COMMENT: '#' ~('\n')* '\n' -> skip;
+
 //types
 T_INT: 'int';
 T_BOOL: 'bool';
@@ -88,9 +94,3 @@ ESC_CHAR: '0' | 'b' | 't' | 'n' | 'f' | 'r' | '"' | '\'' | '\\';
 CHAR: ~('\\' | '\'' | '"');
 APOSTROPHE: '\'';
 DOUBLE_QUOTE: '"';
-
-//whitespace
-WS: [ \n\t\r]+ -> channel(HIDDEN);
-
-//comment
-COMMENT: '#' ~('\n')* '\n' -> skip;
