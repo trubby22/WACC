@@ -83,7 +83,7 @@ int_sign: PLUS | MINUS;
 
 bool_liter: TRUE | FALSE;
 
-char_liter: CHAR_LITER_TOKEN | BACKSLASH ESC_CHAR;
+char_liter: CHAR_LITER_TOKEN | ESC_CHAR_LITER;
 
 str_liter: STRING_LITER_TOKEN;
 
