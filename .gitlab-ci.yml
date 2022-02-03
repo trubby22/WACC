@@ -5,8 +5,6 @@ default:
 build-job:
   stage: build
   script:
-    - which ruby
-    - which java
     - mvn compile
 
 test-job:
