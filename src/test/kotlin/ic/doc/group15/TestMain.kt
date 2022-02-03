@@ -58,7 +58,8 @@ class TestMain {
         val process =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "java -jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar" +
+                "java -jar ./target/WACC-1.0-SNAPSHOT-jar-with-dependencies" +
+                        ".jar" +
                         " < $path 2>&1"
             ).start()
         var num = 0
