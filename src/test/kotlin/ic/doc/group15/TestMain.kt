@@ -53,7 +53,7 @@ class TestMain {
         val process =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "./compile $path 2>&1 | wc -l"
+                "./compile $path 2>&1"
             ).start()
         var num = 0
         try {
