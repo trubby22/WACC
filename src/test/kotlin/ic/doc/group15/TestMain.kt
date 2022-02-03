@@ -64,17 +64,17 @@ class TestMain {
             ).trim()
             println("Associated output:")
             println(output)
-            num = Integer.parseInt(output)
+//            num = Integer.parseInt(output)
             assertEquals(0, exitCode)
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
 
-        if (num != 1) {
-            println("Error in: $path")
-        } else {
-            println("Parsed successfully: $path")
-        }
+//        if (num != 1) {
+//            println("Error in: $path")
+//        } else {
+//            println("Parsed successfully: $path")
+//        }
 
         return num == 1
     }
