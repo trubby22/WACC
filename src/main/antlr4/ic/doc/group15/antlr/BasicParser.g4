@@ -4,9 +4,6 @@ options {
   tokenVocab=BasicLexer;
 }
 
-// EOF indicates that the program must consume to the end of the input.
-program: BEGIN (func)* stat END EOF;
-
 func: type ident OPEN_PARENTHESES param_list? CLOSE_PARENTHESES IS stat END;
 
 param_list: param (COMMA param)*;
@@ -93,3 +90,6 @@ str_liter: DOUBLE_QUOTE CHAR* DOUBLE_QUOTE;
 array_liter: OPEN_BRACKETS (expr (COMMA expr)*)? CLOSE_BRACKETS;
 
 pair_liter: NULL;
+
+// EOF indicates that the program must consume to the end of the input.
+program: BEGIN (func)* stat END EOF;

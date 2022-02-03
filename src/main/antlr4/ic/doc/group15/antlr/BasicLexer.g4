@@ -1,7 +1,7 @@
 lexer grammar BasicLexer;
 
 //whitespace
-WS: [ \n\t\r]+ -> channel(HIDDEN);
+WS: [ \n\t\r]+ -> skip;
 
 //comment
 COMMENT: '#' ~('\n')* '\n' -> skip;
