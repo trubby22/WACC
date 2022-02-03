@@ -79,7 +79,7 @@ class TestMain {
                 "/bin/bash", "-c",
                 "java -jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies" +
                         ".jar" +
-                        " < $path 2>&1"
+                        " < $path 2>&1 | wc -l"
             ).start()
         var num = 0
         try {
@@ -90,19 +90,19 @@ class TestMain {
             ).trim()
             println("Associated output:")
             println(output)
-//            num = Integer.parseInt(output)
+            num = Integer.parseInt(output)
             assertEquals(0, exitCode)
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
 
-//        if (num != 1) {
-//            println("Error in: $path")
-//        } else {
-//            println("Parsed successfully: $path")
-//        }
+        if (num != 1) {
+            println("Error in: $path")
+        } else {
+            println("Parsed successfully: $path")
+        }
 
-        return true
+        return num == 1
     }
 
 }
