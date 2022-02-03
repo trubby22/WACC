@@ -30,7 +30,7 @@ class TestMain {
 
     @Test
     fun checkThatValidProgramsDoNotProduceErrorMessages() {
-        val res = Files.walk(Paths.get("wacc_examples/valid"))
+        val res = Files.walk(Paths.get("wacc_examples/valid/advanced"))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
             .map {
@@ -49,7 +49,7 @@ class TestMain {
             Boolean {
         val process =
             ProcessBuilder(
-                "/bin/bash", "-c",
+                "/bin/sh", "-c",
                 "./compile $path 2>&1 | wc -l"
             ).start()
         var num = 0
