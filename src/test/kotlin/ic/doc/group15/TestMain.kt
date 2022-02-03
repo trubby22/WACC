@@ -47,13 +47,19 @@ class TestMain {
         }
     }
 
+//    @Test
+//    fun learnAboutGitLabShell() {
+//
+//    }
+
     private fun checkThatValidProgramDoesNotProduceErrorMessages(path: String):
             Boolean {
         println("Testing: $path")
         val process =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "./compile $path 2>&1"
+                "java -jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar" +
+                        " < $path 2>&1"
             ).start()
         var num = 0
         try {
@@ -64,17 +70,17 @@ class TestMain {
             ).trim()
             println("Associated output:")
             println(output)
-//            num = Integer.parseInt(output)
+            num = Integer.parseInt(output)
             assertEquals(0, exitCode)
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
 
-//        if (num != 1) {
-//            println("Error in: $path")
-//        } else {
-//            println("Parsed successfully: $path")
-//        }
+        if (num != 1) {
+            println("Error in: $path")
+        } else {
+            println("Parsed successfully: $path")
+        }
 
         return num == 1
     }
