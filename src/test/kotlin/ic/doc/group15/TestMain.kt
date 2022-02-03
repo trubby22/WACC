@@ -1,105 +1,126 @@
 package ic.doc.group15
 
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
+import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
 class TestMain {
 
-//    private val input1: CharStream = CharStreams.fromString("1+2+3")
-//
-//    @Test
-//    fun correctlyParses1Plus2Plus3() {
-//        assertEquals("(prog (expr (expr (expr 1) " +
-//                "(binaryOper +) (expr 2)) (binaryOper +) (expr 3)) <EOF>)",
-//            tree(input1))
-//    }
-
-//    @Test
-//    fun parsesSkipFiles() {
-//        val dir: String = "wacc_examples/valid/basic/skip"
-//        File(dir).walk().map { it.toString() }.filter { it != dir }.forEach {
-//            assertEquals(
-//                "(program begin (stat skip) end <EOF>)",
-//                tree(CharStreams.fromFileName(it)))
-//        }
-//    }
+    private val baseFolder = "wacc_examples/valid"
 
     @Test
-    fun checkThatValidProgramsDoNotProduceErrorMessages() {
-        learnAboutGitLabShell()
-        println("Starting test")
-        val res = Files.walk(Paths.get("wacc_examples/valid/advanced"))
+    fun parsingValidFilesInAdvancedProducesNoErrors() {
+        checkFolder("$baseFolder/advanced")
+    }
+
+    @Test
+    fun parsingValidFilesInArrayProducesNoErrors() {
+        checkFolder("$baseFolder/array")
+    }
+
+    @Test
+    fun parsingValidFilesInBasicProducesNoErrors() {
+        checkFolder("$baseFolder/basic")
+    }
+
+    @Test
+    fun parsingValidFilesInExpressionsProducesNoErrors() {
+        checkFolder("$baseFolder/expressions")
+    }
+
+    @Test
+    fun parsingValidFilesInFunctionProducesNoErrors() {
+        checkFolder("$baseFolder/function")
+    }
+
+    @Test
+    fun parsingValidFilesInIfProducesNoErrors() {
+        checkFolder("$baseFolder/if")
+    }
+
+    @Test
+    fun parsingValidFilesInIoProducesNoErrors() {
+        checkFolder("$baseFolder/IO")
+    }
+
+    @Test
+    fun parsingValidFilesInPairsProducesNoErrors() {
+        checkFolder("$baseFolder/pairs")
+    }
+
+    @Test
+    fun parsingValidFilesInProducesNoErrors() {
+        checkFolder("$baseFolder/")
+    }
+
+    @Test
+    fun parsingValidFilesInRuntimeErrProducesNoErrors() {
+        checkFolder("$baseFolder/runtimeErr")
+    }
+
+    @Test
+    fun parsingValidFilesInScopeProducesNoErrors() {
+        checkFolder("$baseFolder/scope")
+    }
+
+    @Test
+    fun parsingValidFilesInSequenceProducesNoErrors() {
+        checkFolder("$baseFolder/sequence")
+    }
+
+    @Test
+    fun parsingValidFilesInVariablesProducesNoErrors() {
+        checkFolder("$baseFolder/variables")
+    }
+
+    @Test
+    fun parsingValidFilesInWhileProducesNoErrors() {
+        checkFolder("$baseFolder/while")
+    }
+
+    private fun checkFolder(path: String) {
+        val res = Files.walk(Paths.get(path))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
             .map {
-                checkThatValidProgramDoesNotProduceErrorMessages(
+                checkFile(
                 it.toString())
             }
             .reduce { a, b -> a && b }
             .orElse(false)
-
-        println("Test finished")
         if (!res) {
             throw Error()
         }
     }
 
-    private fun learnAboutGitLabShell() {
-        val pbs = listOf(
-            ProcessBuilder("/bin/bash", "-c", "ls target/WACC-1" +
-                    ".0-SNAPSHOT-jar-with-dependencies.jar"),
-        )
-
-        pbs.stream().forEach {
-            try {
-                val process = it.start()
-                val exitCode = process.waitFor()
-                assertEquals(0, exitCode)
-                println(IOUtils.toString(
-                    process.inputStream,
-                    StandardCharsets.UTF_8.name()
-                ).trim())
-                println()
-            } catch (e: InterruptedException) {
-                e.printStackTrace()
-            }
-        }
-
-    }
-
-    private fun checkThatValidProgramDoesNotProduceErrorMessages(path: String):
+    private fun checkFile(path: String):
             Boolean {
-        println("Testing: $path")
         val process =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "java -jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies" +
-                        ".jar" +
-                        " < $path 2>&1 | wc -l"
+                "java -jar " +
+                "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
+                "< $path 2>&1 | wc -l"
             ).start()
         var num = 0
+
         try {
             val exitCode = process.waitFor()
-            val output: String = IOUtils.toString(
+            assertEquals(0, exitCode)
+            num = Integer.parseInt(IOUtils.toString(
                 process.inputStream,
                 StandardCharsets.UTF_8.name()
-            ).trim()
-            println("Associated output:")
-            println(output)
-            num = Integer.parseInt(output)
-            assertEquals(0, exitCode)
+            ).trim())
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
 
+//        Print files that cause parsing errors
         if (num != 1) {
-            println("Error in: $path")
-        } else {
-            println("Parsed successfully: $path")
+            println(path)
         }
 
         return num == 1
