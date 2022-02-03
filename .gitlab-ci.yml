@@ -3,7 +3,7 @@ default:
     - WACC
 
 getting-to-know-the-shell-job:
-  stage: getting-to-know-the-shell
+  stage: .pre
   script:
     - which ruby
     - which java
