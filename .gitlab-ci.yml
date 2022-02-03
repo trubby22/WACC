@@ -5,7 +5,7 @@ default:
 build-job:
   stage: build
   script:
-    - mvn compile
+    - mvn package -DskipTests
 
 test-job:
   stage: test
