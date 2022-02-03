@@ -1,11 +1,11 @@
 package ic.doc.group15
 
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CharStream
-
-import org.junit.jupiter.api.Test
+import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Assertions.assertEquals
-import java.io.File
+import org.junit.jupiter.api.Test
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class TestMain {
 
@@ -18,14 +18,57 @@ class TestMain {
 //            tree(input1))
 //    }
 
+//    @Test
+//    fun parsesSkipFiles() {
+//        val dir: String = "wacc_examples/valid/basic/skip"
+//        File(dir).walk().map { it.toString() }.filter { it != dir }.forEach {
+//            assertEquals(
+//                "(program begin (stat skip) end <EOF>)",
+//                tree(CharStreams.fromFileName(it)))
+//        }
+//    }
+
     @Test
-    fun parsesSkipFiles() {
-        val dir: String = "wacc_examples/valid/basic/skip"
-        File(dir).walk().map { it.toString() }.filter { it != dir }.forEach {
-            assertEquals(
-                "(program begin (stat skip) end <EOF>)",
-                tree(CharStreams.fromFileName(it)))
+    fun checkThatValidProgramsDoNotProduceErrorMessages() {
+        val res = Files.walk(Paths.get("wacc_examples/valid/basic/skip"))
+            .filter(Files::isRegularFile)
+            .filter { path -> path.toString().endsWith(".wacc") }
+            .map {
+                checkThatValidProgramDoesNotProduceErrorMessages(
+                it.toString())
+            }
+            .reduce { a, b -> a && b }
+            .orElse(false)
+
+        if (!res) {
+            throw Error()
         }
+    }
+
+    private fun checkThatValidProgramDoesNotProduceErrorMessages(path: String):
+            Boolean {
+        val process =
+            ProcessBuilder(
+                "/bin/bash", "-c",
+                "./compile $path 2>&1 | wc -l"
+            ).start()
+        var num = 0
+        try {
+            val exitCode = process.waitFor()
+            val output: String = IOUtils.toString(
+                process.inputStream,
+                StandardCharsets.UTF_8.name()
+            ).trim()
+            num = Integer.parseInt(output)
+            assertEquals(0, exitCode)
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
+        if (num != 1) {
+            println(path)
+        }
+
+        return num == 1
     }
 
 }
