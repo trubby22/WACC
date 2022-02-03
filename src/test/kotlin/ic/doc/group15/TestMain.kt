@@ -30,7 +30,7 @@ class TestMain {
 
     @Test
     fun checkThatValidProgramsDoNotProduceErrorMessages() {
-        val res = Files.walk(Paths.get("wacc_examples/valid/basic/skip"))
+        val res = Files.walk(Paths.get("wacc_examples/valid"))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
             .map {
