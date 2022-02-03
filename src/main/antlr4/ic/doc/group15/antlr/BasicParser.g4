@@ -83,9 +83,9 @@ int_sign: PLUS | MINUS;
 
 bool_liter: TRUE | FALSE;
 
-char_liter: APOSTROPHE CHAR APOSTROPHE | BACKSLASH ESC_CHAR;
+char_liter: CHAR_LITER_TOKEN | BACKSLASH ESC_CHAR;
 
-str_liter: DOUBLE_QUOTE CHAR* DOUBLE_QUOTE;
+str_liter: STRING_LITER_TOKEN;
 
 array_liter: OPEN_BRACKETS (expr (COMMA expr)*)? CLOSE_BRACKETS;
 
@@ -93,3 +93,5 @@ pair_liter: NULL;
 
 // EOF indicates that the program must consume to the end of the input.
 program: BEGIN (func)* stat END EOF;
+
+//test_prog: APOSTROPHE EOF ;

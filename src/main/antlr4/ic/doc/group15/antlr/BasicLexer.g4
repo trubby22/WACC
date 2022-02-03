@@ -90,7 +90,10 @@ IDENT: ('_' | ALPHABET) ('_' | ALPHANUMERIC)*;
 
 //characters
 BACKSLASH: '\\';
+APOSTROPHE: '\'';
 ESC_CHAR: '0' | 'b' | 't' | 'n' | 'f' | 'r' | '"' | '\'' | '\\';
 CHAR: ~('\\' | '\'' | '"');
-APOSTROPHE: '\'';
+//CHAR: ALPHABET;
+CHAR_LITER_TOKEN: '\'' CHAR '\'';
+STRING_LITER_TOKEN: '"' CHAR* '"';
 DOUBLE_QUOTE: '"';
