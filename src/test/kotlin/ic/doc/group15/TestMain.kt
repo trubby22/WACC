@@ -1,7 +1,7 @@
 package ic.doc.group15
 
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -12,72 +12,67 @@ class TestMain {
     private val baseFolder = "wacc_examples/valid"
 
     @Test
-    fun parsingValidFilesInAdvancedProducesNoErrors() {
+    fun advancedParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/advanced")
     }
 
     @Test
-    fun parsingValidFilesInArrayProducesNoErrors() {
+    fun arrayParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/array")
     }
 
     @Test
-    fun parsingValidFilesInBasicProducesNoErrors() {
+    fun basicParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/basic")
     }
 
     @Test
-    fun parsingValidFilesInExpressionsProducesNoErrors() {
+    fun expressionsParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/expressions")
     }
 
     @Test
-    fun parsingValidFilesInFunctionProducesNoErrors() {
+    fun functionParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/function")
     }
 
     @Test
-    fun parsingValidFilesInIfProducesNoErrors() {
+    fun ifParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/if")
     }
 
     @Test
-    fun parsingValidFilesInIoProducesNoErrors() {
+    fun ioParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/IO")
     }
 
     @Test
-    fun parsingValidFilesInPairsProducesNoErrors() {
+    fun pairsParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/pairs")
     }
 
     @Test
-    fun parsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/")
-    }
-
-    @Test
-    fun parsingValidFilesInRuntimeErrProducesNoErrors() {
+    fun runtimeErrParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/runtimeErr")
     }
 
     @Test
-    fun parsingValidFilesInScopeProducesNoErrors() {
+    fun scopeParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/scope")
     }
 
     @Test
-    fun parsingValidFilesInSequenceProducesNoErrors() {
+    fun sequenceParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/sequence")
     }
 
     @Test
-    fun parsingValidFilesInVariablesProducesNoErrors() {
+    fun variablesParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/variables")
     }
 
     @Test
-    fun parsingValidFilesInWhileProducesNoErrors() {
+    fun whileParsingValidFilesInProducesNoErrors() {
         checkFolder("$baseFolder/while")
     }
 
