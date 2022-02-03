@@ -30,6 +30,7 @@ class TestMain {
 
     @Test
     fun checkThatValidProgramsDoNotProduceErrorMessages() {
+        learnAboutGitLabShell()
         println("Starting test")
         val res = Files.walk(Paths.get("wacc_examples/valid/advanced"))
             .filter(Files::isRegularFile)
@@ -47,31 +48,28 @@ class TestMain {
         }
     }
 
-//    @Test
-//    fun learnAboutGitLabShell() {
-//        val pbs = listOf(
-//            ProcessBuilder("/bin/bash", "-c", "ls"),
-//            ProcessBuilder("/bin/bash", "-c", "pwd"),
-//            ProcessBuilder("/bin/bash", "-c", "ls target"),
-//            ProcessBuilder("/bin/bash", "-c", "which java"),
-//        )
-//
-//        pbs.stream().forEach {
-//            try {
-//                val process = it.start()
-//                val exitCode = process.waitFor()
-//                assertEquals(0, exitCode)
-//                println(IOUtils.toString(
-//                    process.inputStream,
-//                    StandardCharsets.UTF_8.name()
-//                ).trim())
-//                println()
-//            } catch (e: InterruptedException) {
-//                e.printStackTrace()
-//            }
-//        }
-//
-//    }
+    private fun learnAboutGitLabShell() {
+        val pbs = listOf(
+            ProcessBuilder("/bin/bash", "-c", "ls target/WACC-1" +
+                    ".0-SNAPSHOT-jar-with-dependencies.jar"),
+        )
+
+        pbs.stream().forEach {
+            try {
+                val process = it.start()
+                val exitCode = process.waitFor()
+                assertEquals(0, exitCode)
+                println(IOUtils.toString(
+                    process.inputStream,
+                    StandardCharsets.UTF_8.name()
+                ).trim())
+                println()
+            } catch (e: InterruptedException) {
+                e.printStackTrace()
+            }
+        }
+
+    }
 
     private fun checkThatValidProgramDoesNotProduceErrorMessages(path: String):
             Boolean {

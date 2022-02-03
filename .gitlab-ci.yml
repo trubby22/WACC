@@ -10,4 +10,5 @@ build-job:
 test-job:
   stage: test
   script:
+    - mvn package -DskipTests
     - mvn test
