@@ -2,12 +2,18 @@ default:
   tags:
     - WACC
 
-build-job:
-  stage: build
+getting-to-know-the-shell-job:
+  stage: getting-to-know-the-shell
   script:
-    - mvn compile
+    - which ruby
+    - which java
 
-test-job:
-  stage: test
-  script:
-    - mvn test
+#build-job:
+#  stage: build
+#  script:
+#    - mvn compile
+#
+#test-job:
+#  stage: test
+#  script:
+#    - mvn test
