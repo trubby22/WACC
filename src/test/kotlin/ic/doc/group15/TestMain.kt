@@ -30,6 +30,7 @@ class TestMain {
 
     @Test
     fun checkThatValidProgramsDoNotProduceErrorMessages() {
+        println("Starting test")
         val res = Files.walk(Paths.get("wacc_examples/valid/advanced"))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
@@ -40,6 +41,7 @@ class TestMain {
             .reduce { a, b -> a && b }
             .orElse(false)
 
+        println("Test finished")
         if (!res) {
             throw Error()
         }
@@ -47,9 +49,10 @@ class TestMain {
 
     private fun checkThatValidProgramDoesNotProduceErrorMessages(path: String):
             Boolean {
+        println("Testing: $path")
         val process =
             ProcessBuilder(
-                "/bin/sh", "-c",
+                "/bin/bash", "-c",
                 "./compile $path 2>&1 | wc -l"
             ).start()
         var num = 0
@@ -59,13 +62,18 @@ class TestMain {
                 process.inputStream,
                 StandardCharsets.UTF_8.name()
             ).trim()
+            println("Associated output:")
+            println(output)
             num = Integer.parseInt(output)
             assertEquals(0, exitCode)
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
+
         if (num != 1) {
-            println(path)
+            println("Error in: $path")
+        } else {
+            println("Parsed successfully: $path")
         }
 
         return num == 1
