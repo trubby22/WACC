@@ -19,6 +19,7 @@ gen/
 
 # ANTLR
 *.antlr/
+*/gen
 
 # test input
 test.wacc
