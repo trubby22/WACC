@@ -93,7 +93,6 @@ BACKSLASH: '\\';
 APOSTROPHE: '\'';
 ESC_CHAR: '0' | 'b' | 't' | 'n' | 'f' | 'r' | '"' | '\'' | '\\';
 CHAR: ~('\\' | '\'' | '"');
-//CHAR: ALPHABET;
 CHAR_LITER_TOKEN: '\'' CHAR '\'';
 ESC_CHAR_LITER: '\'' '\\' ESC_CHAR '\'';
 STRING_LITER_TOKEN: '"' (CHAR | '\\' ESC_CHAR)* '"';

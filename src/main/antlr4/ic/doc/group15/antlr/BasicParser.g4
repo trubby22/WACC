@@ -4,7 +4,7 @@ options {
   tokenVocab=BasicLexer;
 }
 
-func: type ident OPEN_PARENTHESES param_list? CLOSE_PARENTHESES IS stat END;
+func: type ident OPEN_PARENTHESES param_list? CLOSE_PARENTHESES IS stat RETURN expr END;
 
 param_list: param (COMMA param)*;
 
@@ -15,7 +15,6 @@ stat: SKIP_STAT                    #skipStat
 | assign_lhs ASSIGN assign_rhs     #assignmentStat
 | READ assign_lhs                  #readStat
 | FREE expr                        #freeStat
-| RETURN expr                      #returnStat
 | EXIT expr                        #exitStat
 | PRINT expr                       #printStat
 | PRINTLN expr                     #printlnStat

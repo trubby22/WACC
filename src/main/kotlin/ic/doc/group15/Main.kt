@@ -10,6 +10,9 @@ fun tree(input: CharStream): String {
     val lexer = BasicLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = BasicParser(tokens)
+    parser.removeErrorListeners()
+    parser.addErrorListener(MyErrorListener())
+//    parser.errorHandler = MyErrorStrategy()
     val tree = parser.program()
 
     return tree.toStringTree(parser);

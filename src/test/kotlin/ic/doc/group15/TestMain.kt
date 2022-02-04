@@ -9,79 +9,134 @@ import java.nio.file.Paths
 
 class TestMain {
 
-    private val baseFolder = "wacc_examples/valid"
+    private val validFolder = "wacc_examples/valid"
 
     @Test
-    fun advancedParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/advanced")
+    fun advancedValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/advanced")
     }
 
     @Test
-    fun arrayParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/array")
+    fun arrayValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/array")
     }
 
     @Test
-    fun basicParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/basic")
+    fun basicValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/basic")
     }
 
     @Test
-    fun expressionsParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/expressions")
+    fun expressionsValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/expressions")
     }
 
     @Test
-    fun functionParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/function")
+    fun functionValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/function")
     }
 
     @Test
-    fun ifParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/if")
+    fun ifValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/if")
     }
 
     @Test
-    fun ioParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/IO")
+    fun ioValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/IO")
     }
 
     @Test
-    fun pairsParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/pairs")
+    fun pairsValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/pairs")
     }
 
     @Test
-    fun runtimeErrParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/runtimeErr")
+    fun runtimeErrValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/runtimeErr")
     }
 
     @Test
-    fun scopeParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/scope")
+    fun scopeValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/scope")
     }
 
     @Test
-    fun sequenceParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/sequence")
+    fun sequenceValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/sequence")
     }
 
     @Test
-    fun variablesParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/variables")
+    fun variablesValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/variables")
     }
 
     @Test
-    fun whileParsingValidFilesInProducesNoErrors() {
-        checkFolder("$baseFolder/while")
+    fun whileValidFilesParsingProducesNoErrors() {
+        checkValidFolder("$validFolder/while")
     }
 
-    private fun checkFolder(path: String) {
+    @Test
+    fun syntacticallyInvalidFilesProduceExpectedErrorMessage() {
+        checkInvalidFolder("wacc_examples/invalid/syntaxErr")
+    }
+
+    private fun checkInvalidFolder(path: String) {
         val res = Files.walk(Paths.get(path))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
             .map {
-                checkFile(
+                checkInvalidFile(
+                    it.toString())
+            }
+            .reduce { a, b -> a && b }
+            .orElse(false)
+        if (!res) {
+            throw Error()
+        }
+    }
+
+    private fun checkInvalidFile(path: String): Boolean {
+        val process =
+            ProcessBuilder(
+                "/bin/bash", "-c",
+                "java -jar " +
+                        "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
+                        "< $path 2>&1"
+            ).start()
+
+        var output = ""
+
+        try {
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode)
+            output = IOUtils.toString(
+                process.inputStream,
+                StandardCharsets.UTF_8.name()
+            )
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
+
+        val success = (output ==
+                "#syntax_error#\n" +
+                "exit:\n" +
+                "100\n")
+
+//        Print files that don't print the appropriate error msg
+        if (!success) {
+            println(path)
+        }
+
+        return success
+    }
+
+    private fun checkValidFolder(path: String) {
+        val res = Files.walk(Paths.get(path))
+            .filter(Files::isRegularFile)
+            .filter { path -> path.toString().endsWith(".wacc") }
+            .map {
+                checkValidFile(
                 it.toString())
             }
             .reduce { a, b -> a && b }
@@ -91,7 +146,7 @@ class TestMain {
         }
     }
 
-    private fun checkFile(path: String):
+    private fun checkValidFile(path: String):
             Boolean {
         val process =
             ProcessBuilder(
