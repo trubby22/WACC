@@ -43,17 +43,19 @@ pair_elem: FST expr
 | SND expr
 ;
 
-type: base_type #BaseType
-| type OPEN_BRACKETS CLOSE_BRACKETS #ArrayType
-| pair_type #PairType
+type: base_type   #baseType
+| array_type      #arrayType
+| pair_type       #pairType
 ;
 
 base_type: T_INT | T_BOOL | T_CHAR | T_STRING;
 
+array_type: (base_type | pair_type) (OPEN_BRACKETS CLOSE_BRACKETS)+ ;
+
 pair_type: PAIR OPEN_PARENTHESES pair_elem_type COMMA pair_elem_type CLOSE_PARENTHESES;
 
 pair_elem_type: base_type
-| ArrayType
+| array_type
 | PAIR
 ;
 
