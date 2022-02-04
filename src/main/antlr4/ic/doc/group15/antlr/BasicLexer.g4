@@ -96,5 +96,5 @@ CHAR: ~('\\' | '\'' | '"');
 //CHAR: ALPHABET;
 CHAR_LITER_TOKEN: '\'' CHAR '\'';
 ESC_CHAR_LITER: '\'' '\\' ESC_CHAR '\'';
-STRING_LITER_TOKEN: '"' (CHAR | '\\"')* '"';
+STRING_LITER_TOKEN: '"' (CHAR | '\\' ESC_CHAR)* '"';
 DOUBLE_QUOTE: '"';
