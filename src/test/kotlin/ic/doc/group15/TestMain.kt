@@ -77,7 +77,7 @@ class TestMain {
     }
 
     @Test
-    fun syntacticallyInvalidFilesProduceExpectedErrorMessage() {
+    fun syntacticallyInvalidFilesExceptBigIntProduceExpectedErrorMessage() {
         checkInvalidFolder("wacc_examples/invalid/syntaxErr")
     }
 
@@ -85,6 +85,7 @@ class TestMain {
         val res = Files.walk(Paths.get(path))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
+            .filter { path -> !path.endsWith("bigIntAssignment.wacc") }
             .map {
                 checkInvalidFile(
                     it.toString())
@@ -109,7 +110,7 @@ class TestMain {
 
         try {
             val exitCode = process.waitFor()
-            assertEquals(0, exitCode)
+            assertEquals(100, exitCode)
             output = IOUtils.toString(
                 process.inputStream,
                 StandardCharsets.UTF_8.name()
@@ -119,9 +120,7 @@ class TestMain {
         }
 
         val success = (output ==
-                "#syntax_error#\n" +
-                "exit:\n" +
-                "100\n")
+                "#syntax_error#")
 
 //        Print files that don't print the appropriate error msg
         if (!success) {

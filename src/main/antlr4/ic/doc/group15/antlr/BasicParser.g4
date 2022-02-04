@@ -4,7 +4,8 @@ options {
   tokenVocab=BasicLexer;
 }
 
-func: type ident OPEN_PARENTHESES param_list? CLOSE_PARENTHESES IS stat RETURN expr END;
+func: type ident OPEN_PARENTHESES param_list? CLOSE_PARENTHESES IS (stat
+END_STAT)? valid_return_stat END;
 
 param_list: param (COMMA param)*;
 
@@ -21,8 +22,18 @@ stat: SKIP_STAT                    #skipStat
 | IF expr THEN stat ELSE stat FI   #ifStat
 | WHILE expr DO stat DONE          #whileStat
 | BEGIN stat END                   #beginEndStat
+| RETURN expr                      #returnStat
 | stat END_STAT stat               #sequenceStat
 ;
+
+valid_return_stat: return_stat | while_return | if_return | begin_end_return;
+
+return_stat: (stat END_STAT)? (RETURN | EXIT) expr;
+
+while_return: WHILE expr DO valid_return_stat DONE;
+if_return: IF expr THEN valid_return_stat ELSE valid_return_stat FI;
+begin_end_return: BEGIN valid_return_stat END;
+
 
 assign_lhs: ident
 | array_elem

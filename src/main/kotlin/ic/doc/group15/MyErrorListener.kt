@@ -14,9 +14,7 @@ class MyErrorListener: BaseErrorListener() {
         msg: String?,
         e: RecognitionException?
     ) {
-        println("#syntax_error#")
-        println("exit:")
-        println("100")
-        exitProcess(0)
+        print("#syntax_error#")
+        exitProcess(100)
     }
 }
