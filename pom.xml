@@ -65,6 +65,11 @@
                         <goals>
                             <goal>antlr4</goal>
                         </goals>
+                        <configuration>
+                            <treatWarningsAsErrors>true</treatWarningsAsErrors>
+                            <visitor>true</visitor>
+                            <listener>false</listener>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
