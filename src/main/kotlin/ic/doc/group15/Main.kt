@@ -19,8 +19,8 @@ fun main() {
 
     println(tree.toStringTree(parser))
 
-    println("====")
-    val visitor = MyVisitor()
-    visitor.visit(tree)
-    println("====")
+//    println("====")
+//    val visitor = MyVisitor()
+//    visitor.visit(tree)
+//    println("====")
 }
