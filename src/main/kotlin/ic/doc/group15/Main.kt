@@ -4,20 +4,23 @@ import ic.doc.group15.antlr.BasicLexer
 import ic.doc.group15.antlr.BasicParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.antlr.v4.runtime.CharStream
 
-fun tree(input: CharStream): String {
+fun main() {
+    val input = CharStreams.fromStream(System.`in`)
     val lexer = BasicLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = BasicParser(tokens)
+
     parser.removeErrorListeners()
     parser.addErrorListener(MyErrorListener())
 //    parser.errorHandler = MyErrorStrategy()
+
     val tree = parser.program()
 
-    return tree.toStringTree(parser);
-}
+    println(tree.toStringTree(parser))
 
-fun main() {
-    println(tree(CharStreams.fromStream(System.`in`)))
+    println("====")
+    val visitor = MyVisitor()
+    visitor.visit(tree)
+    println("====")
 }
