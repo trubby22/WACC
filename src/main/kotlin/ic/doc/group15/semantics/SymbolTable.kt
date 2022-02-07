@@ -1,6 +1,6 @@
 package ic.doc.group15.semantics
 
-class SymbolTable private constructor(val enclosingTable: SymbolTable?) {
+class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
 
     private val map: MutableMap<String, Identifier> = HashMap()
 
@@ -40,6 +40,8 @@ class SymbolTable private constructor(val enclosingTable: SymbolTable?) {
             return st
         }
     }
+
+    fun isTopLevel(): Boolean = enclosingTable == null
 
     fun add(name: String, ident: Identifier) {
         map[name] = ident
