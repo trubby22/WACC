@@ -9,6 +9,11 @@ import java.nio.file.Paths
 
 class TestMain {
 
+    enum class ErrorType(val type: String, val code: Int) {
+        SYNTAX("syntax", 100),
+        SEMANTICS("semantics", 200)
+    }
+
     private val validFolder = "wacc_examples/valid"
 
     @Test
@@ -78,17 +83,23 @@ class TestMain {
 
     @Test
     fun syntacticallyInvalidFilesExceptBigIntProduceExpectedErrorMessage() {
-        checkInvalidFolder("wacc_examples/invalid/syntaxErr")
+        checkInvalidFolder("wacc_examples/invalid/syntaxErr", ErrorType.SYNTAX)
     }
 
-    private fun checkInvalidFolder(path: String) {
+//    @Test
+//    fun semanticallyInvalidFilesProduceExpectedErrorMessage() {
+//        checkInvalidFolder("wacc_examples/invalid/semanticErr", ErrorType
+//            .SEMANTICS)
+//    }
+
+    private fun checkInvalidFolder(path: String, errorType: ErrorType) {
         val res = Files.walk(Paths.get(path))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
             .filter { path -> !path.endsWith("bigIntAssignment.wacc") }
             .map {
                 checkInvalidFile(
-                    it.toString())
+                    it.toString(), errorType)
             }
             .reduce { a, b -> a && b }
             .orElse(false)
@@ -97,7 +108,7 @@ class TestMain {
         }
     }
 
-    private fun checkInvalidFile(path: String): Boolean {
+    private fun checkInvalidFile(path: String, errorType: ErrorType): Boolean {
         val process =
             ProcessBuilder(
                 "/bin/bash", "-c",
@@ -107,10 +118,10 @@ class TestMain {
             ).start()
 
         var output = ""
+        var exitCode = -1
 
         try {
-            val exitCode = process.waitFor()
-            assertEquals(100, exitCode)
+            exitCode = process.waitFor()
             output = IOUtils.toString(
                 process.inputStream,
                 StandardCharsets.UTF_8.name()
@@ -119,8 +130,10 @@ class TestMain {
             e.printStackTrace()
         }
 
-        val success = (output ==
-                "#syntax_error#")
+        val success = (
+                output ==
+                "#${errorType.type}_error#"
+                && exitCode == errorType.code)
 
 //        Print files that don't print the appropriate error msg
         if (!success) {
