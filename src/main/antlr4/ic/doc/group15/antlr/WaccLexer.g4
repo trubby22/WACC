@@ -1,4 +1,4 @@
-lexer grammar BasicLexer;
+lexer grammar WaccLexer;
 
 //whitespace
 WS: [ \n\t\r]+ -> skip;

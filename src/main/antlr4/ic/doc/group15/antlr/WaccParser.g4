@@ -1,7 +1,7 @@
-parser grammar BasicParser;
+parser grammar WaccParser;
 
 options {
-  tokenVocab=BasicLexer;
+  tokenVocab=WaccLexer;
 }
 
 func: type ident OPEN_PARENTHESES param_list? CLOSE_PARENTHESES IS (stat
