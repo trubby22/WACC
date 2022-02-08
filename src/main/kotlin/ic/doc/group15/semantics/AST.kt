@@ -204,3 +204,35 @@ class CallAST(
         }
     }
 }
+
+class ReadStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val varName: String
+) : ASTNode(parent, symbolTable) {
+
+    lateinit var varIdent: Variable private set
+
+    override fun check() {
+        val v = symbolTable.lookupAll(varName)
+
+        when {
+            v == null -> {
+                throw IdentifierError("identifier $varName not found")
+            }
+            v !is Variable -> {
+                throw TypeError("$varName is not a variable")
+            }
+            !(v is IntType || v is CharType || v is StringType || v is PairType
+                    || v is ArrayType) -> {
+                throw TypeError("$varName is not an int, char, string, pair " +
+                        "element or array element")
+            }
+            else -> {
+                varIdent = v
+            }
+        }
+
+        symbolTable.add(varName, varIdent)
+    }
+}
