@@ -1,5 +1,7 @@
 package ic.doc.group15.semantics
 
+import kotlin.system.exitProcess
+
 abstract class ASTNode protected constructor(
     val parent: ASTNode?,
     val symbolTable: SymbolTable
@@ -14,7 +16,13 @@ class AST(topLevelSymbolTable: SymbolTable) : ASTNode(null, topLevelSymbolTable)
 abstract class ExpressionAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    val type: Type
+    val type: Type,
+    val value: Any
+) : ASTNode(parent, symbolTable)
+
+abstract class StatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable
 ) : ASTNode(parent, symbolTable)
 
 class VariableDeclarationAST(
@@ -209,7 +217,7 @@ class ReadStatementAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
     val varName: String
-) : ASTNode(parent, symbolTable) {
+) : StatementAST(parent, symbolTable) {
 
     lateinit var varIdent: Variable private set
 
@@ -236,3 +244,146 @@ class ReadStatementAST(
         symbolTable.add(varName, varIdent)
     }
 }
+
+class SkipStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable
+) : StatementAST(parent, symbolTable) {
+    override fun check() {}
+}
+
+class FreeStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val varName: String
+) : StatementAST(parent, symbolTable) {
+    val v = symbolTable.lookupAll(varName)
+
+    override fun check() {
+        when {
+            v == null -> {
+                throw IdentifierError("trying to free $varName, which has not" +
+                        " been declared")
+            }
+            !(v is PairType || v is ArrayType) -> {
+                throw TypeError("trying to free $varName, which is neither a " +
+                        "pair nor an array")
+            }
+        }
+
+        symbolTable.remove(varName)
+    }
+}
+
+class ReturnStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val expr: ExpressionAST
+) : StatementAST(parent, symbolTable) {
+
+    override fun check() {
+        var enclosingAST = parent
+
+        while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
+            enclosingAST = enclosingAST.parent
+        }
+
+        if (enclosingAST == null) {
+            throw SemanticError("could not find enclosing function")
+        }
+
+        val enclosingFunction = enclosingAST as FunctionDeclarationAST
+        val t = symbolTable.lookupAll(enclosingFunction.returnTypeName)
+
+        when {
+            t != expr.type -> {
+                throw TypeError("function actual return type different from " +
+                        "the one in function signature")
+            }
+        }
+    }
+}
+
+class ExitStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val expr: ExpressionAST
+) : StatementAST(parent, symbolTable) {
+
+    override fun check() {
+        when {
+            expr.type !is IntType -> {
+                throw TypeError("expression passed to exit must be an int; " +
+                        "type passed is ${expr.type}")
+            }
+            else -> {
+                exitProcess(expr.value as Int)
+            }
+        }
+    }
+}
+
+class PrintStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val expr: ExpressionAST
+) : StatementAST(parent, symbolTable) {
+    override fun check() {
+        when {
+            expr.type is PairType || expr.type is ArrayType -> {
+                throw TypeError("trying to print illegal type: ${expr.type}")
+            }
+        }
+    }
+}
+
+class IfStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val condExpr: ExpressionAST,
+    val thenStat: StatementAST,
+    val elseStat: StatementAST
+) : StatementAST(parent, symbolTable) {
+    override fun check() {
+        when {
+            condExpr.type !is BoolType -> {
+                throw TypeError("type of conditional expression should be " +
+                        "bool and is ${condExpr.type}")
+            }
+            else -> {
+                thenStat.check()
+                elseStat.check()
+            }
+        }
+    }
+}
+
+class WhileStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val condExpr: ExpressionAST,
+    val stat: StatementAST
+) : StatementAST(parent, symbolTable) {
+    override fun check() {
+        when {
+            condExpr.type !is BoolType -> {
+                throw TypeError("type of conditional expression should be " +
+                        "bool and is ${condExpr.type}")
+            }
+            else -> {
+                stat.check()
+            }
+        }
+    }
+}
+
+class BeginEndStatementAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val stat: StatementAST
+) : StatementAST(parent, symbolTable) {
+    override fun check() {
+        stat.check()
+    }
+}
+

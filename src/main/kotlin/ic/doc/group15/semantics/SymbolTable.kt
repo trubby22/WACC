@@ -47,6 +47,10 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
         map[name] = ident
     }
 
+    fun remove(name: String) {
+        map.remove(name)
+    }
+
     fun lookup(name: String): Identifier? {
         return map[name]
     }
@@ -63,5 +67,9 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
 
     fun subScope(): SymbolTable {
         return SymbolTable(this)
+    }
+
+    fun parentScope(): SymbolTable? {
+        return enclosingTable
     }
 }
