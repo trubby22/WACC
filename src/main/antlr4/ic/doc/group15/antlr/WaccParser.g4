@@ -4,10 +4,8 @@ options {
   tokenVocab=WaccLexer;
 }
 
-func: type ident OPEN_PARENTHESES param_list? CLOSE_PARENTHESES IS (stat
+func: type ident OPEN_PARENTHESES (param (COMMA param)*)? CLOSE_PARENTHESES IS (stat
 END_STAT)? valid_return_stat END;
-
-param_list: param (COMMA param)*;
 
 param: type ident;
 

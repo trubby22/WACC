@@ -79,9 +79,17 @@ class Visitor(
                     ast, st, returnTypeName, funcName
                 )
 
+                log(
+                    """Visiting parameters of function ${func.funcName}"""
+                )
+
                 st = st.subScope()
                 ast = func
-                visitParam_list(ctx.param_list())
+
+                for (param in ctx.param()) {
+                    func.formals.add(visitParam(param) as ParameterAST)
+                }
+
                 st = st.parentScope()!!
                 ast = ast.parent!!
 
@@ -106,24 +114,7 @@ class Visitor(
         return func
     }
 
-    override fun visitParam_list(ctx: WaccParser.Param_listContext): ASTNode? {
-        if (ast !is FunctionDeclarationAST) {
-            throw DeclarationError("params must be declared in a function definition")
-        }
-
-        log(
-            """Visiting parameters of function ${(ast as FunctionDeclarationAST).funcName}"""
-        )
-
-        for (param in ctx.param()) {
-            visitParam(param)
-        }
-        return null
-    }
-
     override fun visitParam(ctx: WaccParser.ParamContext): ASTNode? {
-        assert(ast is FunctionDeclarationAST)
-
         val typeName = ctx.type().text
         val paramName = ctx.ident().text
 
@@ -164,7 +155,6 @@ class Visitor(
         }
 
         symbolTable.add(paramName, parameterAST.paramIdent)
-        (ast as FunctionDeclarationAST).formals.add(parameterAST)
 
         return visitChildren(ctx)
     }
