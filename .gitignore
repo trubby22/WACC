@@ -23,3 +23,9 @@ gen/
 
 # test input
 test.wacc
+
+# test output
+*.txt
+
+# others
+*.iml
