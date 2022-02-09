@@ -60,16 +60,16 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>4.9.1</version>
+                <configuration>
+                    <treatWarningsAsErrors>true</treatWarningsAsErrors>
+                    <visitor>true</visitor>
+                    <listener>false</listener>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
                             <goal>antlr4</goal>
                         </goals>
-                        <configuration>
-                            <treatWarningsAsErrors>true</treatWarningsAsErrors>
-                            <visitor>true</visitor>
-                            <listener>false</listener>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

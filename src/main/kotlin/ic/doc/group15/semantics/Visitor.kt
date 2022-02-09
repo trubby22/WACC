@@ -10,8 +10,8 @@ class Visitor(
     private val symbolTable: SymbolTable
 ) : WaccParserBaseVisitor<ASTNode>() {
 
-    private var ast: ASTNode = abstractSyntaxTree
-    private var st = symbolTable
+    private var scope: BlockAST = abstractSyntaxTree
+    private var symbols = symbolTable
 
     companion object {
         private val LOG = Logger.getLogger(Visitor::class.java.name)
@@ -22,21 +22,18 @@ class Visitor(
     }
 
     override fun visitProgram(ctx: WaccParser.ProgramContext): ASTNode {
-        if (!st.isTopLevel()) {
-            throw DeclarationError("begin/end not allowed in this scope")
-        }
+        assert(symbols.isTopLevel())
 
-        log("Visiting program")
-
-        val program = ast as AST
+        log("Begin program semantic analysis")
+        val program = scope as AST
 
         log("Visiting function definitions")
-
         for (func in ctx.func()) {
-            program.functions.add(visitFunc(func) as FunctionDeclarationAST)
+            program.statements.add(visitFunc(func) as FunctionDeclarationAST)
         }
 
-        program.main = visit(ctx.stat()) as StatementAST
+        log("Visiting main program")
+        visit(ctx.stat()) as StatementAST
 
         return program
     }
@@ -52,12 +49,12 @@ class Visitor(
             """
         )
 
-        if (!st.isTopLevel()) {
+        if (!symbols.isTopLevel()) {
             throw DeclarationError("functions cannot be declared in this scope")
         }
 
-        val t = st.lookupAll(returnTypeName)
-        val f = st.lookup(funcName)
+        val t = symbols.lookupAll(returnTypeName)
+        val f = symbols.lookup(funcName)
 
         val func: FunctionDeclarationAST
 
@@ -76,38 +73,39 @@ class Visitor(
             }
             else -> {
                 func = FunctionDeclarationAST(
-                    ast, st, returnTypeName, funcName
+                    scope, symbols, returnTypeName, funcName
                 )
 
                 log(
                     """Visiting parameters of function ${func.funcName}"""
                 )
 
-                st = st.subScope()
-                ast = func
+                symbols = symbols.subScope()
+                scope = func
 
                 for (param in ctx.param()) {
                     func.formals.add(visitParam(param) as ParameterAST)
                 }
 
-                st = st.parentScope()!!
-                ast = ast.parent!!
+                symbols = symbols.parentScope()!!
+                scope = scope.parent!! as BlockAST
 
                 func.funcIdent = FunctionType(
                     t,
                     func.formals.map { p -> p.paramIdent },
-                    st
+                    symbols
                 )
 
                 symbolTable.add(funcName, func.funcIdent)
 
-                val body = visit(ctx.stat())
-                if (body !is StatementAST) {
-                    throw DeclarationError("invalid function body in function $funcName")
-                }
+                val body = visit(ctx.stat()) as StatementAST
                 func.body = body
 
-                visitValid_return_stat(ctx.valid_return_stat())
+                if (func.returnStat == null) {
+                    throw DeclarationError(
+                        "function $funcName missing return statement"
+                    )
+                }
             }
         }
 
@@ -125,7 +123,7 @@ class Visitor(
             """
         )
 
-        val parameterAST = ParameterAST(ast, st, typeName, paramName)
+        val parameterAST = ParameterAST(scope, symbols, typeName, paramName)
 
         val t = symbolTable.lookupAll(typeName)
         val p = symbolTable.lookup(paramName)
@@ -171,10 +169,10 @@ class Visitor(
             """
         )
 
-        val varDecl = VariableDeclarationAST(ast, st, typeName, varName)
+        val varDecl = VariableDeclarationAST(scope, symbols, typeName, varName)
 
-        val t = st.lookupAll(typeName)
-        val v = st.lookup(varName)
+        val t = symbols.lookupAll(typeName)
+        val v = symbols.lookup(varName)
 
         when {
             t == null -> {
@@ -191,7 +189,7 @@ class Visitor(
             }
         }
 
-        st.add(varName, varDecl.varIdent)
+        symbols.add(varName, varDecl.varIdent)
 
         return varDecl
     }
@@ -279,5 +277,120 @@ class Visitor(
         return super.visitArray_elem(ctx)
     }
 
+    override fun visitIfStat(ctx: WaccParser.IfStatContext): ASTNode {
+        val condExpr = visitExpr(ctx.expr()) as ExpressionAST
 
+        if (condExpr.type !is BoolType) {
+            throw TypeError(
+                "type of conditional expression should be " +
+                    "bool and is ${condExpr.type}"
+            )
+        }
+
+        symbols = symbols.subScope()
+        val thenStat = visit(ctx.stat(0))
+        if (thenStat !is StatementAST) {
+            throw DeclarationError(
+                "invalid then statement in if block"
+            )
+        }
+        symbols = symbols.parentScope()!!
+
+        symbols = symbols.subScope()
+        val elseStat = visit(ctx.stat(1))
+        if (elseStat !is StatementAST) {
+            throw DeclarationError(
+                "invalid else statement in if block"
+            )
+        }
+        symbols = symbols.parentScope()!!
+
+        return addToScope(IfBlockAST(scope, symbols, condExpr, thenStat, elseStat))
+    }
+
+    override fun visitWhileStat(ctx: WaccParser.WhileStatContext): ASTNode {
+        val condExpr = visitExpr(ctx.expr()) as ExpressionAST
+
+        if (condExpr.type !is BoolType) {
+            throw TypeError(
+                "type of conditional expression should be " +
+                    "bool and is ${condExpr.type}"
+            )
+        }
+
+        val whileBlock = WhileBlockAST(scope, symbols, condExpr)
+
+        scope = whileBlock
+        symbols = symbols.subScope()
+        visit(ctx.stat()) as StatementAST
+        symbols = symbols.parentScope()!!
+        scope = scope.parent!! as BlockAST
+
+        return addToScope(whileBlock)
+    }
+
+    override fun visitPrintStat(ctx: WaccParser.PrintStatContext): ASTNode {
+        val expr = visitExpr(ctx.expr()) as ExpressionAST
+        when (expr.type) {
+            is PairType -> {
+                throw TypeError("cannot print pair type: ${expr.type}")
+            }
+            is ArrayType -> {
+                throw TypeError("cannot print array type: ${expr.type}")
+            }
+        }
+
+        return addToScope(PrintStatementAST(scope, symbols, expr))
+    }
+
+    override fun visitExitStat(ctx: WaccParser.ExitStatContext): ASTNode {
+        val expr = visitExpr(ctx.expr()) as ExpressionAST
+        if (expr.type !is IntType) {
+            throw TypeError(
+                "expression passed to exit must be an int; type passed is ${expr.type}"
+            )
+        }
+        return addToScope(ExitStatementAST(scope, expr))
+    }
+
+    override fun visitReturn_stat(ctx: WaccParser.Return_statContext): ASTNode {
+        log("Visiting return statement")
+
+        var enclosingAST: ASTNode? = scope
+
+        while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
+            enclosingAST = enclosingAST.parent
+        }
+
+        if (enclosingAST == null) {
+            throw IllegalStatementError(
+                "return statement only allowed inside function definition"
+            )
+        }
+
+        val func = enclosingAST as FunctionDeclarationAST
+        val returnType = symbolTable.lookupAll(func.returnTypeName)
+
+        log(" || return statement is under function ${func.funcName}")
+
+        val expr = visit(ctx.expr()) as ExpressionAST
+
+        when {
+            returnType != expr.type -> {
+                throw TypeError(
+                    "return expression type does not match function return type"
+                )
+            }
+        }
+
+        val returnStat = ReturnStatementAST(func, symbols, expr)
+        func.returnStat = returnStat
+
+        return addToScope(returnStat)
+    }
+
+    private fun addToScope(stat: StatementAST): StatementAST {
+        scope.statements.add(stat)
+        return stat
+    }
 }

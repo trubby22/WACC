@@ -9,3 +9,5 @@ class DeclarationError(message: String) : SemanticError(message)
 class IdentifierError(message: String) : SemanticError(message)
 
 class ParameterError(message: String) : SemanticError(message)
+
+class IllegalStatementError(message: String): SemanticError(message)
