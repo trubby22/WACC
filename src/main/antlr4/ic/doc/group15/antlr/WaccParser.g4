@@ -20,7 +20,6 @@ stat: SKIP_STAT                    #skipStat
 | IF expr THEN stat ELSE stat FI   #ifStat
 | WHILE expr DO stat DONE          #whileStat
 | BEGIN stat END                   #beginEndStat
-| RETURN expr                      #returnStat
 | stat END_STAT stat               #sequenceStat
 ;
 

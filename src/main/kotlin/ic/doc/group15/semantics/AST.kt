@@ -1,22 +1,21 @@
 package ic.doc.group15.semantics
 
-import java.util.*
-import kotlin.system.exitProcess
+import java.util.LinkedList
 
 abstract class ASTNode protected constructor(
     val parent: ASTNode?,
     val symbolTable: SymbolTable = SymbolTable.emptyTable
 )
 
-class AST(topLevelSymbolTable: SymbolTable) : ASTNode(null, topLevelSymbolTable) {
-    val functions: MutableList<FunctionDeclarationAST> = LinkedList()
-    lateinit var main: StatementAST
-}
+class AST(topLevelSymbolTable: SymbolTable) : BeginEndBlockAST(null, topLevelSymbolTable)
 
 abstract class ExpressionAST protected constructor(
     parent: ASTNode,
     symbolTable: SymbolTable = SymbolTable.emptyTable
-) : ASTNode(parent, symbolTable)
+) : ASTNode(parent, symbolTable) {
+
+    lateinit var type: Type
+}
 
 class IntLiteralAST(
     parent: ASTNode,
@@ -59,7 +58,7 @@ class UnaryOpAST(
     val unOpType: Type
 ) : ExpressionAST(parent, symbolTable) {
     fun check() {
-        //expr.check()
+        // expr.check()
     }
 }
 
@@ -72,8 +71,8 @@ class BinaryOpAST(
     val binOpType: Type
 ) : ExpressionAST(parent, symbolTable) {
     fun check() {
-        //expr1.check()
-        //expr2.check()
+        // expr1.check()
+        // expr2.check()
 //        if (expr1.type != expr2.type) {
 //            throw TypeError("Operands must be of the same type\n")
 //        }
@@ -81,14 +80,22 @@ class BinaryOpAST(
 }
 
 abstract class StatementAST protected constructor(
-    parent: ASTNode,
-    symbolTable: SymbolTable
+    parent: ASTNode?,
+    symbolTable: SymbolTable = SymbolTable.emptyTable
 ) : ASTNode(parent, symbolTable)
+
+abstract class BlockAST protected constructor(
+    parent: ASTNode?,
+    symbolTable: SymbolTable = SymbolTable.emptyTable
+) : StatementAST(parent, symbolTable) {
+
+    val statements: MutableList<StatementAST> = LinkedList()
+}
 
 open class VariableDeclarationAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    open val typeName: String,
+    val typeName: String,
     val varName: String
 ) : ASTNode(parent, symbolTable) {
 
@@ -116,7 +123,7 @@ class ArrayElemAST(
 class ParameterAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    override val typeName: String,
+    typeName: String,
     val paramName: String
 ) : VariableDeclarationAST(parent, symbolTable, typeName, paramName) {
 
@@ -128,13 +135,15 @@ class FunctionDeclarationAST(
     symbolTable: SymbolTable,
     val returnTypeName: String,
     val funcName: String,
-) : ASTNode(parent, symbolTable) {
+) : BlockAST(parent, symbolTable) {
+
+    lateinit var funcIdent: FunctionType
 
     val formals: MutableList<ParameterAST> = mutableListOf()
 
     lateinit var body: StatementAST
 
-    lateinit var funcIdent: FunctionType
+    var returnStat: ReturnStatementAST? = null
 }
 
 class CallAST(
@@ -159,12 +168,12 @@ class CallAST(
             f.formals.size != actuals.size -> {
                 throw ParameterError(
                     "wrong number of arguments for $funcName: " +
-                            "expected ${f.formals.size}, got ${actuals.size}"
+                        "expected ${f.formals.size}, got ${actuals.size}"
                 )
             }
             else -> {
 //                for (k in actuals.indices) {
-////                    actuals[k].check()
+// //                    actuals[k].check()
 //                    if (f.formals[k].type::class != actuals[k].type::class) {
 //                        throw TypeError(
 //                            "type of function parameter $k incompatible with " +
@@ -198,12 +207,12 @@ class ReadStatementAST(
                 throw TypeError("$varName is not a variable")
             }
             !(
-                    v is IntType || v is CharType || v is StringType || v is PairType ||
-                            v is ArrayType
-                    ) -> {
+                v is IntType || v is CharType || v is StringType || v is PairType ||
+                    v is ArrayType
+                ) -> {
                 throw TypeError(
                     "$varName is not an int, char, string, pair " +
-                            "element or array element"
+                        "element or array element"
                 )
             }
             else -> {
@@ -234,13 +243,13 @@ class FreeStatementAST(
             v == null -> {
                 throw IdentifierError(
                     "trying to free $varName, which has not" +
-                            " been declared"
+                        " been declared"
                 )
             }
             !(v is PairType || v is ArrayType) -> {
                 throw TypeError(
                     "trying to free $varName, which is neither a " +
-                            "pair nor an array"
+                        "pair nor an array"
                 )
             }
         }
@@ -253,118 +262,34 @@ class ReturnStatementAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
     val expr: ExpressionAST
-) : StatementAST(parent, symbolTable) {
-
-    fun check() {
-        var enclosingAST = parent
-
-        while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
-            enclosingAST = enclosingAST.parent
-        }
-
-        if (enclosingAST == null) {
-            throw SemanticError("could not find enclosing function")
-        }
-
-//        val enclosingFunction = enclosingAST as FunctionDeclarationAST
-//        val t = symbolTable.lookupAll(enclosingFunction.returnTypeName)
-
-//        when {
-//            t != expr.type -> {
-//                throw TypeError(
-//                    "function actual return type different from " +
-//                            "the one in function signature"
-//                )
-//            }
-//        }
-    }
-}
+) : StatementAST(parent, symbolTable)
 
 class ExitStatementAST(
     parent: ASTNode,
-    symbolTable: SymbolTable,
     val expr: ExpressionAST
-) : StatementAST(parent, symbolTable) {
-
-//    fun check() {
-//        when (expr.type) {
-//            !is IntType -> {
-//                throw TypeError(
-//                    "expression passed to exit must be an int; " +
-//                            "type passed is ${expr.type}"
-//                )
-//            }
-//            else -> {
-//                exitProcess(expr.value as Int)
-//            }
-//        }
-//    }
-}
+) : StatementAST(parent)
 
 class PrintStatementAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
     val expr: ExpressionAST
-) : StatementAST(parent, symbolTable) {
-    fun check() {
-//        when (expr.type) {
-//            is PairType, is ArrayType -> {
-//                throw TypeError("trying to print illegal type: ${expr.type}")
-//            }
-//        }
-    }
-}
+) : StatementAST(parent, symbolTable)
 
-class IfStatementAST(
+class IfBlockAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
     val condExpr: ExpressionAST,
     val thenStat: StatementAST,
     val elseStat: StatementAST
-) : StatementAST(parent, symbolTable) {
-    fun check() {
-//        when (condExpr.type) {
-//            !is BoolType -> {
-//                throw TypeError(
-//                    "type of conditional expression should be " +
-//                            "bool and is ${condExpr.type}"
-//                )
-//            }
-//            else -> {
-////                thenStat.check()
-////                elseStat.check()
-//            }
-//        }
-    }
-}
+) : BlockAST(parent, symbolTable)
 
-class WhileStatementAST(
+class WhileBlockAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    val condExpr: ExpressionAST,
-    val stat: StatementAST
-) : StatementAST(parent, symbolTable) {
-    fun check() {
-//        when (condExpr.type) {
-//            !is BoolType -> {
-//                throw TypeError(
-//                    "type of conditional expression should be " +
-//                            "bool and is ${condExpr.type}"
-//                )
-//            }
-//            else -> {
-////                stat.check()
-//            }
-//        }
-    }
-}
+    val condExpr: ExpressionAST
+) : BlockAST(parent, symbolTable)
 
-class BeginEndStatementAST(
-    parent: ASTNode,
-    symbolTable: SymbolTable,
-    val stat: StatementAST
-) : StatementAST(parent, symbolTable) {
-    fun check() {
-//        stat.check()
-    }
-}
+open class BeginEndBlockAST(
+    parent: ASTNode?,
+    symbolTable: SymbolTable
+) : BlockAST(parent, symbolTable)
