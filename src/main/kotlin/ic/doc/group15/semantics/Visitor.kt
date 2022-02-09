@@ -156,11 +156,10 @@ class Visitor(
 
         symbolTable.add(paramName, parameterAST.paramIdent)
 
-        return visitChildren(ctx)
+        return parameterAST
     }
 
     override fun visitDeclarationStat(ctx: WaccParser.DeclarationStatContext): ASTNode? {
-        // TODO: handle all assign_rhs cases
 
         val typeName = ctx.type().text
         val varName = ctx.ident().text
@@ -185,7 +184,7 @@ class Visitor(
                 throw TypeError("$typeName is not a type")
             }
             v != null -> {
-                throw DeclarationError("$varName is already declared")
+                throw DeclarationError("$varName has already been declared")
             }
             else -> {
                 varDecl.varIdent = Variable(t)
@@ -194,27 +193,44 @@ class Visitor(
 
         st.add(varName, varDecl.varIdent)
 
-        return visitChildren(ctx)
+        return varDecl
     }
 
     override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode? {
-        // TODO
-        /*
-        val v = symbolTable.lookupAll(varname)
+
+        val varName = ctx.ident().text
+        val expr = ctx.expr()
+        val exprName = expr.text
+
+        log(
+            """Visiting variable assignment
+                || Identifier: $varName
+                || Expression: $exprName
+            """.trimIndent()
+        )
+
+        val varAssign = VariableAssignmentAST(ast, st, varName, exprName)
+
+        // identifier may be declared in parent scope
+        val v = st.lookupAll(varName)
 
         when {
             v == null -> {
-                throw IdentifierError("unknown variable $varname")
+                throw DeclarationError("$varName has not been declared")
             }
             v !is Variable -> {
-                throw IdentifierError("$varname is not a variable")
+                throw IdentifierError("$varName is not a variable")
             }
             v.type != expr.type -> {
-                throw TypeError("$varname type not compatible with expression of type ${expr.type}")
+                throw TypeError("$varName type(${v.type}) not compatible with expression type (${expr.type})")
             }
-            else -> varIdent = v
+            else -> {
+                varAssign.varIdent = expr
+            }
         }
-        */
-        return visitChildren(ctx)
+
+        st.add(varName, varAssign.varIdent)
+
+        return varAssign
     }
 }

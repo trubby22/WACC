@@ -51,14 +51,6 @@ class VariableExpressionAST(
     lateinit var varIdent: Variable
 }
 
-class ArrayElemAST(
-    parent: ASTNode,
-    symbolTable: SymbolTable,
-    val indexExp: ExpressionAST,
-    val arrayName: String,
-    val arrayType: ArrayType
-) : ExpressionAST(parent, symbolTable)
-
 class UnaryOpAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
@@ -93,10 +85,10 @@ abstract class StatementAST protected constructor(
     symbolTable: SymbolTable
 ) : ASTNode(parent, symbolTable)
 
-class VariableDeclarationAST(
+open class VariableDeclarationAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    val typeName: String,
+    open val typeName: String,
     val varName: String
 ) : ASTNode(parent, symbolTable) {
 
@@ -113,12 +105,20 @@ class VariableAssignmentAST(
     lateinit var varIdent: Variable
 }
 
+class ArrayElemAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
+    val indexExp: ExpressionAST,
+    val arrayName: String,
+    val arrayType: ArrayType
+) : ASTNode(parent, symbolTable)
+
 class ParameterAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    val typeName: String,
+    override val typeName: String,
     val paramName: String
-) : ASTNode(parent, symbolTable) {
+) : VariableDeclarationAST(parent, symbolTable, typeName, paramName) {
 
     lateinit var paramIdent: Param
 }
