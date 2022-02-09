@@ -8,7 +8,7 @@ import java.util.logging.Logger
 class Visitor(
     private val abstractSyntaxTree: AST,
     private val symbolTable: SymbolTable
-) : WaccParserBaseVisitor<Void>() {
+) : WaccParserBaseVisitor<ASTNode>() {
 
     private var ast: ASTNode = abstractSyntaxTree
     private var st = symbolTable
@@ -21,14 +21,36 @@ class Visitor(
         }
     }
 
-    override fun visitProgram(ctx: WaccParser.ProgramContext): Void? {
+    override fun visitProgram(ctx: WaccParser.ProgramContext): ASTNode {
+        if (!st.isTopLevel()) {
+            throw DeclarationError("begin/end not allowed in this scope")
+        }
+
         log("Visiting program")
-        return visitChildren(ctx)
+
+        val program = ast as AST
+
+        log("Visiting function definitions")
+
+        for (func in ctx.func()) {
+            program.functions.add(visitFunc(func) as FunctionDeclarationAST)
+        }
+
+        program.main = visit(ctx.stat()) as StatementAST
+
+        return program
     }
 
-    override fun visitFunc(ctx: WaccParser.FuncContext): Void {
+    override fun visitFunc(ctx: WaccParser.FuncContext): ASTNode {
         val funcName = ctx.ident().text
         val returnTypeName = ctx.type().text
+
+        log(
+            """Visiting function declaration
+                || Function name: $funcName
+                || Return type: $returnTypeName
+            """
+        )
 
         if (!st.isTopLevel()) {
             throw DeclarationError("functions cannot be declared in this scope")
@@ -36,6 +58,8 @@ class Visitor(
 
         val t = st.lookupAll(returnTypeName)
         val f = st.lookup(funcName)
+
+        val func: FunctionDeclarationAST
 
         when {
             t == null -> {
@@ -51,31 +75,38 @@ class Visitor(
                 throw DeclarationError("function $funcName already declared")
             }
             else -> {
-                val functionDeclarationAST = FunctionDeclarationAST(
+                func = FunctionDeclarationAST(
                     ast, st, returnTypeName, funcName
                 )
 
                 st = st.subScope()
-                ast = functionDeclarationAST
+                ast = func
                 visitParam_list(ctx.param_list())
                 st = st.parentScope()!!
                 ast = ast.parent!!
 
-                functionDeclarationAST.funcIdent = FunctionType(
+                func.funcIdent = FunctionType(
                     t,
-                    functionDeclarationAST.formals.map { p -> p.paramIdent },
+                    func.formals.map { p -> p.paramIdent },
                     st
                 )
 
-                symbolTable.add(funcName, functionDeclarationAST.funcIdent)
+                symbolTable.add(funcName, func.funcIdent)
 
-                visit(ctx.stat())
-                return visitValid_return_stat(ctx.valid_return_stat())
+                val body = visit(ctx.stat())
+                if (body !is StatementAST) {
+                    throw DeclarationError("invalid function body in function $funcName")
+                }
+                func.body = body
+
+                visitValid_return_stat(ctx.valid_return_stat())
             }
         }
+
+        return func
     }
 
-    override fun visitParam_list(ctx: WaccParser.Param_listContext): Void? {
+    override fun visitParam_list(ctx: WaccParser.Param_listContext): ASTNode? {
         if (ast !is FunctionDeclarationAST) {
             throw DeclarationError("params must be declared in a function definition")
         }
@@ -90,7 +121,7 @@ class Visitor(
         return null
     }
 
-    override fun visitParam(ctx: WaccParser.ParamContext): Void? {
+    override fun visitParam(ctx: WaccParser.ParamContext): ASTNode? {
         assert(ast is FunctionDeclarationAST)
 
         val typeName = ctx.type().text
@@ -138,9 +169,7 @@ class Visitor(
         return visitChildren(ctx)
     }
 
-
-
-    override fun visitDeclarationStat(ctx: WaccParser.DeclarationStatContext): Void? {
+    override fun visitDeclarationStat(ctx: WaccParser.DeclarationStatContext): ASTNode? {
         // TODO: handle all assign_rhs cases
 
         val typeName = ctx.type().text
@@ -178,7 +207,7 @@ class Visitor(
         return visitChildren(ctx)
     }
 
-    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): Void? {
+    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode? {
         // TODO
         /*
         val v = symbolTable.lookupAll(varname)

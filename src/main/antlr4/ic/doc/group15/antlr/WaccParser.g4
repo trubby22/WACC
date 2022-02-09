@@ -34,7 +34,6 @@ while_return: WHILE expr DO valid_return_stat DONE;
 if_return: IF expr THEN valid_return_stat ELSE valid_return_stat FI;
 begin_end_return: BEGIN valid_return_stat END;
 
-
 assign_lhs: ident
 | array_elem
 | pair_elem
