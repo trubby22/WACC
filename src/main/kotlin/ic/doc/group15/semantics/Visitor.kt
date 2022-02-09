@@ -233,4 +233,51 @@ class Visitor(
 
         return varAssign
     }
+
+    override fun visitUnaryOpExpr(ctx: WaccParser.UnaryOpExprContext?): ASTNode {
+        return super.visitUnaryOpExpr(ctx)
+    }
+
+    override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext?): ASTNode {
+        return super.visitBinaryOpExpr(ctx)
+    }
+
+    override fun visitParenExpr(ctx: WaccParser.ParenExprContext?): ASTNode {
+        return super.visitParenExpr(ctx)
+    }
+
+
+    override fun visitInt_liter(ctx: WaccParser.Int_literContext?): ASTNode {
+        return super.visitInt_liter(ctx)
+    }
+
+    override fun visitTBool(ctx: WaccParser.TBoolContext?): ASTNode {
+        return BoolLiteralAST(ast, 1)
+    }
+
+    override fun visitFBool(ctx: WaccParser.FBoolContext?): ASTNode {
+        return BoolLiteralAST(ast, 0)
+    }
+
+    override fun visitChar_liter(ctx: WaccParser.Char_literContext?): ASTNode {
+        return CharLiteralAST(ast, )
+    }
+
+    override fun visitStr_liter(ctx: WaccParser.Str_literContext?): ASTNode {
+        return super.visitStr_liter(ctx)
+    }
+
+    override fun visitPair_liter(ctx: WaccParser.Pair_literContext?): ASTNode {
+        return super.visitPair_liter(ctx)
+    }
+
+    override fun visitIdent(ctx: WaccParser.IdentContext?): ASTNode {
+        return super.visitIdent(ctx)
+    }
+
+    override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
+        return super.visitArray_elem(ctx)
+    }
+
+
 }

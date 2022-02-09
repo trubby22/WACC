@@ -66,16 +66,16 @@ pair_elem_type: base_type
 | PAIR
 ;
 
-expr: int_liter
-| bool_liter
-| char_liter
-| str_liter
-| pair_liter
-| ident
-| array_elem
-| unary_op expr
-| expr binary_op expr
-| OPEN_PARENTHESES expr CLOSE_PARENTHESES
+expr: int_liter                             #intExpr
+| bool_liter                                #boolExpr
+| char_liter                                #charExpr
+| str_liter                                 #strExpr
+| pair_liter                                #pairExpr
+| ident                                     #identExpr
+| array_elem                                #arrayElemExpr
+| unary_op expr                             #unaryOpExpr
+| expr binary_op expr                       #binaryOpExpr
+| OPEN_PARENTHESES expr CLOSE_PARENTHESES   #parenExpr
 ;
 
 unary_op: BANG | MINUS | LEN | ORD | CHR;
@@ -90,7 +90,9 @@ int_liter: int_sign? INTEGER;
 
 int_sign: PLUS | MINUS;
 
-bool_liter: TRUE | FALSE;
+bool_liter: TRUE   #tBool
+| FALSE            #fBool
+ ;
 
 char_liter: CHAR_LITER_TOKEN | ESC_CHAR_LITER;
 
@@ -103,4 +105,3 @@ pair_liter: NULL;
 // EOF indicates that the program must consume to the end of the input.
 program: BEGIN (func)* stat END EOF;
 
-//test_prog: APOSTROPHE EOF ;
