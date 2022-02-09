@@ -4,11 +4,17 @@ default:
 
 build-job:
   stage: build
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+    - when: manual
   script:
     - mvn package -DskipTests
 
 test-job:
   stage: test
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+    - when: manual
   script:
     - mvn package -DskipTests
     - mvn test
