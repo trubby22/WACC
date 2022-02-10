@@ -80,9 +80,27 @@ expr: int_liter                                 #intLiterExpr
     | OPEN_PARENTHESES expr CLOSE_PARENTHESES   #bracketExpr
 ;
 
-unary_op: BANG | MINUS | LEN | ORD | CHR;
+unary_op: BANG #bangUnaryOp
+| MINUS        #minusUnaryOp
+| LEN          #lenUnaryOp
+| ORD          #ordUnaryOp
+| CHR          #chrUnaryOp
+;
 
-binary_op: MULT | DIV | MOD | PLUS | MINUS | GT | GTE | LT | LTE | EQUALS | NOT_EQUALS | AND | OR;
+binary_op: MULT #multBinaryOp
+| DIV           #divBinaryOp
+| MOD           #modBinaryOp
+| PLUS          #plusBinaryOp
+| MINUS         #minusBinaryOp
+| GT            #gtBinaryOp
+| GTE           #gteBinaryOp
+| LT            #ltBinaryOp
+| LTE           #lteBinaryOp
+| EQUALS        #equalsBinaryOp
+| NOT_EQUALS    #notEqualsBinaryOp
+| AND           #andBinaryOp
+| OR            #orBinaryOp
+;
 
 ident: IDENT;
 

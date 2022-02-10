@@ -1,5 +1,6 @@
 package ic.doc.group15.semantics
 
+import java.beans.Expression
 import java.util.LinkedList
 
 abstract class ASTNode protected constructor(
@@ -53,9 +54,14 @@ class VariableExpressionAST(
 class UnaryOpAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    val unOpExp: String,
+    val operator: UnaryOp
+) : ExpressionAST(parent, symbolTable)
+
+class UnaryOpExprAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
     val expr: ExpressionAST,
-    val unOpType: Type
+    val operator: UnaryOpAST
 ) : ExpressionAST(parent, symbolTable) {
     fun check() {
         // expr.check()
@@ -65,10 +71,15 @@ class UnaryOpAST(
 class BinaryOpAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    val binOpExp: String,
+    val operator: BinaryOp
+) : ExpressionAST(parent, symbolTable)
+
+class BinaryOpExprAST(
+    parent: ASTNode,
+    symbolTable: SymbolTable,
     val expr1: ExpressionAST,
     val expr2: ExpressionAST,
-    val binOpType: Type
+    val operator: BinaryOpAST
 ) : ExpressionAST(parent, symbolTable) {
     fun check() {
         // expr1.check()

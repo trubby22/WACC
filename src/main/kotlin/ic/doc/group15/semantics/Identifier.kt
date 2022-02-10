@@ -9,6 +9,8 @@ interface Type : Identifier
 
 interface ReturnableType : Type
 
+interface GenericArrayType : ReturnableType
+
 data class Variable(val type: Type) : Identifier
 
 data class Param(val type: Type) : Identifier
@@ -28,7 +30,23 @@ enum class UnaryOp : Identifier {
     CHR
 }
 
-data class ArrayType(val elementType: Type, val size: Int) : ReturnableType
+enum class BinaryOp: Identifier {
+    MULT,
+    DIV,
+    MOD,
+    PLUS,
+    MINUS,
+    GT,
+    GTE,
+    LT,
+    LTE,
+    EQUALS,
+    NOT_EQUALS,
+    AND,
+    OR
+}
+
+data class ArrayType(val elementType: Type, val size: Int) : GenericArrayType
 
 data class PairType(val leftType: Type?, val rightType: Type?) : ReturnableType
 
