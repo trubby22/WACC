@@ -10,8 +10,8 @@ class Visitor(
     private val symbolTable: SymbolTable
 ) : WaccParserBaseVisitor<ASTNode>() {
 
-    private var scope: BlockAST = abstractSyntaxTree
-    private var symbols = symbolTable
+    private var scopeAST: BlockAST = abstractSyntaxTree
+    private var scopeSymbols = symbolTable
 
     companion object {
         private val LOG = Logger.getLogger(Visitor::class.java.name)
@@ -22,10 +22,10 @@ class Visitor(
     }
 
     override fun visitProgram(ctx: WaccParser.ProgramContext): ASTNode {
-        assert(symbols.isTopLevel())
+        assert(scopeSymbols.isTopLevel())
 
         log("Begin program semantic analysis")
-        val program = scope as AST
+        val program = scopeAST as AST
 
         log("Visiting function definitions")
         for (func in ctx.func()) {
@@ -38,25 +38,25 @@ class Visitor(
         return program
     }
 
+    // TODO: handle array and pair return types
     override fun visitFunc(ctx: WaccParser.FuncContext): ASTNode {
         val funcName = ctx.ident().text
-        val returnTypeName = ctx.type().text
-
         log(
             """Visiting function declaration
                 || Function name: $funcName
-                || Return type: $returnTypeName
             """
         )
 
-        if (!symbols.isTopLevel()) {
+        val returnTypeName = ctx.type().text
+
+        log(""" || Return type: $returnTypeName""")
+
+        if (!scopeSymbols.isTopLevel()) {
             throw DeclarationError("functions cannot be declared in this scope")
         }
 
-        val t = symbols.lookupAll(returnTypeName)
-        val f = symbols.lookup(funcName)
-
-        val func: FunctionDeclarationAST
+        val t = scopeSymbols.lookupAll(returnTypeName)
+        val f = scopeSymbols.lookup(funcName)
 
         when {
             t == null -> {
@@ -71,48 +71,37 @@ class Visitor(
             f != null -> {
                 throw DeclarationError("function $funcName already declared")
             }
-            else -> {
-                func = FunctionDeclarationAST(
-                    scope, symbols, returnTypeName, funcName
-                )
-
-                log(
-                    """Visiting parameters of function ${func.funcName}"""
-                )
-
-                symbols = symbols.subScope()
-                scope = func
-
-                for (param in ctx.param()) {
-                    func.formals.add(visitParam(param) as ParameterAST)
-                }
-
-                symbols = symbols.parentScope()!!
-                scope = scope.parent!! as BlockAST
-
-                func.funcIdent = FunctionType(
-                    t,
-                    func.formals.map { p -> p.paramIdent },
-                    symbols
-                )
-
-                symbolTable.add(funcName, func.funcIdent)
-
-                val body = visit(ctx.stat()) as StatementAST
-                func.body = body
-
-                if (func.returnStat == null) {
-                    throw DeclarationError(
-                        "function $funcName missing return statement"
-                    )
-                }
-            }
         }
+
+        val func = FunctionDeclarationAST(
+            scopeAST, scopeSymbols, returnTypeName, funcName
+        )
+
+        log(
+            """Visiting parameters of function ${func.funcName}"""
+        )
+
+        scopeSymbols = scopeSymbols.subScope()
+        scopeAST = func
+        for (param in ctx.param()) {
+            func.formals.add(visitParam(param) as ParameterAST)
+        }
+        scopeSymbols = scopeSymbols.parentScope()!!
+        scopeAST = scopeAST.parent!! as BlockAST
+
+        func.funcIdent = FunctionType(
+            t as ReturnableType,
+            func.formals.map { p -> p.paramIdent },
+            scopeSymbols
+        )
+        symbolTable.add(funcName, func.funcIdent)
+
+        visit(ctx.stat())
 
         return func
     }
 
-    override fun visitParam(ctx: WaccParser.ParamContext): ASTNode? {
+    override fun visitParam(ctx: WaccParser.ParamContext): ASTNode {
         val typeName = ctx.type().text
         val paramName = ctx.ident().text
 
@@ -123,7 +112,7 @@ class Visitor(
             """
         )
 
-        val parameterAST = ParameterAST(scope, symbols, typeName, paramName)
+        val parameterAST = ParameterAST(scopeAST, scopeSymbols, typeName, paramName)
 
         val t = symbolTable.lookupAll(typeName)
         val p = symbolTable.lookup(paramName)
@@ -157,7 +146,7 @@ class Visitor(
         return parameterAST
     }
 
-    override fun visitDeclarationStat(ctx: WaccParser.DeclarationStatContext): ASTNode? {
+    override fun visitDeclarationStat(ctx: WaccParser.DeclarationStatContext): ASTNode {
 
         val typeName = ctx.type().text
         val varName = ctx.ident().text
@@ -169,10 +158,10 @@ class Visitor(
             """
         )
 
-        val varDecl = VariableDeclarationAST(scope, symbols, typeName, varName)
+        val varDecl = VariableDeclarationAST(scopeAST, scopeSymbols, typeName, varName)
 
-        val t = symbols.lookupAll(typeName)
-        val v = symbols.lookup(varName)
+        val t = scopeSymbols.lookupAll(typeName)
+        val v = scopeSymbols.lookup(varName)
 
         when {
             t == null -> {
@@ -189,48 +178,48 @@ class Visitor(
             }
         }
 
-        symbols.add(varName, varDecl.varIdent)
+        scopeSymbols.add(varName, varDecl.varIdent)
 
         return varDecl
     }
 
-    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode? {
-
-        val varName = ctx.ident().text
-        val expr = ctx.expr()
-        val exprName = expr.text
-
-        log(
-            """Visiting variable assignment
-                || Identifier: $varName
-                || Expression: $exprName
-            """.trimIndent()
-        )
-
-        val varAssign = VariableAssignmentAST(ast, st, varName, exprName)
-
-        // identifier may be declared in parent scope
-        val v = st.lookupAll(varName)
-
-        when {
-            v == null -> {
-                throw DeclarationError("$varName has not been declared")
-            }
-            v !is Variable -> {
-                throw IdentifierError("$varName is not a variable")
-            }
-            v.type != expr.type -> {
-                throw TypeError("$varName type(${v.type}) not compatible with expression type (${expr.type})")
-            }
-            else -> {
-                varAssign.varIdent = expr
-            }
-        }
-
-        st.add(varName, varAssign.varIdent)
-
-        return varAssign
-    }
+//    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
+//
+//        val varName = ctx.().text
+//        val expr = ctx.expr()
+//        val exprName = expr.text
+//
+//        log(
+//            """Visiting variable assignment
+//                || Identifier: $varName
+//                || Expression: $exprName
+//            """.trimIndent()
+//        )
+//
+//        val varAssign = VariableAssignmentAST(scope, symbols, varName, exprName)
+//
+//        // identifier may be declared in parent scope
+//        val v = symbols.lookupAll(varName)
+//
+//        when {
+//            v == null -> {
+//                throw DeclarationError("$varName has not been declared")
+//            }
+//            v !is Variable -> {
+//                throw IdentifierError("$varName is not a variable")
+//            }
+//            v.type != expr.type -> {
+//                throw TypeError("$varName type(${v.type}) not compatible with expression type (${expr.type})")
+//            }
+//            else -> {
+//                varAssign.varIdent = expr
+//            }
+//        }
+//
+//        st.add(varName, varAssign.varIdent)
+//
+//        return varAssign
+//    }
 
     override fun visitUnaryOpExpr(ctx: WaccParser.UnaryOpExprContext?): ASTNode {
         return super.visitUnaryOpExpr(ctx)
@@ -278,59 +267,59 @@ class Visitor(
     }
 
     override fun visitIfStat(ctx: WaccParser.IfStatContext): ASTNode {
-        val condExpr = visitExpr(ctx.expr()) as ExpressionAST
+        val condExpr = visit(ctx.expr()) as ExpressionAST
 
-        if (condExpr.type !is BoolType) {
+        if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
                 "type of conditional expression should be " +
                     "bool and is ${condExpr.type}"
             )
         }
 
-        symbols = symbols.subScope()
+        scopeSymbols = scopeSymbols.subScope()
         val thenStat = visit(ctx.stat(0))
         if (thenStat !is StatementAST) {
             throw DeclarationError(
                 "invalid then statement in if block"
             )
         }
-        symbols = symbols.parentScope()!!
+        scopeSymbols = scopeSymbols.parentScope()!!
 
-        symbols = symbols.subScope()
+        scopeSymbols = scopeSymbols.subScope()
         val elseStat = visit(ctx.stat(1))
         if (elseStat !is StatementAST) {
             throw DeclarationError(
                 "invalid else statement in if block"
             )
         }
-        symbols = symbols.parentScope()!!
+        scopeSymbols = scopeSymbols.parentScope()!!
 
-        return addToScope(IfBlockAST(scope, symbols, condExpr, thenStat, elseStat))
+        return addToScope(IfBlockAST(scopeAST, scopeSymbols, condExpr, thenStat, elseStat))
     }
 
     override fun visitWhileStat(ctx: WaccParser.WhileStatContext): ASTNode {
-        val condExpr = visitExpr(ctx.expr()) as ExpressionAST
+        val condExpr = visit(ctx.expr()) as ExpressionAST
 
-        if (condExpr.type !is BoolType) {
+        if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
                 "type of conditional expression should be " +
                     "bool and is ${condExpr.type}"
             )
         }
 
-        val whileBlock = WhileBlockAST(scope, symbols, condExpr)
+        val whileBlock = WhileBlockAST(scopeAST, scopeSymbols, condExpr)
 
-        scope = whileBlock
-        symbols = symbols.subScope()
+        scopeAST = whileBlock
+        scopeSymbols = scopeSymbols.subScope()
         visit(ctx.stat()) as StatementAST
-        symbols = symbols.parentScope()!!
-        scope = scope.parent!! as BlockAST
+        scopeSymbols = scopeSymbols.parentScope()!!
+        scopeAST = scopeAST.parent!! as BlockAST
 
         return addToScope(whileBlock)
     }
 
     override fun visitPrintStat(ctx: WaccParser.PrintStatContext): ASTNode {
-        val expr = visitExpr(ctx.expr()) as ExpressionAST
+        val expr = visit(ctx.expr()) as ExpressionAST
         when (expr.type) {
             is PairType -> {
                 throw TypeError("cannot print pair type: ${expr.type}")
@@ -340,23 +329,23 @@ class Visitor(
             }
         }
 
-        return addToScope(PrintStatementAST(scope, symbols, expr))
+        return addToScope(PrintStatementAST(scopeAST, scopeSymbols, expr))
     }
 
     override fun visitExitStat(ctx: WaccParser.ExitStatContext): ASTNode {
-        val expr = visitExpr(ctx.expr()) as ExpressionAST
-        if (expr.type !is IntType) {
+        val expr = visit(ctx.expr()) as ExpressionAST
+        if (expr.type != BasicType.IntType) {
             throw TypeError(
                 "expression passed to exit must be an int; type passed is ${expr.type}"
             )
         }
-        return addToScope(ExitStatementAST(scope, expr))
+        return addToScope(ExitStatementAST(scopeAST, expr))
     }
 
     override fun visitReturn_stat(ctx: WaccParser.Return_statContext): ASTNode {
         log("Visiting return statement")
 
-        var enclosingAST: ASTNode? = scope
+        var enclosingAST: ASTNode? = scopeAST
 
         while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
             enclosingAST = enclosingAST.parent
@@ -383,14 +372,105 @@ class Visitor(
             }
         }
 
-        val returnStat = ReturnStatementAST(func, symbols, expr)
+        val returnStat = ReturnStatementAST(func, scopeSymbols, expr)
         func.returnStat = returnStat
 
         return addToScope(returnStat)
     }
 
+//    override fun visitFreeStat(ctx: WaccParser.FreeStatContext): ASTNode {
+//        val expr = visitExpr(ctx.expr()) as ExpressionAST
+//
+//        when {
+//            v == null -> {
+//                throw IdentifierError(
+//                    "trying to free $varName, which has not" +
+//                            " been declared"
+//                )
+//            }
+//            !(v is PairType || v is ArrayType) -> {
+//                throw TypeError(
+//                    "trying to free $varName, which is neither a " +
+//                            "pair nor an array"
+//                )
+//            }
+//        }
+//
+//        return addToScope(FreeStatementAST(scope, symbols, expr))
+//    }
+
+    override fun visitSkipStat(ctx: WaccParser.SkipStatContext?): ASTNode {
+        return addToScope(SkipStatementAST(scopeAST))
+    }
+
+//    override fun visitReadStat(ctx: WaccParser.ReadStatContext?): ASTNode {
+//        val v = symbolTable.lookupAll(varName)
+//
+//        when {
+//            v == null -> {
+//                throw IdentifierError("identifier $varName not found")
+//            }
+//            v !is Variable -> {
+//                throw TypeError("$varName is not a variable")
+//            }
+//            !(
+//                    v is IntType || v is CharType || v is StringType || v is PairType ||
+//                            v is ArrayType
+//                    ) -> {
+//                throw TypeError(
+//                    "$varName is not an int, char, string, pair " +
+//                            "element or array element"
+//                )
+//            }
+//            else -> {
+//                varIdent = v
+//            }
+//        }
+//
+//        symbolTable.add(varName, varIdent)
+//    }
+
+    override fun visitCallAssign(ctx: WaccParser.CallAssignContext): ASTNode {
+        val funcName = ctx.ident().text
+        val f = symbolTable.lookupAll(funcName)
+
+        val args: MutableList<WaccParser.ExprContext> = ctx.arg_list().expr()
+
+        when {
+            f == null -> {
+                throw IdentifierError("function $funcName not found")
+            }
+            f !is FunctionType -> {
+                throw TypeError("$funcName is not a function")
+            }
+            f.formals.size != args.size -> {
+                throw ParameterError(
+                    "wrong number of arguments for $funcName: " +
+                            "expected ${f.formals.size}, got ${args.size}"
+                )
+            }
+        }
+
+        val funcCall = CallAST(scopeAST, scopeSymbols, funcName)
+
+        funcCall.funcIdent = f as FunctionType
+
+        for (k in args.indices) {
+            val argExpr = visit(args[k]) as ExpressionAST
+            if (f.formals[k].type::class != argExpr.type::class) {
+                throw TypeError(
+                    "type of function parameter $k incompatible with " +
+                            "declaration of $funcName"
+                )
+            }
+            funcCall.actuals.add(argExpr)
+        }
+
+        return funcCall
+    }
+
     private fun addToScope(stat: StatementAST): StatementAST {
-        scope.statements.add(stat)
+        scopeAST.statements.add(stat)
         return stat
     }
 }

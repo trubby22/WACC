@@ -141,8 +141,6 @@ class FunctionDeclarationAST(
 
     val formals: MutableList<ParameterAST> = mutableListOf()
 
-    lateinit var body: StatementAST
-
     var returnStat: ReturnStatementAST? = null
 }
 
@@ -150,42 +148,11 @@ class CallAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
     val funcName: String,
-    val actuals: List<ExpressionAST>
 ) : ASTNode(parent, symbolTable) {
 
-    lateinit var funcIdent: FunctionType private set
+    lateinit var funcIdent: FunctionType
 
-    fun check() {
-        val f = symbolTable.lookupAll(funcName)
-
-        when {
-            f == null -> {
-                throw IdentifierError("function $funcName not found")
-            }
-            f !is FunctionType -> {
-                throw TypeError("$funcName is not a function")
-            }
-            f.formals.size != actuals.size -> {
-                throw ParameterError(
-                    "wrong number of arguments for $funcName: " +
-                        "expected ${f.formals.size}, got ${actuals.size}"
-                )
-            }
-            else -> {
-//                for (k in actuals.indices) {
-// //                    actuals[k].check()
-//                    if (f.formals[k].type::class != actuals[k].type::class) {
-//                        throw TypeError(
-//                            "type of function parameter $k incompatible with " +
-//                                    "declaration of $funcName"
-//                        )
-//                    }
-//                }
-//
-//                funcIdent = f
-            }
-        }
-    }
+    val actuals: MutableList<ExpressionAST> = LinkedList()
 }
 
 class ReadStatementAST(
@@ -194,69 +161,18 @@ class ReadStatementAST(
     val varName: String
 ) : StatementAST(parent, symbolTable) {
 
-    lateinit var varIdent: Variable private set
-
-    fun check() {
-        val v = symbolTable.lookupAll(varName)
-
-        when {
-            v == null -> {
-                throw IdentifierError("identifier $varName not found")
-            }
-            v !is Variable -> {
-                throw TypeError("$varName is not a variable")
-            }
-            !(
-                v is IntType || v is CharType || v is StringType || v is PairType ||
-                    v is ArrayType
-                ) -> {
-                throw TypeError(
-                    "$varName is not an int, char, string, pair " +
-                        "element or array element"
-                )
-            }
-            else -> {
-                varIdent = v
-            }
-        }
-
-        symbolTable.add(varName, varIdent)
-    }
+    lateinit var varIdent: Variable
 }
 
 class SkipStatementAST(
     parent: ASTNode,
-    symbolTable: SymbolTable
-) : StatementAST(parent, symbolTable) {
-    fun check() {}
-}
+) : StatementAST(parent)
 
 class FreeStatementAST(
     parent: ASTNode,
     symbolTable: SymbolTable,
-    val varName: String
-) : StatementAST(parent, symbolTable) {
-    val v = symbolTable.lookupAll(varName)
-
-    fun check() {
-        when {
-            v == null -> {
-                throw IdentifierError(
-                    "trying to free $varName, which has not" +
-                        " been declared"
-                )
-            }
-            !(v is PairType || v is ArrayType) -> {
-                throw TypeError(
-                    "trying to free $varName, which is neither a " +
-                        "pair nor an array"
-                )
-            }
-        }
-
-        symbolTable.remove(varName)
-    }
-}
+    val expr: ExpressionAST
+) : StatementAST(parent, symbolTable)
 
 class ReturnStatementAST(
     parent: ASTNode,
