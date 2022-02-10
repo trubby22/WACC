@@ -224,14 +224,20 @@ class Visitor(
 //    }
 
     override fun visitUnaryOpExpr(ctx: WaccParser.UnaryOpExprContext): ASTNode {
+        log("Visiting unary operator expression")
         val expr = visit(ctx.expr()) as ExpressionAST
-        return UnaryOp.generateNode(scopeSymbols, expr, ctx.unary_op())
+        val op = UnaryOp.generateNode(scopeSymbols, expr, ctx.unary_op())
+        log("Found unary operator ${op.operator}")
+        return op
     }
 
     override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext): ASTNode {
+        log("Visiting binary operator expression")
         val expr1 = visit(ctx.expr(0)) as ExpressionAST
         val expr2 = visit(ctx.expr(1)) as ExpressionAST
-        return BinaryOp.generateNode(scopeSymbols, expr1, expr2, ctx.binary_op())
+        val op = BinaryOp.generateNode(scopeSymbols, expr1, expr2, ctx.binary_op())
+        log("Found binary operator ${op.operator}")
+        return op
     }
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
