@@ -54,7 +54,7 @@ class Visitor(
         log(""" || Return type: $returnTypeName""")
 
         if (!scopeSymbols.isTopLevel()) {
-            throw DeclarationError("functions cannot be declared in this scope")
+            throw DeclarationError("Error in compilation! Exit code 200. line: ${ctx.getStart().line} column: ${ctx.getStart().charPositionInLine} functions cannot be declared in this scope")
         }
 
         val t = scopeSymbols.lookupAll(returnTypeName)
@@ -62,16 +62,16 @@ class Visitor(
 
         when {
             t == null -> {
-                throw TypeError("unknown return type $returnTypeName")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown return type $returnTypeName")
             }
             t !is Type -> {
-                throw TypeError("$returnTypeName is not a type")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $returnTypeName is not a type")
             }
             t !is ReturnableType -> {
-                throw TypeError("cannot return $returnTypeName type")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} cannot return $returnTypeName type")
             }
             f != null -> {
-                throw DeclarationError("function $funcName already declared")
+                throw DeclarationError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} type().function $funcName already declared")
             }
         }
 
@@ -121,21 +121,21 @@ class Visitor(
 
         when {
             t == null -> {
-                throw TypeError("unknown return type $typeName")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown return type $typeName")
             }
             t !is Type -> {
-                throw TypeError("$typeName is not a type")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName is not a type")
             }
             t !is ReturnableType -> {
-                throw TypeError("$typeName cannot be a parameter")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName cannot be a parameter")
             }
             p != null -> {
                 if (p is Param) {
                     throw DeclarationError(
-                        "parameter $paramName already declared for this function"
+                        "Error in compilation! Exit code 200. line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} parameter $paramName already declared for this function"
                     )
                 } else {
-                    throw DeclarationError("identifier $paramName already declared")
+                    throw DeclarationError("Error in compilation! Exit code 200. line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} identifier $paramName already declared")
                 }
             }
             else -> {
@@ -167,13 +167,13 @@ class Visitor(
 
         when {
             t == null -> {
-                throw TypeError("unknown type $typeName")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown type $typeName")
             }
             t !is Type -> {
-                throw TypeError("$typeName is not a type")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName is not a type")
             }
             v != null -> {
-                throw DeclarationError("$varName has already been declared")
+                throw DeclarationError("Error in compilation! Exit code 200. line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} $varName has already been declared")
             }
             else -> {
                 varDecl.varIdent = Variable(t)
@@ -249,7 +249,7 @@ class Visitor(
 
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
-                "type of conditional expression should be " +
+                "Error in compilation! Exit code 200. line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} type of conditional expression should be " +
                     "bool and is ${condExpr.type}"
             )
         }
@@ -258,7 +258,7 @@ class Visitor(
         val thenStat = visit(ctx.stat(0))
         if (thenStat !is StatementAST) {
             throw DeclarationError(
-                "invalid then statement in if block"
+                "Error in compilation! Exit code 200. line: ${ctx.stat(0).getStart().line} column: ${ctx.stat(0).getStart().charPositionInLine} invalid then statement in if block"
             )
         }
         scopeSymbols = scopeSymbols.parentScope()!!
@@ -267,7 +267,7 @@ class Visitor(
         val elseStat = visit(ctx.stat(1))
         if (elseStat !is StatementAST) {
             throw DeclarationError(
-                "invalid else statement in if block"
+                "Error in compilation! Exit code 200. line: ${ctx.stat(1).getStart().line} column: ${ctx.stat(1).getStart().charPositionInLine} invalid else statement in if block"
             )
         }
         scopeSymbols = scopeSymbols.parentScope()!!
@@ -280,7 +280,7 @@ class Visitor(
 
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
-                "type of conditional expression should be " +
+                "Error in compilation! Exit code 200. line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} type of conditional expression should be " +
                     "bool and is ${condExpr.type}"
             )
         }
@@ -300,10 +300,10 @@ class Visitor(
         val expr = visit(ctx.expr()) as ExpressionAST
         when (expr.type) {
             is PairType -> {
-                throw TypeError("cannot print pair type: ${expr.type}")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} cannot print pair type: ${expr.type}")
             }
             is ArrayType -> {
-                throw TypeError("cannot print array type: ${expr.type}")
+                throw TypeError("Error in compilation! Exit code 200. line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} expr().cannot print array type: ${expr.type}")
             }
         }
 
