@@ -19,6 +19,7 @@ class Visitor(
         private val LOG = Logger.getLogger(Visitor::class.java.name)
 
         private fun log(message: String) {
+            LOG.setLevel(Level.FINE)
             LOG.log(Level.FINE, message.trimMargin())
         }
     }
@@ -289,6 +290,15 @@ class Visitor(
         return op
     }
 
+    override fun visitBracketExpr(ctx: WaccParser.BracketExprContext): ASTNode {
+        return visit(ctx.expr()) as ExpressionAST
+    }
+
+    override fun visitIdent(ctx: WaccParser.IdentContext?): ASTNode {
+        val variable = scopeSymbols.lookupAll(ctx?.text!!)!! as Variable
+        return VariableIdentifierAST(scopeSymbols, ctx.text!!, variable)
+    }
+
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
         return super.visitArray_elem(ctx)
     }
@@ -381,6 +391,20 @@ class Visitor(
         }
 
         return addToScope(PrintStatementAST(scopeAST, scopeSymbols, expr))
+    }
+
+    override fun visitPrintlnStat(ctx: WaccParser.PrintlnStatContext): ASTNode {
+        val expr = visit(ctx.expr()) as ExpressionAST
+        when (expr.type) {
+            is PairType -> {
+                throw TypeError("cannot print pair type: ${expr.type}")
+            }
+            is ArrayType -> {
+                throw TypeError("cannot print array type: ${expr.type}")
+            }
+        }
+
+        return addToScope(PrintlnStatementAST(scopeAST, scopeSymbols, expr))
     }
 
     override fun visitExitStat(ctx: WaccParser.ExitStatContext): ASTNode {

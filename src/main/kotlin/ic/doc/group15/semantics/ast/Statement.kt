@@ -74,3 +74,9 @@ class PrintStatementAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST
 ) : StatementAST(parent, symbolTable)
+
+class PrintlnStatementAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable,
+    val expr: ExpressionAST
+) : StatementAST(parent, symbolTable)

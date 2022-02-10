@@ -44,8 +44,9 @@ class BinaryOpExprAST(
     symbolTable: SymbolTable,
     val expr1: ExpressionAST,
     val expr2: ExpressionAST,
-    val operator: BinaryOp
-) : ExpressionAST(symbolTable, type = expr1.type)
+    val operator: BinaryOp,
+    val exprType: Type
+) : ExpressionAST(symbolTable, type = exprType)
 
 class CallAST(
     symbolTable: SymbolTable,
