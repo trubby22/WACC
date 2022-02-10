@@ -32,7 +32,6 @@ class ArrayElemAST(
     val varIdent: Variable
 ) : ExpressionAST(symbolTable, (varIdent.type as ArrayType).elementType)
 
-
 class UnaryOpAST(
     symbolTable: SymbolTable,
     val operator: UnaryOp

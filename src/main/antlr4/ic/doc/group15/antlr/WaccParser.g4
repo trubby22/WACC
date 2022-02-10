@@ -80,26 +80,26 @@ expr: int_liter                                 #intLiterExpr
     | OPEN_PARENTHESES expr CLOSE_PARENTHESES   #bracketExpr
 ;
 
-unary_op: BANG #bangUnaryOp
-| MINUS        #minusUnaryOp
-| LEN          #lenUnaryOp
-| ORD          #ordUnaryOp
-| CHR          #chrUnaryOp
+unary_op: BANG                                  #bangUnaryOp
+        | MINUS                                 #minusUnaryOp
+        | LEN                                   #lenUnaryOp
+        | ORD                                   #ordUnaryOp
+        | CHR                                   #chrUnaryOp
 ;
 
-binary_op: MULT #multBinaryOp
-| DIV           #divBinaryOp
-| MOD           #modBinaryOp
-| PLUS          #plusBinaryOp
-| MINUS         #minusBinaryOp
-| GT            #gtBinaryOp
-| GTE           #gteBinaryOp
-| LT            #ltBinaryOp
-| LTE           #lteBinaryOp
-| EQUALS        #equalsBinaryOp
-| NOT_EQUALS    #notEqualsBinaryOp
-| AND           #andBinaryOp
-| OR            #orBinaryOp
+binary_op: MULT                                 #multBinaryOp
+         | DIV                                  #divBinaryOp
+         | MOD                                  #modBinaryOp
+         | PLUS                                 #plusBinaryOp
+         | MINUS                                #minusBinaryOp
+         | GT                                   #gtBinaryOp
+         | GTE                                  #gteBinaryOp
+         | LT                                   #ltBinaryOp
+         | LTE                                  #lteBinaryOp
+         | EQUALS                               #equalsBinaryOp
+         | NOT_EQUALS                           #notEqualsBinaryOp
+         | AND                                  #andBinaryOp
+         | OR                                   #orBinaryOp
 ;
 
 ident: IDENT;
@@ -111,9 +111,9 @@ int_liter: int_liter_negative | int_liter_positive;
 int_liter_negative: MINUS NEGATIVE_INTEGER;
 int_liter_positive: PLUS? POSITIVE_INTEGER;
 
-bool_liter: TRUE   #tBool
-| FALSE            #fBool
- ;
+bool_liter: TRUE                                #tBool
+          | FALSE                               #fBool
+;
 
 char_liter: CHAR_LITER_TOKEN | ESC_CHAR_LITER;
 

@@ -224,23 +224,23 @@ class Visitor(
 //    }
 
     override fun visitBangUnaryOp(ctx: WaccParser.BangUnaryOpContext?): ASTNode {
-        return UnaryOpAST(scopeAST, symbolTable, UnaryOp.BANG)
+        return UnaryOpAST(symbolTable, UnaryOp.BANG)
     }
 
     override fun visitMinusUnaryOp(ctx: WaccParser.MinusUnaryOpContext?): ASTNode {
-        return UnaryOpAST(scopeAST, symbolTable, UnaryOp.MINUS)
+        return UnaryOpAST(symbolTable, UnaryOp.MINUS)
     }
 
     override fun visitLenUnaryOp(ctx: WaccParser.LenUnaryOpContext?): ASTNode {
-        return UnaryOpAST(scopeAST, symbolTable, UnaryOp.LEN)
+        return UnaryOpAST(symbolTable, UnaryOp.LEN)
     }
 
     override fun visitOrdUnaryOp(ctx: WaccParser.OrdUnaryOpContext?): ASTNode {
-        return UnaryOpAST(scopeAST, symbolTable, UnaryOp.ORD)
+        return UnaryOpAST(symbolTable, UnaryOp.ORD)
     }
 
     override fun visitChrUnaryOp(ctx: WaccParser.ChrUnaryOpContext?): ASTNode {
-        return UnaryOpAST(scopeAST, symbolTable, UnaryOp.CHR)
+        return UnaryOpAST(symbolTable, UnaryOp.CHR)
     }
 
     override fun visitUnaryOpExpr(ctx: WaccParser.UnaryOpExprContext): ASTNode {
@@ -251,102 +251,107 @@ class Visitor(
             UnaryOp.BANG -> {
                 val expectedType = BasicType.BoolType
                 if (expr.type != expectedType) {
-                    throw TypeError("type mismatch when evaluating ${unaryOp
-                        .operator} - " +
+                    throw TypeError(
+                        "type mismatch when evaluating ${unaryOp.operator} - " +
                             "expected: " +
-                            "${expectedType}, actual: ${expr.type}")
+                            "$expectedType, actual: ${expr.type}"
+                    )
                 }
             }
             UnaryOp.MINUS -> {
                 val expectedType = BasicType.IntType
                 if (expr.type != expectedType) {
-                    throw TypeError("type mismatch when evaluating ${unaryOp
-                        .operator} - " +
+                    throw TypeError(
+                        "type mismatch when evaluating ${unaryOp.operator} - " +
                             "expected: " +
-                            "${expectedType}, actual: ${expr.type}")
+                            "$expectedType, actual: ${expr.type}"
+                    )
                 }
             }
             UnaryOp.LEN -> {
                 if (expr.type !is ArrayType) {
-                    throw TypeError("type mismatch when evaluating ${unaryOp
-                        .operator} - " +
+                    throw TypeError(
+                        "type mismatch when evaluating ${unaryOp.operator} - " +
                             "expected: " +
-                            "ArrayType, actual: ${expr.type}")
+                            "ArrayType, actual: ${expr.type}"
+                    )
                 }
             }
             UnaryOp.ORD -> {
                 val expectedType = BasicType.CharType
                 if (expr.type != expectedType) {
-                    throw TypeError("type mismatch when evaluating ${unaryOp
-                        .operator} - " +
+                    throw TypeError(
+                        "type mismatch when evaluating ${unaryOp.operator} - " +
                             "expected: " +
-                            "${expectedType}, actual: ${expr.type}")
+                            "$expectedType, actual: ${expr.type}"
+                    )
                 }
             }
             UnaryOp.CHR -> {
                 val expectedType = BasicType.IntType
                 if (expr.type != expectedType) {
-                    throw TypeError("type mismatch when evaluating ${unaryOp
-                        .operator} - " +
+                    throw TypeError(
+                        "type mismatch when evaluating ${unaryOp.operator} - " +
                             "expected: " +
-                            "${expectedType}, actual: ${expr.type}")
+                            "$expectedType, actual: ${expr.type}"
+                    )
                 }
             }
         }
 
-        return UnaryOpExprAST(scopeAST, symbolTable, expr, unaryOp)
+        return UnaryOpExprAST(symbolTable, expr, unaryOp)
     }
 
     override fun visitMultBinaryOp(ctx: WaccParser.MultBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.MULT)
+        return BinaryOpAST(symbolTable, BinaryOp.MULT)
     }
 
     override fun visitDivBinaryOp(ctx: WaccParser.DivBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.DIV)
+        return BinaryOpAST(symbolTable, BinaryOp.DIV)
     }
 
     override fun visitModBinaryOp(ctx: WaccParser.ModBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.MOD)
+        return BinaryOpAST(symbolTable, BinaryOp.MOD)
     }
 
     override fun visitPlusBinaryOp(ctx: WaccParser.PlusBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.PLUS)
+        return BinaryOpAST(symbolTable, BinaryOp.PLUS)
     }
 
     override fun visitMinusBinaryOp(ctx: WaccParser.MinusBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.MINUS)
+        return BinaryOpAST(symbolTable, BinaryOp.MINUS)
     }
 
     override fun visitGtBinaryOp(ctx: WaccParser.GtBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.GT)
+        return BinaryOpAST(symbolTable, BinaryOp.GT)
     }
 
     override fun visitGteBinaryOp(ctx: WaccParser.GteBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.GTE)
+        return BinaryOpAST(symbolTable, BinaryOp.GTE)
     }
 
     override fun visitLtBinaryOp(ctx: WaccParser.LtBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.LT)
+        return BinaryOpAST(symbolTable, BinaryOp.LT)
     }
 
     override fun visitLteBinaryOp(ctx: WaccParser.LteBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.LTE)
+        return BinaryOpAST(symbolTable, BinaryOp.LTE)
     }
 
     override fun visitEqualsBinaryOp(ctx: WaccParser.EqualsBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.EQUALS)
+        return BinaryOpAST(symbolTable, BinaryOp.EQUALS)
     }
 
     override fun visitNotEqualsBinaryOp(ctx: WaccParser.NotEqualsBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.NOT_EQUALS)
+        return BinaryOpAST(symbolTable, BinaryOp.NOT_EQUALS)
     }
 
     override fun visitAndBinaryOp(ctx: WaccParser.AndBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.AND)
+        return BinaryOpAST(symbolTable, BinaryOp.AND)
     }
 
     override fun visitOrBinaryOp(ctx: WaccParser.OrBinaryOpContext?): ASTNode {
-        return BinaryOpAST(scopeAST, symbolTable, BinaryOp.OR)
+        return BinaryOpAST(symbolTable, BinaryOp.OR)
     }
 
     override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext?): ASTNode {
@@ -355,66 +360,89 @@ class Visitor(
         val binaryOp = visit(ctx?.binary_op()) as BinaryOpAST
 
         if (expr1.type != expr2.type) {
-            throw TypeError("operands of binary expressions have different " +
-                    "types")
+            throw TypeError(
+                "operands of binary expressions have different " +
+                    "types"
+            )
         }
 
         when (expr1.type) {
             BasicType.IntType -> {
-                val disallowedTypes = setOf(BinaryOp.AND, BinaryOp
-                    .OR)
+                val disallowedTypes = setOf(
+                    BinaryOp.AND,
+                    BinaryOp
+                        .OR
+                )
                 if (disallowedTypes.contains(expr1.type as BinaryOp)) {
-                    throw TypeError("cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}")
+                    throw TypeError(
+                        "cannot apply ${binaryOp.operator} to " +
+                            "arguments of type ${expr1.type}"
+                    )
                 }
             }
             BasicType.CharType -> {
-                val allowedTypes = setOf(BinaryOp.GT, BinaryOp.GTE, BinaryOp
-                    .LT, BinaryOp.LTE, BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
+                val allowedTypes = setOf(
+                    BinaryOp.GT, BinaryOp.GTE,
+                    BinaryOp
+                        .LT,
+                    BinaryOp.LTE, BinaryOp.EQUALS, BinaryOp.NOT_EQUALS
+                )
                 if (!allowedTypes.contains(expr1.type as BinaryOp)) {
-                    throw TypeError("cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}")
+                    throw TypeError(
+                        "cannot apply ${binaryOp.operator} to " +
+                            "arguments of type ${expr1.type}"
+                    )
                 }
             }
             BasicType.StringType -> {
                 val allowedTypes = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
                 if (!allowedTypes.contains(expr1.type as BinaryOp)) {
-                    throw TypeError("cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}")
+                    throw TypeError(
+                        "cannot apply ${binaryOp.operator} to " +
+                            "arguments of type ${expr1.type}"
+                    )
                 }
             }
             BasicType.BoolType -> {
-                val allowedTypes = setOf(BinaryOp.EQUALS, BinaryOp
-                    .NOT_EQUALS, BinaryOp.AND, BinaryOp.OR)
+                val allowedTypes = setOf(
+                    BinaryOp.EQUALS,
+                    BinaryOp
+                        .NOT_EQUALS,
+                    BinaryOp.AND, BinaryOp.OR
+                )
                 if (!allowedTypes.contains(expr1.type as BinaryOp)) {
-                    throw TypeError("cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}")
+                    throw TypeError(
+                        "cannot apply ${binaryOp.operator} to " +
+                            "arguments of type ${expr1.type}"
+                    )
                 }
             }
             is ArrayType -> {
                 val allowedTypes = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
                 if (!allowedTypes.contains(expr1.type as BinaryOp)) {
-                    throw TypeError("cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}")
+                    throw TypeError(
+                        "cannot apply ${binaryOp.operator} to " +
+                            "arguments of type ${expr1.type}"
+                    )
                 }
             }
             is PairType -> {
                 val allowedTypes = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
                 if (!allowedTypes.contains(expr1.type as BinaryOp)) {
-                    throw TypeError("cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}")
+                    throw TypeError(
+                        "cannot apply ${binaryOp.operator} to " +
+                            "arguments of type ${expr1.type}"
+                    )
                 }
             }
         }
 
-        return BinaryOpExprAST(scopeAST, symbolTable, expr1, expr2, binaryOp)
+        return BinaryOpExprAST(symbolTable, expr1, expr2, binaryOp)
     }
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
         return super.visitArray_elem(ctx)
     }
-
-
 
     override fun visitIfStat(ctx: WaccParser.IfStatContext): ASTNode {
         val condExpr = visit(ctx.expr()) as ExpressionAST
@@ -619,44 +647,40 @@ class Visitor(
         return funcCall
     }
 
-    override fun visitInt_liter(ctx: WaccParser.Int_literContext): ASTNode {
-        var i: Int
-        try {
-            i = Integer.parseInt(ctx.INTEGER().text)
-        } catch (e: NumberFormatException) {
-            throw OutOfBoundsError(
-                "integer value ${ctx.INTEGER().text} is out of bounds; must be 32-bit signed value"
-            )
-        }
-        if (ctx.int_sign() != null) {
-            if (ctx.int_sign().MINUS() != null) {
-                i *= -1
-            }
-        }
-
-        assert(i in INT_MIN..INT_MAX)
+    override fun visitInt_liter_positive(ctx: WaccParser.Int_liter_positiveContext): ASTNode {
+        val i = parseInt(ctx.POSITIVE_INTEGER().text)
+        assert(i in 0..INT_MAX)
 
         return IntLiteralAST(i)
     }
 
-    override fun visitBool_liter(ctx: WaccParser.Bool_literContext): ASTNode {
-        var b = false
+    override fun visitInt_liter_negative(ctx: WaccParser.Int_liter_negativeContext): ASTNode {
+        val i = parseInt(ctx.text)
+        assert(i in INT_MIN..0)
 
-        if (ctx.TRUE() != null) {
-            b = true
-        }
-
-        return BoolLiteralAST(b)
+        return IntLiteralAST(i)
     }
 
-    // TODO: rework this
-    override fun visitChar_liter(ctx: WaccParser.Char_literContext): ASTNode {
-        val c = if (ctx.CHAR_LITER_TOKEN() != null) {
-            ctx.text[1]
-        } else {
-            ctx.ESC_CHAR_LITER().text.single()
+    private fun parseInt(text: String): Int {
+        try {
+            return Integer.parseInt(text)
+        } catch (e: NumberFormatException) {
+            throw OutOfBoundsError(
+                "integer value $text is out of bounds; must be 32-bit signed integer"
+            )
         }
-        return CharLiteralAST(c)
+    }
+
+    override fun visitTBool(ctx: WaccParser.TBoolContext?): ASTNode {
+        return BoolLiteralAST(true)
+    }
+
+    override fun visitFBool(ctx: WaccParser.FBoolContext?): ASTNode {
+        return BoolLiteralAST(false)
+    }
+
+    override fun visitChar_liter(ctx: WaccParser.Char_literContext): ASTNode {
+        return CharLiteralAST(ctx.text.single())
     }
 
     override fun visitStr_liter(ctx: WaccParser.Str_literContext): ASTNode {
