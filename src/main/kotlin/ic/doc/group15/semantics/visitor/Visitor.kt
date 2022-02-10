@@ -1,7 +1,9 @@
-package ic.doc.group15.semantics
+package ic.doc.group15.semantics.visitor
 
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.antlr.WaccParserBaseVisitor
+import ic.doc.group15.semantics.*
+import ic.doc.group15.semantics.ast.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -300,7 +302,7 @@ class Visitor(
     override fun visitReturn_stat(ctx: WaccParser.Return_statContext): ASTNode {
         log("Visiting return statement")
 
-        var enclosingAST: ASTNode? = scopeAST
+        var enclosingAST: BlockAST? = scopeAST
 
         while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
             enclosingAST = enclosingAST.parent
@@ -401,12 +403,12 @@ class Visitor(
             f.formals.size != args.size -> {
                 throw ParameterError(
                     "wrong number of arguments for $funcName: " +
-                            "expected ${f.formals.size}, got ${args.size}"
+                        "expected ${f.formals.size}, got ${args.size}"
                 )
             }
         }
 
-        val funcCall = CallAST(scopeAST, scopeSymbols, funcName)
+        val funcCall = CallAST(scopeSymbols, funcName)
 
         funcCall.funcIdent = f as FunctionType
 
@@ -415,13 +417,104 @@ class Visitor(
             if (f.formals[k].type::class != argExpr.type::class) {
                 throw TypeError(
                     "type of function parameter $k incompatible with " +
-                            "declaration of $funcName"
+                        "declaration of $funcName"
                 )
             }
             funcCall.actuals.add(argExpr)
         }
 
         return funcCall
+    }
+
+    override fun visitInt_liter(ctx: WaccParser.Int_literContext): ASTNode {
+        var i: Int
+        try {
+            i = Integer.parseInt(ctx.INTEGER().text)
+        } catch (e: NumberFormatException) {
+            throw OutOfBoundsError(
+                "integer value ${ctx.INTEGER().text} is out of bounds; must be 32-bit signed value"
+            )
+        }
+        if (ctx.int_sign() != null) {
+            if (ctx.int_sign().MINUS() != null) {
+                i *= -1
+            }
+        }
+
+        assert(i in INT_MIN..INT_MAX)
+
+        return IntLiteralAST(i)
+    }
+
+    override fun visitBool_liter(ctx: WaccParser.Bool_literContext): ASTNode {
+        var b = false
+
+        if (ctx.TRUE() != null) {
+            b = true
+        }
+
+        return BoolLiteralAST(b)
+    }
+
+    // TODO: rework this
+    override fun visitChar_liter(ctx: WaccParser.Char_literContext): ASTNode {
+        val c = if (ctx.CHAR_LITER_TOKEN() != null) {
+            ctx.text[1]
+        } else {
+            ctx.ESC_CHAR_LITER().text.single()
+        }
+        return CharLiteralAST(c)
+    }
+
+    override fun visitStr_liter(ctx: WaccParser.Str_literContext): ASTNode {
+        return StringLiteralAST(ctx.text)
+    }
+
+    override fun visitPair_liter(ctx: WaccParser.Pair_literContext): ASTNode {
+        return NullPairLiteralAST()
+    }
+
+    override fun visitArray_liter(ctx: WaccParser.Array_literContext): ASTNode {
+        assert(ctx.expr().isNotEmpty())
+
+        var arrayLiteral: ArrayLiteralAST? = null
+
+        var elemType: Type? = null
+        for (expr in ctx.expr()) {
+            val elem = visit(expr) as ExpressionAST
+            if (elemType == null) {
+                elemType = elem.type
+                arrayLiteral = ArrayLiteralAST(elemType)
+            } else if (!elemType.compatible(elem.type)) {
+                throw TypeError("elements in array literal must all by the same type")
+            }
+            arrayLiteral!!.elems.add(elem)
+        }
+        assert(arrayLiteral != null)
+
+        return arrayLiteral!!
+    }
+
+    // TODO finish
+    override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
+//        val arrName = ctx.ident().text
+//
+//        val arrType = scopeSymbols.lookupAll(arrName)
+//        when {
+//            arrType == null -> {
+//                throw TypeError("array $arrName not declared")
+//            }
+//            arrType !is Variable -> {
+//                throw TypeError("$arrName is not an array variable")
+//            }
+//            arrType.type !is ArrayType -> {
+//                throw TypeError("variable $arrName is not an array")
+//            }
+//        }
+//
+//        val indexExpr = visit(ctx.expr())
+//
+//        return ArrayElemAST(scopeSymbols, )
     }
 
     private fun addToScope(stat: StatementAST): StatementAST {
