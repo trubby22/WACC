@@ -62,16 +62,32 @@ class Visitor(
 
         when {
             t == null -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown return type $returnTypeName")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } unknown return type $returnTypeName"
+                )
             }
             t !is Type -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $returnTypeName is not a type")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } $returnTypeName is not a type"
+                )
             }
             t !is ReturnableType -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} cannot return $returnTypeName type")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } cannot return $returnTypeName type"
+                )
             }
             f != null -> {
-                throw DeclarationError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} type().function $funcName already declared")
+                throw DeclarationError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } type().function $funcName already declared"
+                )
             }
         }
 
@@ -114,28 +130,47 @@ class Visitor(
             """
         )
 
-        val parameterAST = ParameterAST(scopeAST, scopeSymbols, typeName, paramName)
+        val parameterAST =
+            ParameterAST(scopeAST, scopeSymbols, typeName, paramName)
 
         val t = symbolTable.lookupAll(typeName)
         val p = symbolTable.lookup(paramName)
 
         when {
             t == null -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown return type $typeName")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } unknown return type $typeName"
+                )
             }
             t !is Type -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName is not a type")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } $typeName is not a type"
+                )
             }
             t !is ReturnableType -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName cannot be a parameter")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } $typeName cannot be a parameter"
+                )
             }
             p != null -> {
                 if (p is Param) {
                     throw DeclarationError(
-                        "line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} parameter $paramName already declared for this function"
+                        "line: ${ctx.ident().getStart().line} column: ${
+                            ctx.ident().getStart().charPositionInLine
+                        } parameter $paramName already declared for this function"
                     )
                 } else {
-                    throw DeclarationError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} identifier $paramName already declared")
+                    throw DeclarationError(
+                        "line: ${ctx.ident().getStart().line} column: ${
+                            ctx.ident().getStart().charPositionInLine
+                        } identifier $paramName already declared"
+                    )
                 }
             }
             else -> {
@@ -160,20 +195,33 @@ class Visitor(
             """
         )
 
-        val varDecl = VariableDeclarationAST(scopeAST, scopeSymbols, typeName, varName)
+        val varDecl =
+            VariableDeclarationAST(scopeAST, scopeSymbols, typeName, varName)
 
         val t = scopeSymbols.lookupAll(typeName)
         val v = scopeSymbols.lookup(varName)
 
         when {
             t == null -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown type $typeName")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } unknown type $typeName"
+                )
             }
             t !is Type -> {
-                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName is not a type")
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } $typeName is not a type"
+                )
             }
             v != null -> {
-                throw DeclarationError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} $varName has already been declared")
+                throw DeclarationError(
+                    "line: ${ctx.ident().getStart().line} column: ${
+                        ctx.ident().getStart().charPositionInLine
+                    } $varName has already been declared"
+                )
             }
             else -> {
                 varDecl.varIdent = Variable(t)
@@ -235,7 +283,8 @@ class Visitor(
         log("Visiting binary operator expression")
         val expr1 = visit(ctx.expr(0)) as ExpressionAST
         val expr2 = visit(ctx.expr(1)) as ExpressionAST
-        val op = BinaryOp.generateNode(scopeSymbols, expr1, expr2, ctx.binary_op())
+        val op =
+            BinaryOp.generateNode(scopeSymbols, expr1, expr2, ctx.binary_op())
         log("Found binary operator ${op.operator}")
         return op
     }
@@ -249,8 +298,10 @@ class Visitor(
 
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
-                "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} type of conditional expression should be " +
-                    "bool and is ${condExpr.type}"
+                "line: ${ctx.expr().getStart().line} column: ${
+                    ctx.expr().getStart().charPositionInLine
+                } type of conditional expression should be " +
+                        "bool and is ${condExpr.type}"
             )
         }
 
@@ -258,7 +309,9 @@ class Visitor(
         val thenStat = visit(ctx.stat(0))
         if (thenStat !is StatementAST) {
             throw DeclarationError(
-                "line: ${ctx.stat(0).getStart().line} column: ${ctx.stat(0).getStart().charPositionInLine} invalid then statement in if block"
+                "line: ${ctx.stat(0).getStart().line} column: ${
+                    ctx.stat(0).getStart().charPositionInLine
+                } invalid then statement in if block"
             )
         }
         scopeSymbols = scopeSymbols.parentScope()!!
@@ -267,12 +320,22 @@ class Visitor(
         val elseStat = visit(ctx.stat(1))
         if (elseStat !is StatementAST) {
             throw DeclarationError(
-                "line: ${ctx.stat(1).getStart().line} column: ${ctx.stat(1).getStart().charPositionInLine} invalid else statement in if block"
+                "line: ${ctx.stat(1).getStart().line} column: ${
+                    ctx.stat(1).getStart().charPositionInLine
+                } invalid else statement in if block"
             )
         }
         scopeSymbols = scopeSymbols.parentScope()!!
 
-        return addToScope(IfBlockAST(scopeAST, scopeSymbols, condExpr, thenStat, elseStat))
+        return addToScope(
+            IfBlockAST(
+                scopeAST,
+                scopeSymbols,
+                condExpr,
+                thenStat,
+                elseStat
+            )
+        )
     }
 
     override fun visitWhileStat(ctx: WaccParser.WhileStatContext): ASTNode {
@@ -280,8 +343,10 @@ class Visitor(
 
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
-                "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} type of conditional expression should be " +
-                    "bool and is ${condExpr.type}"
+                "line: ${ctx.expr().getStart().line} column: ${
+                    ctx.expr().getStart().charPositionInLine
+                } type of conditional expression should be " +
+                        "bool and is ${condExpr.type}"
             )
         }
 
@@ -300,10 +365,18 @@ class Visitor(
         val expr = visit(ctx.expr()) as ExpressionAST
         when (expr.type) {
             is PairType -> {
-                throw TypeError("line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} cannot print pair type: ${expr.type}")
+                throw TypeError(
+                    "line: ${ctx.expr().getStart().line} column: ${
+                        ctx.expr().getStart().charPositionInLine
+                    } cannot print pair type: ${expr.type}"
+                )
             }
             is ArrayType -> {
-                throw TypeError("line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} expr().cannot print array type: ${expr.type}")
+                throw TypeError(
+                    "line: ${ctx.expr().getStart().line} column: ${
+                        ctx.expr().getStart().charPositionInLine
+                    } expr().cannot print array type: ${expr.type}"
+                )
             }
         }
 
@@ -314,7 +387,9 @@ class Visitor(
         val expr = visit(ctx.expr()) as ExpressionAST
         if (expr.type != BasicType.IntType) {
             throw TypeError(
-                "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} expression passed to exit must be an int; type passed is ${expr.type}"
+                "line: ${ctx.expr().getStart().line} column: ${
+                    ctx.expr().getStart().charPositionInLine
+                } expression passed to exit must be an int; type passed is ${expr.type}"
             )
         }
         return addToScope(ExitStatementAST(scopeAST, expr))
@@ -345,7 +420,9 @@ class Visitor(
         when {
             returnType != expr.type -> {
                 throw TypeError(
-                    "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} return expression type does not match function return type"
+                    "line: ${ctx.expr().getStart().line} column: ${
+                        ctx.expr().getStart().charPositionInLine
+                    } return expression type does not match function return type"
                 )
             }
         }
@@ -416,15 +493,25 @@ class Visitor(
 
         when {
             f == null -> {
-                throw IdentifierError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} function $funcName not found")
+                throw IdentifierError(
+                    "line: ${ctx.ident().getStart().line} column: ${
+                        ctx.ident().getStart().charPositionInLine
+                    } function $funcName not found"
+                )
             }
             f !is FunctionType -> {
-                throw TypeError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} $funcName is not a function")
+                throw TypeError(
+                    "line: ${ctx.ident().getStart().line} column: ${
+                        ctx.ident().getStart().charPositionInLine
+                    } $funcName is not a function"
+                )
             }
             f.formals.size != args.size -> {
                 throw ParameterError(
-                    "line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} wrong number of arguments for $funcName: " +
-                        "expected ${f.formals.size}, got ${args.size}"
+                    "line: ${ctx.ident().getStart().line} column: ${
+                        ctx.ident().getStart().charPositionInLine
+                    } wrong number of arguments for $funcName: " +
+                            "expected ${f.formals.size}, got ${args.size}"
                 )
             }
         }
@@ -437,8 +524,10 @@ class Visitor(
             val argExpr = visit(args[k]) as ExpressionAST
             if (f.formals[k].type::class != argExpr.type::class) {
                 throw TypeError(
-                    "line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} type of function parameter $k incompatible with " +
-                        "declaration of $funcName"
+                    "line: ${ctx.ident().getStart().line} column: ${
+                        ctx.ident().getStart().charPositionInLine
+                    } type of function parameter $k incompatible with " +
+                            "declaration of $funcName"
                 )
             }
             funcCall.actuals.add(argExpr)
@@ -503,7 +592,11 @@ class Visitor(
                 elemType = elem.type
                 arrayLiteral = ArrayLiteralAST(elemType)
             } else if (!elemType.compatible(elem.type)) {
-                throw TypeError("line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} elements in array literal must all by the same type")
+                throw TypeError(
+                    "line: ${ctx.getStart().line} column: ${
+                        ctx.getStart().charPositionInLine
+                    } elements in array literal must all by the same type"
+                )
             }
             arrayLiteral!!.elems.add(elem)
         }
