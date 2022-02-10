@@ -23,3 +23,8 @@ gen/
 
 # test input
 test.wacc
+
+# others
+*.iml
+*.tokens
+*.txt
