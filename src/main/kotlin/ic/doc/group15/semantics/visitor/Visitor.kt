@@ -54,7 +54,7 @@ class Visitor(
         log(""" || Return type: $returnTypeName""")
 
         if (!scopeSymbols.isTopLevel()) {
-            throw DeclarationError("functions cannot be declared in this scope")
+            throw DeclarationError("line: ${ctx.getStart().line} column: ${ctx.getStart().charPositionInLine} functions cannot be declared in this scope")
         }
 
         val t = scopeSymbols.lookupAll(returnTypeName)
@@ -62,16 +62,16 @@ class Visitor(
 
         when {
             t == null -> {
-                throw TypeError("unknown return type $returnTypeName")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown return type $returnTypeName")
             }
             t !is Type -> {
-                throw TypeError("$returnTypeName is not a type")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $returnTypeName is not a type")
             }
             t !is ReturnableType -> {
-                throw TypeError("cannot return $returnTypeName type")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} cannot return $returnTypeName type")
             }
             f != null -> {
-                throw DeclarationError("function $funcName already declared")
+                throw DeclarationError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} type().function $funcName already declared")
             }
         }
 
@@ -121,21 +121,21 @@ class Visitor(
 
         when {
             t == null -> {
-                throw TypeError("unknown return type $typeName")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown return type $typeName")
             }
             t !is Type -> {
-                throw TypeError("$typeName is not a type")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName is not a type")
             }
             t !is ReturnableType -> {
-                throw TypeError("$typeName cannot be a parameter")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName cannot be a parameter")
             }
             p != null -> {
                 if (p is Param) {
                     throw DeclarationError(
-                        "parameter $paramName already declared for this function"
+                        "line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} parameter $paramName already declared for this function"
                     )
                 } else {
-                    throw DeclarationError("identifier $paramName already declared")
+                    throw DeclarationError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} identifier $paramName already declared")
                 }
             }
             else -> {
@@ -167,13 +167,13 @@ class Visitor(
 
         when {
             t == null -> {
-                throw TypeError("unknown type $typeName")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} unknown type $typeName")
             }
             t !is Type -> {
-                throw TypeError("$typeName is not a type")
+                throw TypeError("line: ${ctx.type().getStart().line} column: ${ctx.type().getStart().charPositionInLine} $typeName is not a type")
             }
             v != null -> {
-                throw DeclarationError("$varName has already been declared")
+                throw DeclarationError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} $varName has already been declared")
             }
             else -> {
                 varDecl.varIdent = Variable(t)
@@ -223,224 +223,21 @@ class Visitor(
 //        return varAssign
 //    }
 
-    override fun visitBangUnaryOp(ctx: WaccParser.BangUnaryOpContext?): ASTNode {
-        return UnaryOpAST(symbolTable, UnaryOp.BANG)
-    }
-
-    override fun visitMinusUnaryOp(ctx: WaccParser.MinusUnaryOpContext?): ASTNode {
-        return UnaryOpAST(symbolTable, UnaryOp.MINUS)
-    }
-
-    override fun visitLenUnaryOp(ctx: WaccParser.LenUnaryOpContext?): ASTNode {
-        return UnaryOpAST(symbolTable, UnaryOp.LEN)
-    }
-
-    override fun visitOrdUnaryOp(ctx: WaccParser.OrdUnaryOpContext?): ASTNode {
-        return UnaryOpAST(symbolTable, UnaryOp.ORD)
-    }
-
-    override fun visitChrUnaryOp(ctx: WaccParser.ChrUnaryOpContext?): ASTNode {
-        return UnaryOpAST(symbolTable, UnaryOp.CHR)
-    }
-
     override fun visitUnaryOpExpr(ctx: WaccParser.UnaryOpExprContext): ASTNode {
+        log("Visiting unary operator expression")
         val expr = visit(ctx.expr()) as ExpressionAST
-        val unaryOp = visit(ctx.unary_op()) as UnaryOpAST
-
-        when (unaryOp.operator) {
-            UnaryOp.BANG -> {
-                val expectedType = BasicType.BoolType
-                if (expr.type != expectedType) {
-                    throw TypeError(
-                        "type mismatch when evaluating ${unaryOp.operator} - " +
-                            "expected: " +
-                            "$expectedType, actual: ${expr.type}"
-                    )
-                }
-            }
-            UnaryOp.MINUS -> {
-                val expectedType = BasicType.IntType
-                if (expr.type != expectedType) {
-                    throw TypeError(
-                        "type mismatch when evaluating ${unaryOp.operator} - " +
-                            "expected: " +
-                            "$expectedType, actual: ${expr.type}"
-                    )
-                }
-            }
-            UnaryOp.LEN -> {
-                if (expr.type !is ArrayType) {
-                    throw TypeError(
-                        "type mismatch when evaluating ${unaryOp.operator} - " +
-                            "expected: " +
-                            "ArrayType, actual: ${expr.type}"
-                    )
-                }
-            }
-            UnaryOp.ORD -> {
-                val expectedType = BasicType.CharType
-                if (expr.type != expectedType) {
-                    throw TypeError(
-                        "type mismatch when evaluating ${unaryOp.operator} - " +
-                            "expected: " +
-                            "$expectedType, actual: ${expr.type}"
-                    )
-                }
-            }
-            UnaryOp.CHR -> {
-                val expectedType = BasicType.IntType
-                if (expr.type != expectedType) {
-                    throw TypeError(
-                        "type mismatch when evaluating ${unaryOp.operator} - " +
-                            "expected: " +
-                            "$expectedType, actual: ${expr.type}"
-                    )
-                }
-            }
-        }
-
-        return UnaryOpExprAST(symbolTable, expr, unaryOp)
+        val op = UnaryOp.generateNode(scopeSymbols, expr, ctx.unary_op())
+        log("Found unary operator ${op.operator}")
+        return op
     }
 
-
-    override fun visitMultBinaryOp(ctx: WaccParser.MultBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.MULT)
-    }
-
-    override fun visitDivBinaryOp(ctx: WaccParser.DivBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.DIV)
-    }
-
-    override fun visitModBinaryOp(ctx: WaccParser.ModBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.MOD)
-    }
-
-    override fun visitPlusBinaryOp(ctx: WaccParser.PlusBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.PLUS)
-    }
-
-    override fun visitMinusBinaryOp(ctx: WaccParser.MinusBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.MINUS)
-    }
-
-    override fun visitGtBinaryOp(ctx: WaccParser.GtBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.GT)
-    }
-
-    override fun visitGteBinaryOp(ctx: WaccParser.GteBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.GTE)
-    }
-
-    override fun visitLtBinaryOp(ctx: WaccParser.LtBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.LT)
-    }
-
-    override fun visitLteBinaryOp(ctx: WaccParser.LteBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.LTE)
-    }
-
-    override fun visitEqualsBinaryOp(ctx: WaccParser.EqualsBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.EQUALS)
-    }
-
-    override fun visitNotEqualsBinaryOp(ctx: WaccParser.NotEqualsBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.NOT_EQUALS)
-    }
-
-    override fun visitAndBinaryOp(ctx: WaccParser.AndBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.AND)
-    }
-
-    override fun visitOrBinaryOp(ctx: WaccParser.OrBinaryOpContext?): ASTNode {
-        return BinaryOpAST(symbolTable, BinaryOp.OR)
-    }
-
-    override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext?): ASTNode {
-
-
-        val expr1 = visit(ctx?.expr(0)) as ExpressionAST
-        val binaryOp = visit(ctx?.binary_op()) as BinaryOpAST
-        val expr2 = visit(ctx?.expr(1)) as ExpressionAST
-
-        if (expr1.type != expr2.type) {
-            throw TypeError(
-                "operands of binary expressions have different " +
-                    "types"
-            )
-        }
-
-        when (expr1.type) {
-            BasicType.IntType -> {
-                val disallowedOperators = setOf(
-                    BinaryOp.AND,
-                    BinaryOp
-                        .OR
-                )
-                if (disallowedOperators.contains(binaryOp.operator)) {
-                    throw TypeError(
-                        "cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}"
-                    )
-                }
-            }
-            BasicType.CharType -> {
-                val allowedOperators = setOf(
-                    BinaryOp.GT, BinaryOp.GTE,
-                    BinaryOp
-                        .LT,
-                    BinaryOp.LTE, BinaryOp.EQUALS, BinaryOp.NOT_EQUALS
-                )
-                if (!allowedOperators.contains(binaryOp.operator)) {
-                    throw TypeError(
-                        "cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}"
-                    )
-                }
-            }
-            BasicType.StringType -> {
-                val allowedOperators = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
-                if (!allowedOperators.contains(binaryOp.operator)) {
-                    throw TypeError(
-                        "cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}"
-                    )
-                }
-            }
-            BasicType.BoolType -> {
-                val allowedOperators = setOf(
-                    BinaryOp.EQUALS,
-                    BinaryOp
-                        .NOT_EQUALS,
-                    BinaryOp.AND, BinaryOp.OR
-                )
-                if (!allowedOperators.contains(binaryOp.operator)) {
-                    throw TypeError(
-                        "cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}"
-                    )
-                }
-            }
-            is ArrayType -> {
-                val allowedOperators = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
-                if (!allowedOperators.contains(binaryOp.operator)) {
-                    throw TypeError(
-                        "cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}"
-                    )
-                }
-            }
-            is PairType -> {
-                val allowedOperators = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
-                if (!allowedOperators.contains(binaryOp.operator)) {
-                    throw TypeError(
-                        "cannot apply ${binaryOp.operator} to " +
-                            "arguments of type ${expr1.type}"
-                    )
-                }
-            }
-        }
-
-        return BinaryOpExprAST(symbolTable, expr1, expr2, binaryOp)
+    override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext): ASTNode {
+        log("Visiting binary operator expression")
+        val expr1 = visit(ctx.expr(0)) as ExpressionAST
+        val expr2 = visit(ctx.expr(1)) as ExpressionAST
+        val op = BinaryOp.generateNode(scopeSymbols, expr1, expr2, ctx.binary_op())
+        log("Found binary operator ${op.operator}")
+        return op
     }
 
     override fun visitBracketExpr(ctx: WaccParser.BracketExprContext?): ASTNode {
@@ -457,7 +254,7 @@ class Visitor(
 
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
-                "type of conditional expression should be " +
+                "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} type of conditional expression should be " +
                     "bool and is ${condExpr.type}"
             )
         }
@@ -466,7 +263,7 @@ class Visitor(
         val thenStat = visit(ctx.stat(0))
         if (thenStat !is StatementAST) {
             throw DeclarationError(
-                "invalid then statement in if block"
+                "line: ${ctx.stat(0).getStart().line} column: ${ctx.stat(0).getStart().charPositionInLine} invalid then statement in if block"
             )
         }
         scopeSymbols = scopeSymbols.parentScope()!!
@@ -475,7 +272,7 @@ class Visitor(
         val elseStat = visit(ctx.stat(1))
         if (elseStat !is StatementAST) {
             throw DeclarationError(
-                "invalid else statement in if block"
+                "line: ${ctx.stat(1).getStart().line} column: ${ctx.stat(1).getStart().charPositionInLine} invalid else statement in if block"
             )
         }
         scopeSymbols = scopeSymbols.parentScope()!!
@@ -488,7 +285,7 @@ class Visitor(
 
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
-                "type of conditional expression should be " +
+                "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} type of conditional expression should be " +
                     "bool and is ${condExpr.type}"
             )
         }
@@ -508,10 +305,10 @@ class Visitor(
         val expr = visit(ctx.expr()) as ExpressionAST
         when (expr.type) {
             is PairType -> {
-                throw TypeError("cannot print pair type: ${expr.type}")
+                throw TypeError("line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} cannot print pair type: ${expr.type}")
             }
             is ArrayType -> {
-                throw TypeError("cannot print array type: ${expr.type}")
+                throw TypeError("line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} expr().cannot print array type: ${expr.type}")
             }
         }
 
@@ -536,7 +333,7 @@ class Visitor(
         val expr = visit(ctx.expr()) as ExpressionAST
         if (expr.type != BasicType.IntType) {
             throw TypeError(
-                "expression passed to exit must be an int; type passed is ${expr.type}"
+                "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} expression passed to exit must be an int; type passed is ${expr.type}"
             )
         }
         return addToScope(ExitStatementAST(scopeAST, expr))
@@ -553,7 +350,7 @@ class Visitor(
 
         if (enclosingAST == null) {
             throw IllegalStatementError(
-                "return statement only allowed inside function definition"
+                "line: ${ctx.getStart().line} column: ${ctx.getStart().charPositionInLine} return statement only allowed inside function definition"
             )
         }
 
@@ -567,7 +364,7 @@ class Visitor(
         when {
             returnType != expr.type -> {
                 throw TypeError(
-                    "return expression type does not match function return type"
+                    "line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} return expression type does not match function return type"
                 )
             }
         }
@@ -638,14 +435,14 @@ class Visitor(
 
         when {
             f == null -> {
-                throw IdentifierError("function $funcName not found")
+                throw IdentifierError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} function $funcName not found")
             }
             f !is FunctionType -> {
-                throw TypeError("$funcName is not a function")
+                throw TypeError("line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} $funcName is not a function")
             }
             f.formals.size != args.size -> {
                 throw ParameterError(
-                    "wrong number of arguments for $funcName: " +
+                    "line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} wrong number of arguments for $funcName: " +
                         "expected ${f.formals.size}, got ${args.size}"
                 )
             }
@@ -659,7 +456,7 @@ class Visitor(
             val argExpr = visit(args[k]) as ExpressionAST
             if (f.formals[k].type::class != argExpr.type::class) {
                 throw TypeError(
-                    "type of function parameter $k incompatible with " +
+                    "line: ${ctx.ident().getStart().line} column: ${ctx.ident().getStart().charPositionInLine} type of function parameter $k incompatible with " +
                         "declaration of $funcName"
                 )
             }
@@ -725,7 +522,7 @@ class Visitor(
                 elemType = elem.type
                 arrayLiteral = ArrayLiteralAST(elemType)
             } else if (!elemType.compatible(elem.type)) {
-                throw TypeError("elements in array literal must all by the same type")
+                throw TypeError("line: ${ctx.expr().getStart().line} column: ${ctx.expr().getStart().charPositionInLine} elements in array literal must all by the same type")
             }
             arrayLiteral!!.elems.add(elem)
         }
