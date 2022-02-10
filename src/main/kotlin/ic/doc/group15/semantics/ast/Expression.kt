@@ -42,9 +42,6 @@ class UnaryOpExprAST(
     val expr: ExpressionAST,
     val operator: UnaryOpAST
 ) : ExpressionAST(symbolTable, type = expr.type) {
-    fun check() {
-        // expr.check()
-    }
 }
 
 class BinaryOpAST(
@@ -58,13 +55,6 @@ class BinaryOpExprAST(
     val expr2: ExpressionAST,
     val operator: BinaryOpAST
 ) : ExpressionAST(symbolTable, type = expr1.type) {
-    fun check() {
-        // expr1.check()
-        // expr2.check()
-//        if (expr1.type != expr2.type) {
-//            throw TypeError("Operands must be of the same type\n")
-//        }
-    }
 }
 
 class CallAST(
