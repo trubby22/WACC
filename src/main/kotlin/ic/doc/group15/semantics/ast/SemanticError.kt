@@ -1,6 +1,6 @@
 package ic.doc.group15.semantics
 
-open class SemanticError(message: String) : Throwable(message)
+open class SemanticError(message: String) : Throwable("Error in compilation! Exit code 200. " + message)
 
 class TypeError(message: String) : SemanticError(message)
 
