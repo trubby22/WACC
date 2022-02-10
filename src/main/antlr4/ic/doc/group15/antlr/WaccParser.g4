@@ -4,7 +4,7 @@ options {
   tokenVocab=WaccLexer;
 }
 
-func: type ident OPEN_PARENTHESES (param (COMMA param)*)? CLOSE_PARENTHESES IS
+func: type ident OPEN_PAREN (param (COMMA param)*)? CLOSE_PAREN IS
           (stat END_STAT)?
           valid_return_stat
       END;
@@ -39,11 +39,11 @@ assign_lhs: ident                               #identAssign
           | pair_elem                           #pairAssign
 ;
 
-assign_rhs: expr                                                          #exprAssign
-          | array_liter                                                   #arrayLiterAssign
-          | NEWPAIR OPEN_PARENTHESES expr COMMA expr CLOSE_PARENTHESES    #newPairAssign
-          | pair_elem                                                     #pairElemAssign
-          | CALL ident OPEN_PARENTHESES arg_list? CLOSE_PARENTHESES       #callAssign
+assign_rhs: expr                                              #exprAssign
+          | array_liter                                       #arrayLiterAssign
+          | NEWPAIR OPEN_PAREN expr COMMA expr CLOSE_PAREN    #newPairAssign
+          | pair_elem                                         #pairElemAssign
+          | CALL ident OPEN_PAREN arg_list? CLOSE_PAREN       #callAssign
 ;
 
 arg_list: expr (COMMA expr)*;
@@ -61,45 +61,39 @@ base_type: T_INT | T_BOOL | T_CHAR | T_STRING;
 
 array_type: (base_type | pair_type) (OPEN_BRACKETS CLOSE_BRACKETS)+;
 
-pair_type: PAIR OPEN_PARENTHESES pair_elem_type COMMA pair_elem_type CLOSE_PARENTHESES;
+pair_type: PAIR OPEN_PAREN pair_elem_type COMMA pair_elem_type CLOSE_PAREN;
 
 pair_elem_type: base_type
               | array_type
               | PAIR
 ;
 
-expr: int_liter                                 #intLiterExpr
+expr: OPEN_PAREN expr CLOSE_PAREN               #bracketExpr
+    | int_liter                                 #intLiterExpr
     | bool_liter                                #boolLiterExpr
     | char_liter                                #charLiterExpr
     | str_liter                                 #strLiterExpr
     | pair_liter                                #pairLiterExpr
-    | ident                                     #identExpr
     | array_elem                                #arrayElemExpr
-    | unary_op expr                             #unaryOpExpr
-    | expr binary_op expr                       #binaryOpExpr
-    | OPEN_PARENTHESES expr CLOSE_PARENTHESES   #bracketExpr
-;
-
-unary_op: BANG                                  #bangUnaryOp
-        | MINUS                                 #minusUnaryOp
-        | LEN                                   #lenUnaryOp
-        | ORD                                   #ordUnaryOp
-        | CHR                                   #chrUnaryOp
-;
-
-binary_op: MULT                                 #multBinaryOp
-         | DIV                                  #divBinaryOp
-         | MOD                                  #modBinaryOp
-         | PLUS                                 #plusBinaryOp
-         | MINUS                                #minusBinaryOp
-         | GT                                   #gtBinaryOp
-         | GTE                                  #gteBinaryOp
-         | LT                                   #ltBinaryOp
-         | LTE                                  #lteBinaryOp
-         | EQUALS                               #equalsBinaryOp
-         | NOT_EQUALS                           #notEqualsBinaryOp
-         | AND                                  #andBinaryOp
-         | OR                                   #orBinaryOp
+    | ident                                     #identExpr
+    | BANG expr                                 #bangUnaryOp
+    | MINUS expr                                #minusUnaryOp
+    | LEN expr                                  #lenUnaryOp
+    | ORD expr                                  #ordUnaryOp
+    | CHR expr                                  #chrUnaryOp
+    | expr MULT expr                            #multBinaryOp
+    | expr DIV expr                             #divBinaryOp
+    | expr MOD expr                             #modBinaryOp
+    | expr PLUS expr                            #plusBinaryOp
+    | expr MINUS expr                           #minusBinaryOp
+    | expr GT expr                              #gtBinaryOp
+    | expr GTE expr                             #gteBinaryOp
+    | expr LT expr                              #ltBinaryOp
+    | expr LTE expr                             #lteBinaryOp
+    | expr EQUALS expr                          #equalsBinaryOp
+    | expr NOT_EQUALS expr                      #notEqualsBinaryOp
+    | expr AND expr                             #andBinaryOp
+    | expr OR expr                              #orBinaryOp
 ;
 
 ident: IDENT;

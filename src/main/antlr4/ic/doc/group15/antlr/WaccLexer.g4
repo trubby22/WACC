@@ -73,10 +73,10 @@ AND: '&&';
 OR: '||';
 
 //brackets
-OPEN_PARENTHESES: '(';
+OPEN_PAREN: '(';
 OPEN_BRACKETS: '[';
 COMMA: ',';
-CLOSE_PARENTHESES: ')';
+CLOSE_PAREN: ')';
 CLOSE_BRACKETS: ']';
 
 //numbers

@@ -1,8 +1,6 @@
 package ic.doc.group15.semantics.ast
 
 import ic.doc.group15.semantics.*
-import ic.doc.group15.semantics.visitor.BinaryOp
-import ic.doc.group15.semantics.visitor.UnaryOp
 import java.util.LinkedList
 
 abstract class ExpressionAST protected constructor(

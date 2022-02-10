@@ -1,8 +1,7 @@
-package ic.doc.group15.semantics.visitor
+package ic.doc.group15.semantics
 
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.antlr.WaccParserBaseVisitor
-import ic.doc.group15.semantics.*
 import ic.doc.group15.semantics.ast.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -65,28 +64,28 @@ class Visitor(
             t == null -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } unknown return type $returnTypeName"
                 )
             }
             t !is Type -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } $returnTypeName is not a type"
                 )
             }
             t !is ReturnableType -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } cannot return $returnTypeName type"
                 )
             }
             f != null -> {
                 throw DeclarationError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } type().function $funcName already declared"
                 )
             }
@@ -141,21 +140,21 @@ class Visitor(
             t == null -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } unknown return type $typeName"
                 )
             }
             t !is Type -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } $typeName is not a type"
                 )
             }
             t !is ReturnableType -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } $typeName cannot be a parameter"
                 )
             }
@@ -163,13 +162,13 @@ class Visitor(
                 if (p is Param) {
                     throw DeclarationError(
                         "line: ${ctx.ident().getStart().line} column: ${
-                            ctx.ident().getStart().charPositionInLine
+                        ctx.ident().getStart().charPositionInLine
                         } parameter $paramName already declared for this function"
                     )
                 } else {
                     throw DeclarationError(
                         "line: ${ctx.ident().getStart().line} column: ${
-                            ctx.ident().getStart().charPositionInLine
+                        ctx.ident().getStart().charPositionInLine
                         } identifier $paramName already declared"
                     )
                 }
@@ -206,21 +205,21 @@ class Visitor(
             t == null -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } unknown type $typeName"
                 )
             }
             t !is Type -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } $typeName is not a type"
                 )
             }
             v != null -> {
                 throw DeclarationError(
                     "line: ${ctx.ident().getStart().line} column: ${
-                        ctx.ident().getStart().charPositionInLine
+                    ctx.ident().getStart().charPositionInLine
                     } $varName has already been declared"
                 )
             }
@@ -271,34 +270,7 @@ class Visitor(
 //
 //        return varAssign
 //    }
-
-    override fun visitUnaryOpExpr(ctx: WaccParser.UnaryOpExprContext): ASTNode {
-        log("Visiting unary operator expression")
-        val expr = visit(ctx.expr()) as ExpressionAST
-        val op = UnaryOp.generateNode(scopeSymbols, expr, ctx.unary_op())
-        log("Found unary operator ${op.operator}")
-        return op
-    }
-
-    override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext): ASTNode {
-        log("Visiting binary operator expression")
-        val expr1 = visit(ctx.expr(0)) as ExpressionAST
-        val expr2 = visit(ctx.expr(1)) as ExpressionAST
-        val op =
-            BinaryOp.generateNode(scopeSymbols, expr1, expr2, ctx.binary_op())
-        log("Found binary operator ${op.operator}")
-        return op
-    }
-
-    override fun visitBracketExpr(ctx: WaccParser.BracketExprContext): ASTNode {
-        return visit(ctx.expr()) as ExpressionAST
-    }
-
-    override fun visitIdent(ctx: WaccParser.IdentContext?): ASTNode {
-        val variable = scopeSymbols.lookupAll(ctx?.text!!)!! as Variable
-        return VariableIdentifierAST(scopeSymbols, ctx.text!!, variable)
-    }
-
+    
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
         return super.visitArray_elem(ctx)
     }
@@ -309,9 +281,9 @@ class Visitor(
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
                 "line: ${ctx.expr().getStart().line} column: ${
-                    ctx.expr().getStart().charPositionInLine
+                ctx.expr().getStart().charPositionInLine
                 } type of conditional expression should be " +
-                        "bool and is ${condExpr.type}"
+                    "bool and is ${condExpr.type}"
             )
         }
 
@@ -320,7 +292,7 @@ class Visitor(
         if (thenStat !is StatementAST) {
             throw DeclarationError(
                 "line: ${ctx.stat(0).getStart().line} column: ${
-                    ctx.stat(0).getStart().charPositionInLine
+                ctx.stat(0).getStart().charPositionInLine
                 } invalid then statement in if block"
             )
         }
@@ -331,7 +303,7 @@ class Visitor(
         if (elseStat !is StatementAST) {
             throw DeclarationError(
                 "line: ${ctx.stat(1).getStart().line} column: ${
-                    ctx.stat(1).getStart().charPositionInLine
+                ctx.stat(1).getStart().charPositionInLine
                 } invalid else statement in if block"
             )
         }
@@ -354,9 +326,9 @@ class Visitor(
         if (condExpr.type != BasicType.BoolType) {
             throw TypeError(
                 "line: ${ctx.expr().getStart().line} column: ${
-                    ctx.expr().getStart().charPositionInLine
+                ctx.expr().getStart().charPositionInLine
                 } type of conditional expression should be " +
-                        "bool and is ${condExpr.type}"
+                    "bool and is ${condExpr.type}"
             )
         }
 
@@ -377,14 +349,14 @@ class Visitor(
             is PairType -> {
                 throw TypeError(
                     "line: ${ctx.expr().getStart().line} column: ${
-                        ctx.expr().getStart().charPositionInLine
+                    ctx.expr().getStart().charPositionInLine
                     } cannot print pair type: ${expr.type}"
                 )
             }
             is ArrayType -> {
                 throw TypeError(
                     "line: ${ctx.expr().getStart().line} column: ${
-                        ctx.expr().getStart().charPositionInLine
+                    ctx.expr().getStart().charPositionInLine
                     } expr().cannot print array type: ${expr.type}"
                 )
             }
@@ -412,7 +384,7 @@ class Visitor(
         if (expr.type != BasicType.IntType) {
             throw TypeError(
                 "line: ${ctx.expr().getStart().line} column: ${
-                    ctx.expr().getStart().charPositionInLine
+                ctx.expr().getStart().charPositionInLine
                 } expression passed to exit must be an int; type passed is ${expr.type}"
             )
         }
@@ -445,7 +417,7 @@ class Visitor(
             returnType != expr.type -> {
                 throw TypeError(
                     "line: ${ctx.expr().getStart().line} column: ${
-                        ctx.expr().getStart().charPositionInLine
+                    ctx.expr().getStart().charPositionInLine
                     } return expression type does not match function return type"
                 )
             }
@@ -519,23 +491,23 @@ class Visitor(
             f == null -> {
                 throw IdentifierError(
                     "line: ${ctx.ident().getStart().line} column: ${
-                        ctx.ident().getStart().charPositionInLine
+                    ctx.ident().getStart().charPositionInLine
                     } function $funcName not found"
                 )
             }
             f !is FunctionType -> {
                 throw TypeError(
                     "line: ${ctx.ident().getStart().line} column: ${
-                        ctx.ident().getStart().charPositionInLine
+                    ctx.ident().getStart().charPositionInLine
                     } $funcName is not a function"
                 )
             }
             f.formals.size != args.size -> {
                 throw ParameterError(
                     "line: ${ctx.ident().getStart().line} column: ${
-                        ctx.ident().getStart().charPositionInLine
+                    ctx.ident().getStart().charPositionInLine
                     } wrong number of arguments for $funcName: " +
-                            "expected ${f.formals.size}, got ${args.size}"
+                        "expected ${f.formals.size}, got ${args.size}"
                 )
             }
         }
@@ -549,9 +521,9 @@ class Visitor(
             if (f.formals[k].type::class != argExpr.type::class) {
                 throw TypeError(
                     "line: ${ctx.ident().getStart().line} column: ${
-                        ctx.ident().getStart().charPositionInLine
+                    ctx.ident().getStart().charPositionInLine
                     } type of function parameter $k incompatible with " +
-                            "declaration of $funcName"
+                        "declaration of $funcName"
                 )
             }
             funcCall.actuals.add(argExpr)
@@ -618,7 +590,7 @@ class Visitor(
             } else if (!elemType.compatible(elem.type)) {
                 throw TypeError(
                     "line: ${ctx.getStart().line} column: ${
-                        ctx.getStart().charPositionInLine
+                    ctx.getStart().charPositionInLine
                     } elements in array literal must all by the same type"
                 )
             }
@@ -650,6 +622,31 @@ class Visitor(
 //
 //        return ArrayElemAST(scopeSymbols, )
 //    }
+
+    fun visitUnaryExpr(
+        unOp: UnaryOp,
+        expr: WaccParser.ExprContext
+    ): ASTNode {
+        log("Visiting unary operator expression")
+        val node = unOp.generateNode(scopeSymbols, visit(expr) as ExpressionAST)
+        log("Found unary operator ${node.operator}")
+        return node
+    }
+
+    fun visitBinaryExpr(
+        binOp: BinaryOp,
+        expr1: WaccParser.ExprContext,
+        expr2: WaccParser.ExprContext
+    ): ASTNode {
+        log("Visiting binary operator expression")
+        val node = binOp.generateNode(
+            scopeSymbols,
+            visit(expr1) as ExpressionAST,
+            visit(expr2) as ExpressionAST
+        )
+        log("Found binary operator ${node.operator}")
+        return node
+    }
 
     private fun addToScope(stat: StatementAST): StatementAST {
         scopeAST.statements.add(stat)
