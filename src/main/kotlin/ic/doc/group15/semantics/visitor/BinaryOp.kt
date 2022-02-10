@@ -1,10 +1,7 @@
 package ic.doc.group15.semantics.visitor
 
 import ic.doc.group15.antlr.WaccParser.*
-import ic.doc.group15.semantics.BasicType
-import ic.doc.group15.semantics.ReturnableType
-import ic.doc.group15.semantics.SymbolTable
-import ic.doc.group15.semantics.TypeError
+import ic.doc.group15.semantics.*
 import ic.doc.group15.semantics.ast.BinaryOpExprAST
 import ic.doc.group15.semantics.ast.ExpressionAST
 import kotlin.reflect.KClass
@@ -15,21 +12,22 @@ private val boolOnly = setOf<ReturnableType>(BasicType.BoolType)
 
 enum class BinaryOp(
     private val opClass: KClass<out Binary_opContext>,
-    private val allowedTypes: Set<ReturnableType>? = intOnly
+    private val allowedTypes: Set<ReturnableType>? = intOnly,
+    private val returnType: Type
 ) {
-    MULT(MultBinaryOpContext::class),
-    DIV(DivBinaryOpContext::class),
-    MOD(ModBinaryOpContext::class),
-    PLUS(PlusBinaryOpContext::class),
-    MINUS(MinusBinaryOpContext::class),
-    GT(GtBinaryOpContext::class, comparables),
-    GTE(GteBinaryOpContext::class, comparables),
-    LT(LtBinaryOpContext::class, comparables),
-    LTE(LteBinaryOpContext::class, comparables),
-    EQUALS(EqualsBinaryOpContext::class, null),
-    NOT_EQUALS(NotEqualsBinaryOpContext::class, null),
-    AND(AndBinaryOpContext::class, boolOnly),
-    OR(OrBinaryOpContext::class, allowedTypes = boolOnly);
+    MULT(MultBinaryOpContext::class, returnType = BasicType.IntType),
+    DIV(DivBinaryOpContext::class, returnType = BasicType.IntType),
+    MOD(ModBinaryOpContext::class, returnType = BasicType.IntType),
+    PLUS(PlusBinaryOpContext::class, returnType = BasicType.IntType),
+    MINUS(MinusBinaryOpContext::class, returnType = BasicType.IntType),
+    GT(GtBinaryOpContext::class, comparables, returnType = BasicType.BoolType),
+    GTE(GteBinaryOpContext::class, comparables, returnType = BasicType.BoolType),
+    LT(LtBinaryOpContext::class, comparables, returnType = BasicType.BoolType),
+    LTE(LteBinaryOpContext::class, comparables, returnType = BasicType.BoolType),
+    EQUALS(EqualsBinaryOpContext::class, null, returnType = BasicType.BoolType),
+    NOT_EQUALS(NotEqualsBinaryOpContext::class, null, returnType = BasicType.BoolType),
+    AND(AndBinaryOpContext::class, boolOnly, returnType = BasicType.BoolType),
+    OR(OrBinaryOpContext::class, allowedTypes = boolOnly, returnType = BasicType.BoolType);
 
     companion object {
         private val binOpMap = BinaryOp.values().associateBy(BinaryOp::opClass)
@@ -51,7 +49,8 @@ enum class BinaryOp(
                     "cannot apply $binOp to arguments of type ${expr1.type}"
                 )
             }
-            return BinaryOpExprAST(st, expr1, expr2, binOp)
+
+            return BinaryOpExprAST(st, expr1, expr2, binOp, binOp.returnType)
         }
     }
 }

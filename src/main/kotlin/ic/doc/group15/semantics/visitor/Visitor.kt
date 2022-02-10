@@ -19,6 +19,7 @@ class Visitor(
         private val LOG = Logger.getLogger(Visitor::class.java.name)
 
         private fun log(message: String) {
+            LOG.setLevel(Level.FINE)
             LOG.log(Level.FINE, message.trimMargin())
         }
     }
@@ -233,7 +234,6 @@ class Visitor(
 
     override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext): ASTNode {
         log("Visiting binary operator expression")
-        println(ctx.text)
         val expr1 = visit(ctx.expr(0)) as ExpressionAST
         val expr2 = visit(ctx.expr(1)) as ExpressionAST
         val op = BinaryOp.generateNode(scopeSymbols, expr1, expr2, ctx.binary_op())
@@ -242,7 +242,12 @@ class Visitor(
     }
 
     override fun visitBracketExpr(ctx: WaccParser.BracketExprContext): ASTNode {
-        return visit(ctx.expr())
+        return visit(ctx.expr()) as ExpressionAST
+    }
+
+    override fun visitIdent(ctx: WaccParser.IdentContext?): ASTNode {
+        val variable = scopeSymbols.lookupAll(ctx?.text!!)!! as Variable
+        return VariableIdentifierAST(scopeSymbols, ctx.text!!, variable)
     }
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
