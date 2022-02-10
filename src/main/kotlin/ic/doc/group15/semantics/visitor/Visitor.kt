@@ -302,6 +302,7 @@ class Visitor(
         return UnaryOpExprAST(symbolTable, expr, unaryOp)
     }
 
+
     override fun visitMultBinaryOp(ctx: WaccParser.MultBinaryOpContext?): ASTNode {
         return BinaryOpAST(symbolTable, BinaryOp.MULT)
     }
@@ -356,9 +357,10 @@ class Visitor(
 
     override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext?): ASTNode {
 
+
         val expr1 = visit(ctx?.expr(0)) as ExpressionAST
-        val expr2 = visit(ctx?.expr(1)) as ExpressionAST
         val binaryOp = visit(ctx?.binary_op()) as BinaryOpAST
+        val expr2 = visit(ctx?.expr(1)) as ExpressionAST
 
         if (expr1.type != expr2.type) {
             throw TypeError(
@@ -441,6 +443,10 @@ class Visitor(
         return BinaryOpExprAST(symbolTable, expr1, expr2, binaryOp)
     }
 
+    override fun visitBracketExpr(ctx: WaccParser.BracketExprContext?): ASTNode {
+        return visit(ctx?.expr()) as ExpressionAST
+    }
+
     override fun visitIdent(ctx: WaccParser.IdentContext?): ASTNode {
         val variable = scopeSymbols.lookupAll(ctx?.text!!)!! as Variable
         return VariableIdentifierAST(scopeSymbols, ctx.text!!, variable.type)
@@ -510,6 +516,20 @@ class Visitor(
         }
 
         return addToScope(PrintStatementAST(scopeAST, scopeSymbols, expr))
+    }
+
+    override fun visitPrintlnStat(ctx: WaccParser.PrintlnStatContext): ASTNode {
+        val expr = visit(ctx.expr()) as ExpressionAST
+        when (expr.type) {
+            is PairType -> {
+                throw TypeError("cannot print pair type: ${expr.type}")
+            }
+            is ArrayType -> {
+                throw TypeError("cannot print array type: ${expr.type}")
+            }
+        }
+
+        return addToScope(PrintlnStatementAST(scopeAST, scopeSymbols, expr))
     }
 
     override fun visitExitStat(ctx: WaccParser.ExitStatContext): ASTNode {
