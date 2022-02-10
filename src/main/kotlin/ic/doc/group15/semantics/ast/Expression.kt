@@ -22,8 +22,8 @@ class ArrayLiteralAST(val elemType: Type) : ExpressionAST(type = elemType) {
 class VariableIdentifierAST(
     symbolTable: SymbolTable,
     val varName: String,
-    val varIdent: Variable
-) : ExpressionAST(type = varIdent.type)
+    val varType: Type
+) : ExpressionAST(type = varType)
 
 class ArrayElemAST(
     symbolTable: SymbolTable,

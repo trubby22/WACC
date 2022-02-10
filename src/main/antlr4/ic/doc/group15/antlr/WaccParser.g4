@@ -4,6 +4,9 @@ options {
   tokenVocab=WaccLexer;
 }
 
+// EOF indicates that the program must consume to the end of the input.
+program: BEGIN (func)* stat END EOF;
+
 func: type ident OPEN_PARENTHESES (param (COMMA param)*)? CLOSE_PARENTHESES IS
           (stat END_STAT)?
           valid_return_stat
@@ -122,6 +125,3 @@ str_liter: STRING_LITER_TOKEN;
 array_liter: OPEN_BRACKETS (expr (COMMA expr)*)? CLOSE_BRACKETS;
 
 pair_liter: NULL;
-
-// EOF indicates that the program must consume to the end of the input.
-program: BEGIN (func)* stat END EOF;

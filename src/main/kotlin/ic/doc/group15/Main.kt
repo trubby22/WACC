@@ -15,10 +15,14 @@ fun main() {
     val tokens = CommonTokenStream(lexer)
     val parser = WaccParser(tokens)
     parser.removeErrorListeners()
+    val syntacticErrorListener = SyntacticErrorListener()
+    parser.addErrorListener(syntacticErrorListener)
 
     val program = parser.program()
 
     println(program.toStringTree(parser))
+
+    parser.removeErrorListener(syntacticErrorListener)
 
     val st = SymbolTable.topLevel()
     val ast = AST(st)

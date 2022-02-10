@@ -35,7 +35,7 @@ class Visitor(
         }
 
         log("Visiting main program")
-        visit(ctx.stat()) as StatementAST
+        visit(ctx.stat())
 
         return program
     }
@@ -355,6 +355,7 @@ class Visitor(
     }
 
     override fun visitBinaryOpExpr(ctx: WaccParser.BinaryOpExprContext?): ASTNode {
+
         val expr1 = visit(ctx?.expr(0)) as ExpressionAST
         val expr2 = visit(ctx?.expr(1)) as ExpressionAST
         val binaryOp = visit(ctx?.binary_op()) as BinaryOpAST
@@ -368,12 +369,12 @@ class Visitor(
 
         when (expr1.type) {
             BasicType.IntType -> {
-                val disallowedTypes = setOf(
+                val disallowedOperators = setOf(
                     BinaryOp.AND,
                     BinaryOp
                         .OR
                 )
-                if (disallowedTypes.contains(expr1.type as BinaryOp)) {
+                if (disallowedOperators.contains(binaryOp.operator)) {
                     throw TypeError(
                         "cannot apply ${binaryOp.operator} to " +
                             "arguments of type ${expr1.type}"
@@ -381,13 +382,13 @@ class Visitor(
                 }
             }
             BasicType.CharType -> {
-                val allowedTypes = setOf(
+                val allowedOperators = setOf(
                     BinaryOp.GT, BinaryOp.GTE,
                     BinaryOp
                         .LT,
                     BinaryOp.LTE, BinaryOp.EQUALS, BinaryOp.NOT_EQUALS
                 )
-                if (!allowedTypes.contains(expr1.type as BinaryOp)) {
+                if (!allowedOperators.contains(binaryOp.operator)) {
                     throw TypeError(
                         "cannot apply ${binaryOp.operator} to " +
                             "arguments of type ${expr1.type}"
@@ -395,8 +396,8 @@ class Visitor(
                 }
             }
             BasicType.StringType -> {
-                val allowedTypes = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
-                if (!allowedTypes.contains(expr1.type as BinaryOp)) {
+                val allowedOperators = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
+                if (!allowedOperators.contains(binaryOp.operator)) {
                     throw TypeError(
                         "cannot apply ${binaryOp.operator} to " +
                             "arguments of type ${expr1.type}"
@@ -404,13 +405,13 @@ class Visitor(
                 }
             }
             BasicType.BoolType -> {
-                val allowedTypes = setOf(
+                val allowedOperators = setOf(
                     BinaryOp.EQUALS,
                     BinaryOp
                         .NOT_EQUALS,
                     BinaryOp.AND, BinaryOp.OR
                 )
-                if (!allowedTypes.contains(expr1.type as BinaryOp)) {
+                if (!allowedOperators.contains(binaryOp.operator)) {
                     throw TypeError(
                         "cannot apply ${binaryOp.operator} to " +
                             "arguments of type ${expr1.type}"
@@ -418,8 +419,8 @@ class Visitor(
                 }
             }
             is ArrayType -> {
-                val allowedTypes = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
-                if (!allowedTypes.contains(expr1.type as BinaryOp)) {
+                val allowedOperators = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
+                if (!allowedOperators.contains(binaryOp.operator)) {
                     throw TypeError(
                         "cannot apply ${binaryOp.operator} to " +
                             "arguments of type ${expr1.type}"
@@ -427,8 +428,8 @@ class Visitor(
                 }
             }
             is PairType -> {
-                val allowedTypes = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
-                if (!allowedTypes.contains(expr1.type as BinaryOp)) {
+                val allowedOperators = setOf(BinaryOp.EQUALS, BinaryOp.NOT_EQUALS)
+                if (!allowedOperators.contains(binaryOp.operator)) {
                     throw TypeError(
                         "cannot apply ${binaryOp.operator} to " +
                             "arguments of type ${expr1.type}"
@@ -440,8 +441,9 @@ class Visitor(
         return BinaryOpExprAST(symbolTable, expr1, expr2, binaryOp)
     }
 
-    override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
-        return super.visitArray_elem(ctx)
+    override fun visitIdent(ctx: WaccParser.IdentContext?): ASTNode {
+        val variable = scopeSymbols.lookupAll(ctx?.text!!)!! as Variable
+        return VariableIdentifierAST(scopeSymbols, ctx.text!!, variable.type)
     }
 
     override fun visitIfStat(ctx: WaccParser.IfStatContext): ASTNode {
