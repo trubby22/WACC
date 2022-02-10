@@ -489,7 +489,8 @@ class SemanticTests {
         val ast = AST(st)
         val tree = parser.program()
         val visitor = Visitor(ast, st)
-        visitor.visitProgram(tree)
+
+        visitor.visit(tree)
     }
 }
 
