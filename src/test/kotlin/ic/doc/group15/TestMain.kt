@@ -82,7 +82,7 @@ class TestMain {
     }
 
     @Test
-    fun syntacticallyInvalidFilesExceptBigIntProduceExpectedErrorMessage() {
+    fun syntacticallyInvalidFilesProduceExpectedErrorMessage() {
         checkInvalidFolder("wacc_examples/invalid/syntaxErr", ErrorType.SYNTAX)
     }
 
@@ -96,7 +96,6 @@ class TestMain {
         val res = Files.walk(Paths.get(path))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
-            .filter { path -> !path.endsWith("bigIntAssignment.wacc") }
             .map {
                 checkInvalidFile(
                     it.toString(), errorType)
