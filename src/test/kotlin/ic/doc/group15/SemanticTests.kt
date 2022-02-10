@@ -486,7 +486,6 @@ class SemanticTests {
         parser.addErrorListener(MyErrorListener())
 
         val tree = parser.program()
-        println(tree.toStringTree(parser))
         val visitor = MyVisitor()
         visitor.visit(tree)
     }
