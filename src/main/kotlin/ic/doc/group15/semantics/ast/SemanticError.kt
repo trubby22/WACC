@@ -1,6 +1,6 @@
-package ic.doc.group15.semantics
+package ic.doc.group15.semantics.ast
 
-open class SemanticError(message: String) : Throwable("Error in compilation! Exit code 200. " + message)
+open class SemanticError(message: String) : Throwable("Error in compilation! Exit code 200. $message")
 
 class TypeError(message: String) : SemanticError(message)
 

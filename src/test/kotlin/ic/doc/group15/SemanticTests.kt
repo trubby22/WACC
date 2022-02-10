@@ -2,7 +2,10 @@ package ic.doc.group15
 
 import ic.doc.group15.antlr.BasicLexer
 import ic.doc.group15.antlr.BasicParser
-import ic.doc.group15.semantics.SemanticError
+import ic.doc.group15.semantics.AST
+import ic.doc.group15.semantics.ast.SemanticError
+import ic.doc.group15.semantics.SymbolTable
+import ic.doc.group15.semantics.visitor.Visitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Nested
@@ -474,7 +477,7 @@ class SemanticTests {
      * Generate an AST and walk the tree to perform semantic/type checks.
      *
      * @param path Path to the file to be checked semantically.
-     * @exception ic.doc.group15.semantics.SemanticError
+     * @exception ic.doc.group15.semantics.ast.SemanticError
      */
     private fun isSemanticallyValid(path: String) {
         val input = CharStreams.fromFileName(path)
@@ -482,12 +485,11 @@ class SemanticTests {
         val tokens = CommonTokenStream(lexer)
         val parser = BasicParser(tokens)
 
-        parser.removeErrorListeners()
-        parser.addErrorListener(MyErrorListener())
-
+        val st = SymbolTable.topLevel()
+        val ast = AST(st)
         val tree = parser.program()
-        val visitor = MyVisitor()
-        visitor.visit(tree)
+        val visitor = Visitor(ast, st)
+        visitor.visitProgram(tree)
     }
 }
 
