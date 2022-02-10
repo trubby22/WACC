@@ -9,11 +9,10 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
         val emptyTable: SymbolTable = SymbolTable(null)
 
         private val basicTypes = mapOf(
-            Pair("int", IntType(min = Int.MIN_VALUE, max = Int.MAX_VALUE)),
-            Pair("float", FloatType(min = Float.MIN_VALUE, max = Float.MAX_VALUE)),
-            Pair("char", CharType(min = 0, max = 255)),
-            Pair("string", StringType()),
-            Pair("bool", BoolType(falseVal = 0, trueVal = 1)),
+            Pair("int", BasicType.IntType),
+            Pair("bool", BasicType.BoolType),
+            Pair("char", BasicType.CharType),
+            Pair("string", BasicType.StringType),
         )
 
         fun topLevel(): SymbolTable {
@@ -27,10 +26,6 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
 
     fun add(name: String, ident: Identifier) {
         map[name] = ident
-    }
-
-    fun remove(name: String) {
-        map.remove(name)
     }
 
     fun lookup(name: String): Identifier? {
