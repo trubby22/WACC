@@ -4,9 +4,9 @@ import ic.doc.group15.antlr.WaccParser.*
 import ic.doc.group15.semantics.BasicType
 import ic.doc.group15.semantics.ReturnableType
 import ic.doc.group15.semantics.SymbolTable
-import ic.doc.group15.semantics.TypeError
 import ic.doc.group15.semantics.ast.BinaryOpExprAST
 import ic.doc.group15.semantics.ast.ExpressionAST
+import ic.doc.group15.semantics.ast.TypeError
 import kotlin.reflect.KClass
 
 private val intOnly = setOf<ReturnableType>(BasicType.IntType)

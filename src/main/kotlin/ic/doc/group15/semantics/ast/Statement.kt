@@ -1,6 +1,5 @@
 package ic.doc.group15.semantics.ast
 
-import ic.doc.group15.semantics.ASTNode
 import ic.doc.group15.semantics.Param
 import ic.doc.group15.semantics.SymbolTable
 import ic.doc.group15.semantics.Variable

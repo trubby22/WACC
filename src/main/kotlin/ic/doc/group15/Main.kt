@@ -2,7 +2,7 @@ package ic.doc.group15
 
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
-import ic.doc.group15.semantics.AST
+import ic.doc.group15.semantics.ast.AST
 import ic.doc.group15.semantics.SymbolTable
 import ic.doc.group15.semantics.visitor.Visitor
 import org.antlr.v4.runtime.CharStreams

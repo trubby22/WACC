@@ -3,8 +3,8 @@ package ic.doc.group15.semantics.visitor
 import ic.doc.group15.antlr.WaccParser.*
 import ic.doc.group15.semantics.*
 import ic.doc.group15.semantics.ast.ExpressionAST
+import ic.doc.group15.semantics.ast.TypeError
 import ic.doc.group15.semantics.ast.UnaryOpExprAST
-import kotlin.math.log
 import kotlin.reflect.KClass
 
 enum class UnaryOp(

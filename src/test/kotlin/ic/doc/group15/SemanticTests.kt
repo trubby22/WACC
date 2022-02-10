@@ -1,8 +1,8 @@
 package ic.doc.group15
 
-import ic.doc.group15.antlr.BasicLexer
-import ic.doc.group15.antlr.BasicParser
-import ic.doc.group15.semantics.AST
+import ic.doc.group15.antlr.WaccParser
+import ic.doc.group15.antlr.WaccLexer
+import ic.doc.group15.semantics.ast.AST
 import ic.doc.group15.semantics.ast.SemanticError
 import ic.doc.group15.semantics.SymbolTable
 import ic.doc.group15.semantics.visitor.Visitor
@@ -481,9 +481,9 @@ class SemanticTests {
      */
     private fun isSemanticallyValid(path: String) {
         val input = CharStreams.fromFileName(path)
-        val lexer = BasicLexer(input)
+        val lexer = WaccLexer(input)
         val tokens = CommonTokenStream(lexer)
-        val parser = BasicParser(tokens)
+        val parser = WaccParser(tokens)
 
         val st = SymbolTable.topLevel()
         val ast = AST(st)
