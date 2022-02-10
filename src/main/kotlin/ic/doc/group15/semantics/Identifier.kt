@@ -20,6 +20,14 @@ enum class BasicType : ReturnableType {
     StringType
 }
 
+enum class UnaryOp : Identifier {
+    BANG,
+    MINUS,
+    LEN,
+    ORD,
+    CHR
+}
+
 data class ArrayType(val elementType: Type, val size: Int) : ReturnableType
 
 data class PairType(val leftType: Type?, val rightType: Type?) : ReturnableType
