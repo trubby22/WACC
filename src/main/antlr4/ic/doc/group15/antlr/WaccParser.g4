@@ -88,9 +88,10 @@ ident: IDENT;
 
 array_elem: ident (OPEN_BRACKETS expr CLOSE_BRACKETS)+;
 
-int_liter: int_sign? INTEGER;
+int_liter: int_liter_negative | int_liter_positive;
 
-int_sign: PLUS | MINUS;
+int_liter_negative: MINUS NEGATIVE_INTEGER;
+int_liter_positive: PLUS? POSITIVE_INTEGER;
 
 bool_liter: TRUE | FALSE;
 

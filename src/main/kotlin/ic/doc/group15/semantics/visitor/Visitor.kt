@@ -496,7 +496,7 @@ class Visitor(
     }
 
     // TODO finish
-    override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
+//    override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
 //        val arrName = ctx.ident().text
 //
 //        val arrType = scopeSymbols.lookupAll(arrName)
@@ -515,7 +515,7 @@ class Visitor(
 //        val indexExpr = visit(ctx.expr())
 //
 //        return ArrayElemAST(scopeSymbols, )
-    }
+//    }
 
     private fun addToScope(stat: StatementAST): StatementAST {
         scopeAST.statements.add(stat)
