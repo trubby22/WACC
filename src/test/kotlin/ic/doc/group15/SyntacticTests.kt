@@ -279,7 +279,7 @@ class SyntacticTests {
 
         @ParameterizedTest(name = "check {0} source code is syntactically valid")
         @ValueSource(
-            strings = ["_VarNames", "booLDeclaration", "boolDeclaration2", "capCharDeclaration",
+            strings = ["_VarNames", "boolDeclaration", "boolDeclaration2", "capCharDeclaration",
                 "charDeclaration", "charDeclaration2", "emptyStringDeclaration", "intDeclaration", "longVarNames",
                 "manyVariables", "negIntDeclaration", "puncCharDeclaration", "stringDeclaration", "zeroIntDeclaration"]
         )
@@ -351,7 +351,7 @@ class SyntacticTests {
                 strings = ["badlyNamed", "badlyPlaced", "funcExpr", "funcExpr2", "functionConditionalNoReturn",
                     "functionEndingNotReturn", "functionLateDefine", "functionMissingCall", "functionMissingParam",
                     "functionMissingPType", "functionNoReturn", "functionReturnInLoop", "functionScopeDef",
-                    "mutualRecursionNoReturn", "nobodyAfterFuncs", "thisIsNotC"]
+                    "mutualRecursionNoReturn", "noBodyAfterFuncs", "thisIsNotC"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
                 assertTrue(isSyntaxInvalid("$functionInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
@@ -449,12 +449,12 @@ class SyntacticTests {
                 ).trim()
             )
         } catch (e: InterruptedException) {
-            e.printStackTrace()
+            System.err.println("$path is not syntactically valid!")
         }
 
         // Print files that cause parsing errors
         if (num != 1) {
-            println(path)
+            System.err.println("$path is not syntactically valid!")
         }
 
         return num == 1
@@ -479,14 +479,14 @@ class SyntacticTests {
                 StandardCharsets.UTF_8.name()
             )
         } catch (e: InterruptedException) {
-            e.printStackTrace()
+            System.err.println("$path is treated as syntactically valid when it should be the opposite!")
         }
 
         val success = (output == "#${errorType.type}_error#" && exitCode == errorType.code)
 
         // Print files that don't print the appropriate error msg
         if (!success) {
-            println(path)
+            System.err.println("$path is treated as syntactically valid when it should be the opposite!")
         }
 
         return success
