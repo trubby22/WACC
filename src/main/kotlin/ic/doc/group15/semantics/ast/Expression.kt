@@ -1,6 +1,8 @@
 package ic.doc.group15.semantics.ast
 
 import ic.doc.group15.semantics.*
+import ic.doc.group15.semantics.visitor.BinaryOp
+import ic.doc.group15.semantics.visitor.UnaryOp
 import java.util.LinkedList
 
 abstract class ExpressionAST protected constructor(
@@ -32,30 +34,18 @@ class ArrayElemAST(
     val varIdent: Variable
 ) : ExpressionAST(symbolTable, (varIdent.type as ArrayType).elementType)
 
-class UnaryOpAST(
-    symbolTable: SymbolTable,
-    val operator: UnaryOp
-) : ASTNode(symbolTable)
-
 class UnaryOpExprAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST,
-    val operator: UnaryOpAST
-) : ExpressionAST(symbolTable, type = expr.type) {
-}
-
-class BinaryOpAST(
-    symbolTable: SymbolTable,
-    val operator: BinaryOp
-) : ASTNode(symbolTable)
+    val operator: UnaryOp
+) : ExpressionAST(symbolTable, type = expr.type)
 
 class BinaryOpExprAST(
     symbolTable: SymbolTable,
     val expr1: ExpressionAST,
     val expr2: ExpressionAST,
-    val operator: BinaryOpAST
-) : ExpressionAST(symbolTable, type = expr1.type) {
-}
+    val operator: BinaryOp
+) : ExpressionAST(symbolTable, type = expr1.type)
 
 class CallAST(
     symbolTable: SymbolTable,

@@ -47,30 +47,6 @@ class ArrayType(val elementType: Type, val size: Int) : ReturnableType {
     }
 }
 
-enum class UnaryOp : Identifier {
-    BANG,
-    MINUS,
-    LEN,
-    ORD,
-    CHR
-}
-
-enum class BinaryOp: Identifier {
-    MULT,
-    DIV,
-    MOD,
-    PLUS,
-    MINUS,
-    GT,
-    GTE,
-    LT,
-    LTE,
-    EQUALS,
-    NOT_EQUALS,
-    AND,
-    OR
-}
-
 class PairType(
     val leftType: Type?,
     val rightType: Type?
