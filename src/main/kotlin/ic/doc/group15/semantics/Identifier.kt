@@ -55,16 +55,21 @@ class ArrayType(val elementType: Type, val size: Int) : ReturnableType {
     }
 }
 
-class PairType(
-    val leftType: Type = Type.ANY,
-    val rightType: Type = Type.ANY
-) : ReturnableType {
+class PairType(fstType: Type = Type.ANY, sndType: Type = Type.ANY) : ReturnableType {
+
+    val fstType: Type
+    val sndType: Type
+
+    init {
+        this.fstType = if (fstType is PairType) PairType() else fstType
+        this.sndType = if (sndType is PairType) PairType() else sndType
+    }
 
     override fun compatible(type: Type): Boolean {
         if (type !is PairType) {
             return false
         }
-        return leftType.compatible(type.leftType) && rightType.compatible(type.rightType)
+        return fstType.compatible(type.fstType) && sndType.compatible(type.sndType)
     }
 }
 

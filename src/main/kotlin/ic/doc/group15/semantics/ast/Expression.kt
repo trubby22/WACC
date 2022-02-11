@@ -22,10 +22,9 @@ class VariableIdentifierAST(
 
 class ArrayElemAST(
     symbolTable: SymbolTable,
-    val indexExp: ExpressionAST,
-    val arrayName: String,
-    val arrType: Type
-) : ExpressionAST(symbolTable, arrType)
+    val arrayExpr: ExpressionAST,
+    val indexExpr: ExpressionAST
+) : ExpressionAST(symbolTable, (arrayExpr.type as ArrayType).elementType)
 
 class UnaryOpExprAST(
     symbolTable: SymbolTable,

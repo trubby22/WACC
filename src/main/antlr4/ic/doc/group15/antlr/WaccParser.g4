@@ -34,16 +34,16 @@ valid_return_stat: return_stat
                  | BEGIN valid_return_stat END
 ;
 
-assign_lhs: ident
-          | array_elem
-          | pair_elem
+assign_lhs: ident                               #identAssignLhs
+          | array_elem                          #arrayElemAssignLhs
+          | pair_elem                           #pairElemAssignLhs
 ;
 
-assign_rhs: expr                                              #exprAssign
-          | array_liter                                       #arrayLiterAssign
-          | NEWPAIR OPEN_PAREN expr COMMA expr CLOSE_PAREN    #newPairAssign
-          | pair_elem                                         #pairElemAssign
-          | CALL ident OPEN_PAREN arg_list? CLOSE_PAREN       #callAssign
+assign_rhs: expr                                              #exprAssignRhs
+          | array_liter                                       #arrayLiterAssignRhs
+          | NEWPAIR OPEN_PAREN expr COMMA expr CLOSE_PAREN    #newPairAssignRhs
+          | pair_elem                                         #pairElemAssignRhs
+          | CALL ident OPEN_PAREN arg_list? CLOSE_PAREN       #callAssignRhs
 ;
 
 arg_list: expr (COMMA expr)*;

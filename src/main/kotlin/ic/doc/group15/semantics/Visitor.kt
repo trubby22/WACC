@@ -24,6 +24,8 @@ class Visitor(
         }
     }
 
+    //region statements
+
     override fun visitProgram(ctx: WaccParser.ProgramContext): ASTNode {
         assert(scopeSymbols.isTopLevel())
 
@@ -234,57 +236,6 @@ class Visitor(
         return varDecl
     }
 
-    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
-        val assignLhs = visit(ctx.assign_lhs()) as ExpressionAST
-        var assignRhs = visit(ctx.assign_rhs())
-
-        if (assignRhs is ExpressionAST) {
-            if (assignLhs.type != assignRhs.type) {
-                throw TypeError(
-                    "trying to assign rhs of type ${assignRhs
-                        .type} to lhs of type ${assignLhs.type}"
-                )
-            }
-        } else {
-            assignRhs = assignRhs as CallAST
-            if (assignLhs.type != assignRhs.funcIdent.returnType) {
-                throw TypeError(
-                    "trying to assign rhs of type ${assignRhs
-                        .funcIdent.returnType} to lhs of type ${assignLhs.type}"
-                )
-            }
-        }
-
-        return VariableAssignmentAST(
-            scopeAST, scopeSymbols, assignLhs,
-            assignRhs
-        )
-    }
-
-    override fun visitAssign_lhs(ctx: WaccParser.Assign_lhsContext): ASTNode {
-        return visit(ctx.children[0])
-    }
-
-    override fun visitExprAssign(ctx: WaccParser.ExprAssignContext): ASTNode {
-        return visit(ctx.children[0])
-    }
-
-    override fun visitArrayLiterAssign(ctx: WaccParser.ArrayLiterAssignContext): ASTNode {
-        return visit(ctx.children[0])
-    }
-
-    override fun visitNewPairAssign(ctx: WaccParser.NewPairAssignContext): ASTNode {
-        return NewPairAST(
-            scopeSymbols,
-            visit(ctx.expr(0)) as ExpressionAST,
-            visit(ctx.expr(1)) as ExpressionAST
-        )
-    }
-
-    override fun visitPairElemAssign(ctx: WaccParser.PairElemAssignContext): ASTNode {
-        return visit(ctx.children[0])
-    }
-
     override fun visitIfStat(ctx: WaccParser.IfStatContext): ASTNode {
         val condExpr = visit(ctx.expr()) as ExpressionAST
 
@@ -491,7 +442,87 @@ class Visitor(
 //        symbolTable.add(varName, varIdent)
 //    }
 
-    override fun visitCallAssign(ctx: WaccParser.CallAssignContext): ASTNode {
+    //endregion
+
+    //region assign_and_declare
+
+    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
+        val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST
+        val assignRhs = visit(ctx.assign_rhs()) as AssignRhsAST
+
+        if (!assignLhs.type.compatible(assignRhs.type)) {
+            throw TypeError(
+                "trying to assign rhs of type ${assignRhs.type} to lhs of type " +
+                    "${assignLhs.type} is not allowed"
+            )
+        }
+
+        assignLhs.rhs = assignRhs
+
+        return assignLhs
+    }
+
+    override fun visitIdentAssignLhs(ctx: WaccParser.IdentAssignLhsContext): ASTNode {
+        val ident = visitIdent(ctx.ident())
+        if (ident !is VariableIdentifierAST) {
+            throw TypeError(
+                "only variables can be assigned to"
+            )
+        }
+        return AssignToIdentAST(scopeAST, ident)
+    }
+
+    override fun visitArrayElemAssignLhs(ctx: WaccParser.ArrayElemAssignLhsContext): ASTNode {
+        return AssignToArrayElemAST(scopeAST, visitArray_elem(ctx.array_elem()) as ArrayElemAST)
+    }
+
+    override fun visitPairElemAssignLhs(ctx: WaccParser.PairElemAssignLhsContext): ASTNode {
+        return AssignToPairElemAST(scopeAST, visit(ctx.pair_elem()) as PairElemAST)
+    }
+
+    override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
+        var arrayExpr = visit(ctx.ident()) as ExpressionAST
+
+        for (expr in ctx.expr()) {
+            if (arrayExpr.type !is ArrayType) {
+                throw TypeError("cannot use array index on non-array type")
+            }
+            val indexExpr = visit(expr) as ExpressionAST
+            if (indexExpr.type != BasicType.IntType) {
+                throw TypeError("array index must be an int")
+            }
+            arrayExpr = ArrayElemAST(scopeSymbols, arrayExpr, indexExpr)
+        }
+        assert(arrayExpr is ArrayElemAST)
+
+        return arrayExpr
+    }
+
+    override fun visitNewPairAssignRhs(ctx: WaccParser.NewPairAssignRhsContext): ASTNode {
+        val expr1 = visit(ctx.expr(0)) as ExpressionAST
+        val expr2 = visit(ctx.expr(1)) as ExpressionAST
+        return NewPairAST(symbolTable, expr1, expr2)
+    }
+
+    override fun visitFstPair(ctx: WaccParser.FstPairContext): ASTNode {
+        val expr = visit(ctx.expr()) as ExpressionAST
+        if (expr.type !is PairType) {
+            throw TypeError("fst can only be called on pairs")
+        }
+
+        return FstPairElemAST(scopeSymbols, expr)
+    }
+
+    override fun visitSndPair(ctx: WaccParser.SndPairContext): ASTNode {
+        val expr = visit(ctx.expr()) as ExpressionAST
+        if (expr.type !is PairType) {
+            throw TypeError("snd can only be called on pairs")
+        }
+
+        return SndPairElemAST(scopeSymbols, expr)
+    }
+
+    override fun visitCallAssignRhs(ctx: WaccParser.CallAssignRhsContext): ASTNode {
         val funcName = ctx.ident().text
         val f = symbolTable.lookupAll(funcName)
 
@@ -540,6 +571,10 @@ class Visitor(
         return funcCall
     }
 
+    //endregion
+
+    //region literals
+
     override fun visitInt_liter_positive(ctx: WaccParser.Int_liter_positiveContext): ASTNode {
         val i = parseInt(ctx.POSITIVE_INTEGER().text)
         assert(i in 0..INT_MAX)
@@ -552,16 +587,6 @@ class Visitor(
         assert(i in INT_MIN..0)
 
         return IntLiteralAST(i)
-    }
-
-    private fun parseInt(text: String): Int {
-        try {
-            return Integer.parseInt(text)
-        } catch (e: NumberFormatException) {
-            throw OutOfBoundsError(
-                "integer value $text is out of bounds; must be 32-bit signed integer"
-            )
-        }
     }
 
     override fun visitTBool(ctx: WaccParser.TBoolContext?): ASTNode {
@@ -603,24 +628,19 @@ class Visitor(
             elems.add(elem)
         }
 
-        return ArrayLiteralAST(elemType, elems)
+        return ArrayLiteralAST(scopeSymbols, elemType, elems)
     }
 
-    override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
-        val id = visit(ctx.ident()) as VariableIdentifierAST
-        val name = id.varName
-        val type = id.type
-        val expr = visit(ctx.expr(0)) as ExpressionAST
+    //endregion
 
-        return ArrayElemAST(scopeSymbols, expr, name, type)
-    }
-
-    override fun visitFstPair(ctx: WaccParser.FstPairContext): ASTNode {
-        return visit(ctx.expr())
-    }
-
-    override fun visitSndPair(ctx: WaccParser.SndPairContext): ASTNode {
-        return visit(ctx.expr())
+    private fun parseInt(text: String): Int {
+        try {
+            return Integer.parseInt(text)
+        } catch (e: NumberFormatException) {
+            throw OutOfBoundsError(
+                "integer value $text is out of bounds; must be 32-bit signed integer"
+            )
+        }
     }
 
     private fun visitUnaryExpr(

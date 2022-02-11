@@ -11,37 +11,37 @@ abstract class AssignRhsAST protected constructor(
 abstract class AssignmentAST protected constructor(
     parent: BlockAST,
     val lhs: ASTNode,
-    val rhs: AssignRhsAST
-) : StatementAST(parent)
+    val type: Type,
+) : StatementAST(parent) {
+    lateinit var rhs: AssignRhsAST
+}
 
 class AssignToIdentAST(
     parent: BlockAST,
     lhs: VariableIdentifierAST,
-    rhs: AssignRhsAST
-) : AssignmentAST(parent, lhs, rhs)
+) : AssignmentAST(parent, lhs, lhs.type)
 
 class AssignToArrayElemAST(
     parent: BlockAST,
     lhs: ArrayElemAST,
-    rhs: AssignRhsAST
-) : AssignmentAST(parent, lhs, rhs)
+) : AssignmentAST(parent, lhs, lhs.type)
 
 class AssignToPairElemAST(
     parent: BlockAST,
-    lhs: PairElemAST,
-    rhs: AssignRhsAST
-) : AssignmentAST(parent, lhs, rhs)
+    lhs: PairElemAST
+) : AssignmentAST(parent, lhs, lhs.elemType)
 
 class ArrayLiteralAST(
+    symbolTable: SymbolTable,
     elemType: Type,
     val elems: List<ExpressionAST>
-) : AssignRhsAST(type = ArrayType(elemType, elems.size))
+) : AssignRhsAST(symbolTable, ArrayType(elemType, elems.size))
 
 class NewPairAST(
     symbolTable: SymbolTable,
     val fstExpr: ExpressionAST,
     val sndExpr: ExpressionAST
-) : AssignRhsAST(symbolTable, type = PairType(fstExpr.type, sndExpr.type))
+) : AssignRhsAST(symbolTable, PairType(fstExpr.type, sndExpr.type))
 
 abstract class PairElemAST protected constructor(
     symbolTable: SymbolTable,
@@ -51,13 +51,13 @@ abstract class PairElemAST protected constructor(
 
 class FstPairElemAST(
     symbolTable: SymbolTable,
-    val expr: ExpressionAST
-) : AssignRhsAST(symbolTable, (expr.type as PairType).leftType)
+    val pairExpr: ExpressionAST
+) : AssignRhsAST(symbolTable, (pairExpr.type as PairType).fstType)
 
 class SndPairElemAST(
     symbolTable: SymbolTable,
-    val expr: ExpressionAST
-) : AssignRhsAST(symbolTable, (expr.type as PairType).rightType)
+    val pairExpr: ExpressionAST
+) : AssignRhsAST(symbolTable, (pairExpr.type as PairType).sndType)
 
 class CallAST(
     symbolTable: SymbolTable,
