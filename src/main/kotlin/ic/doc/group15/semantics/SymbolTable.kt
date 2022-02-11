@@ -1,45 +1,29 @@
 package ic.doc.group15.semantics
 
-class SymbolTable private constructor(val enclosingTable: SymbolTable?) {
+class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
 
     private val map: MutableMap<String, Identifier> = HashMap()
 
     companion object {
+
+        val emptyTable: SymbolTable = SymbolTable(null)
+
         private val basicTypes = mapOf(
-            Pair("int", IntType(min = Int.MIN_VALUE, max = Int.MAX_VALUE)),
-            Pair("float", FloatType(min = Float.MIN_VALUE, max = Float.MAX_VALUE)),
-            Pair("char", CharType(min = 0, max = 255)),
-            Pair("string", StringType()),
-            Pair("bool", BoolType(falseVal = 0, trueVal = 1)),
+            Pair("int", BasicType.IntType),
+            Pair("bool", BasicType.BoolType),
+            Pair("char", BasicType.CharType),
+            Pair("string", BasicType.StringType),
         )
 
+        // Create a top-level symbol table for AST initialisation
         fun topLevel(): SymbolTable {
             val st = SymbolTable(null)
             st.map.putAll(basicTypes)
-            val standardFunctions = arrayOf(
-                Pair("print", FunctionType(null, listOf(Param(StringType())), st.subScope())),
-                Pair("println", FunctionType(null, listOf(Param(StringType())), st.subScope())),
-                Pair(
-                    "exit",
-                    FunctionType(
-                        null,
-                        listOf(Param(basicTypes["int"]!!)),
-                        st.subScope()
-                    )
-                ),
-                Pair(
-                    "newpair",
-                    FunctionType(
-                        PairType(Type(), Type()),
-                        listOf(Param(Type()), Param(Type())),
-                        st.subScope()
-                    )
-                )
-            )
-            st.map.putAll(standardFunctions)
             return st
         }
     }
+
+    fun isTopLevel(): Boolean = enclosingTable == null
 
     fun add(name: String, ident: Identifier) {
         map[name] = ident
@@ -52,7 +36,7 @@ class SymbolTable private constructor(val enclosingTable: SymbolTable?) {
     fun lookupAll(name: String): Identifier? {
         var st: SymbolTable? = this
         while (st != null) {
-            var ident = st.lookup(name)
+            val ident = st.lookup(name)
             if (ident != null) return ident
             st = st.enclosingTable
         }
@@ -61,5 +45,9 @@ class SymbolTable private constructor(val enclosingTable: SymbolTable?) {
 
     fun subScope(): SymbolTable {
         return SymbolTable(this)
+    }
+
+    fun parentScope(): SymbolTable? {
+        return enclosingTable
     }
 }

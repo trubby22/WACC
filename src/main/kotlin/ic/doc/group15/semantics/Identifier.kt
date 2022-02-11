@@ -1,32 +1,97 @@
 package ic.doc.group15.semantics
 
-/**
- * TODO: keep reference to AST node
- */
-open class Identifier
+const val INT_MAX = Int.MAX_VALUE
+const val INT_MIN = Int.MIN_VALUE
 
-open class Type : Identifier()
+interface Identifier
 
-data class Variable(val type: Type) : Identifier()
+interface Type : Identifier {
+    fun compatible(type: Type): Boolean
 
-data class Param(val type: Type) : Identifier()
+    companion object {
+        val ANY: Type = AnyType()
 
-data class IntType(val min: Int, val max: Int) : Type()
+        private class AnyType : Type {
+            override fun compatible(type: Type): Boolean = true
+        }
+    }
+}
 
-data class FloatType(val min: Float, val max: Float) : Type()
+interface ReturnableType : Type
 
-data class CharType(val min: Int, val max: Int) : Type()
+interface HeapAllocatedType : Type
 
-class StringType : Type()
+data class Variable(val type: Type) : Identifier
 
-data class BoolType(val falseVal: Int, val trueVal: Int) : Type()
+data class Param(val type: Type) : Identifier
 
-data class ArrayType(val elementType: Type, val size: Int) : Type()
+enum class BasicType : ReturnableType {
+    IntType {
+        override fun compatible(type: Type): Boolean {
+            return type == IntType
+        }
+    },
+    BoolType {
+        override fun compatible(type: Type): Boolean {
+            return type == BoolType
+        }
+    },
+    CharType {
+        override fun compatible(type: Type): Boolean {
+            return type == CharType
+        }
+    },
+    StringType {
+        override fun compatible(type: Type): Boolean {
+            return type == StringType
+        }
+    }
+}
 
-data class PairType(val leftType: Type, val rightType: Type) : Type()
+class ArrayType(val elementType: Type, val size: Int) : ReturnableType, HeapAllocatedType {
+    override fun compatible(type: Type): Boolean {
+        if (type !is ArrayType) {
+            return false
+        }
+        return elementType.compatible(type.elementType)
+    }
+}
 
-data class FunctionType(
-    val returnType: Type?,
-    val params: List<Param>,
+class PairType(
+    fstType: Type = Type.ANY,
+    sndType: Type = Type.ANY
+) : ReturnableType, HeapAllocatedType {
+
+    val fstType: Type
+    val sndType: Type
+
+    init {
+        this.fstType = if (fstType is PairType) PairType() else fstType
+        this.sndType = if (sndType is PairType) PairType() else sndType
+    }
+
+    override fun compatible(type: Type): Boolean {
+        if (type !is PairType) {
+            return false
+        }
+        return fstType.compatible(type.fstType) && sndType.compatible(type.sndType)
+    }
+}
+
+class FunctionType(
+    val returnType: Type,
+    val formals: List<Param>,
     val symbolTable: SymbolTable
-) : Type()
+) : Type {
+    override fun compatible(type: Type): Boolean {
+        if (type !is FunctionType || type.returnType != returnType) {
+            return false
+        }
+        for (i in formals.indices) {
+//            if (!formals[i].type.compatible(type.formals[i].type)) {
+//                return false
+//            }
+        }
+        return true
+    }
+}
