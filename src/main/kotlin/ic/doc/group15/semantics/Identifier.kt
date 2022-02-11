@@ -1,8 +1,5 @@
 package ic.doc.group15.semantics
 
-import com.sun.jdi.CharType
-import ic.doc.group15.semantics.BasicType.StringType
-
 const val INT_MAX = Int.MAX_VALUE
 const val INT_MIN = Int.MIN_VALUE
 

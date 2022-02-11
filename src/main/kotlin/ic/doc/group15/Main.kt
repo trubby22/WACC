@@ -20,8 +20,6 @@ fun main() {
     parser.addErrorListener(syntacticErrorListener)
 
     val program = parser.program()
-//    val tree = program.toStringTree(parser)
-//    println(tree)
 
     syntacticErrorListener.terminateIfSyntacticErrorOccurred()
     parser.removeErrorListener(syntacticErrorListener)
@@ -32,7 +30,8 @@ fun main() {
     try {
         visitor.visit(program)
     } catch (e: SemanticError) {
-        e.printStackTrace()
+//        e.printStackTrace()
+        println(e.message)
         exitProcess(200)
     }
 }

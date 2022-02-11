@@ -11,7 +11,6 @@ class IntLiteralAST(val intValue: Int) : ExpressionAST(type = BasicType.IntType)
 class BoolLiteralAST(val boolValue: Boolean) : ExpressionAST(type = BasicType.BoolType)
 class CharLiteralAST(val charValue: Char) : ExpressionAST(type = BasicType.CharType)
 class StringLiteralAST(val stringValue: String) : ExpressionAST(type = BasicType.StringType)
-
 class NullPairLiteralAST : ExpressionAST(type = PairType())
 
 open class VariableIdentifierAST(

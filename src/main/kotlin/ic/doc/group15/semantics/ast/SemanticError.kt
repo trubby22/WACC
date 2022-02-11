@@ -1,7 +1,8 @@
 package ic.doc.group15.semantics.ast
 
-open class SemanticError(message: String) : Throwable("A semantic error " +
-        "occurred: $message")
+open class SemanticError(message: String) : Throwable(
+    "A semantic error occurred: $message"
+)
 
 class TypeError(message: String) : SemanticError(message)
 
