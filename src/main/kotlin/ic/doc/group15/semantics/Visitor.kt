@@ -412,8 +412,11 @@ class Visitor(
     }
 
     override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
+
         val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST
         val assignRhs = visit(ctx.assign_rhs()) as AssignRhsAST
+
+        log("Visiting variable assignment ${ctx.assign_lhs().text}")
 
         if (!assignLhs.type.compatible(assignRhs.type)) {
             throw TypeError(
@@ -751,6 +754,21 @@ class Visitor(
             visit(expr2) as ExpressionAST
         )
         log("Found binary operator ${node.operator}")
+
+        if (arrayOf(BinaryOp.AND, BinaryOp.OR).any { it == node.operator }) {
+            if (!node.expr1.type.compatible(BasicType.BoolType) ||
+                !node.expr2.type.compatible(BasicType.BoolType)) {
+                throw TypeError("boolean operands expected in expression but " +
+                    "found operands of type ${node.expr1.type} and ${node.expr2.type} instead")
+            }
+        }
+
+        if (!node.expr1.type.compatible(node.expr2.type)) {
+            throw TypeError("left operand of type ${node.expr1.type} is incompatible " +
+                "with right operand of type ${node.expr2.type}")
+
+        }
+
         return node
     }
 
