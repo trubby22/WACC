@@ -78,20 +78,20 @@ class PairType(
     }
 }
 
-class FunctionType(
-    val returnType: Type,
-    val formals: List<Param>,
-    val symbolTable: SymbolTable
-) : Type {
-    override fun compatible(type: Type): Boolean {
-        if (type !is FunctionType) {
-            return false
-        }
-        for (i in formals.indices) {
-            if (!formals[i].type.compatible(type.formals[i].type)) {
-                return false
-            }
-        }
-        return true
-    }
-}
+//class FunctionType(
+//    val returnType: Type,
+//    val formals: List<Param>,
+//    val symbolTable: SymbolTable
+//) : Type {
+//    override fun compatible(type: Type): Boolean {
+//        if (!type.compatible(returnType)) {
+//            return false
+//        }
+//        for (i in formals.indices) {
+//            if (!formals[i].type.compatible(type.formals[i].type)) {
+//                return false
+//            }
+//        }
+//        return true
+//    }
+//}
