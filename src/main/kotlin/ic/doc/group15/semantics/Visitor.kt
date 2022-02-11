@@ -33,6 +33,16 @@ class Visitor(
         }
     }
 
+    override fun visitBeginEndStat(ctx: WaccParser.BeginEndStatContext):
+            ASTNode? {
+
+        symbolTable = symbolTable.subScope()
+        val node = visit(ctx.stat())
+        symbolTable = symbolTable.parentScope()!!
+
+        return node
+    }
+
     //region statements_and_blocks
 
     override fun visitProgram(ctx: WaccParser.ProgramContext): ASTNode {
@@ -255,22 +265,6 @@ class Visitor(
         log("Visiting print statement")
 
         val expr = visit(ctx.expr()) as ExpressionAST
-        when (expr.type) {
-            is PairType -> {
-                throw TypeError(
-                    "line: ${ctx.expr().getStart().line} column: ${
-                    ctx.expr().getStart().charPositionInLine
-                    } cannot print pair type: ${expr.type}"
-                )
-            }
-            is ArrayType -> {
-                throw TypeError(
-                    "line: ${ctx.expr().getStart().line} column: ${
-                    ctx.expr().getStart().charPositionInLine
-                    } expr().cannot print array type: ${expr.type}"
-                )
-            }
-        }
 
         return addToScope(PrintStatementAST(scopeAST, symbolTable, expr))
     }
@@ -279,14 +273,6 @@ class Visitor(
         log("Visiting println statement")
 
         val expr = visit(ctx.expr()) as ExpressionAST
-        when (expr.type) {
-            is PairType -> {
-                throw TypeError("cannot print pair type: ${expr.type}")
-            }
-            is ArrayType -> {
-                throw TypeError("cannot print array type: ${expr.type}")
-            }
-        }
 
         return addToScope(PrintlnStatementAST(scopeAST, symbolTable, expr))
     }
@@ -397,13 +383,26 @@ class Visitor(
         val t = TypeParser.parse(symbolTable, type)
         val v = symbolTable.lookup(varName)
 
-        if (v != null) {
-            // Only functions can be overridden by variables
-            if (v !is FunctionType) {
-                throw DeclarationError(
-                    "line: ${ident.getStart().line} column: ${
-                    ident.getStart().charPositionInLine
-                    } $varName has already been declared"
+        when {
+            t == null -> {
+                throw TypeError(
+                    "line: ${type.getStart().line} column: ${
+                    type.getStart().charPositionInLine
+                    } unknown type $typeName"
+                )
+            }
+            t !is Type -> {
+                throw TypeError(
+                    "line: ${type.getStart().line} column: ${
+                    type.getStart().charPositionInLine
+                    } $typeName is not a type"
+                )
+            }
+            !t.compatible(t) -> {
+                throw TypeError(
+                    "line: ${type.getStart().line} column: ${
+                        type.getStart().charPositionInLine
+                    } return expression type does not match function return type"
                 )
             }
         }
@@ -446,21 +445,20 @@ class Visitor(
     }
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
-        var arrayExpr = visit(ctx.ident()) as ExpressionAST
+        val arr = (symbolTable.lookupAll(ctx.ident().text) as Variable).type
+                as ArrayType
+        val indexList = mutableListOf<ExpressionAST>()
 
         for (expr in ctx.expr()) {
-            if (arrayExpr.type !is ArrayType) {
-                throw TypeError("cannot use array index on non-array type")
-            }
             val indexExpr = visit(expr) as ExpressionAST
             if (indexExpr.type != BasicType.IntType) {
                 throw TypeError("array index must be an int")
             }
-            arrayExpr = ArrayElemAST(symbolTable, arrayExpr, indexExpr)
+            indexList.add(indexExpr)
         }
-        assert(arrayExpr is ArrayElemAST)
 
-        return arrayExpr
+        return ArrayElemAST(symbolTable, ctx.ident().text, indexList,
+            arr.elementType)
     }
 
     override fun visitNewPairAssignRhs(ctx: WaccParser.NewPairAssignRhsContext): ASTNode {
@@ -584,7 +582,7 @@ class Visitor(
     }
 
     override fun visitChar_liter(ctx: WaccParser.Char_literContext): ASTNode {
-        return CharLiteralAST(ctx.text.single())
+        return CharLiteralAST(ctx.text.substring(1, ctx.text.length - 1)[0])
     }
 
     override fun visitStr_liter(ctx: WaccParser.Str_literContext): ASTNode {

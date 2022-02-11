@@ -61,7 +61,7 @@ class TypeParser {
                 type = parse(symbolTable, ctx.base_type() as Base_typeContext)
             }
             for (i in ctx.array_brackets()) {
-                type = ArrayType(type, null)
+                type = ArrayType(type)
             }
             return type
         }
