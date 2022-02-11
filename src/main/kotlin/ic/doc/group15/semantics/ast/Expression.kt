@@ -27,9 +27,10 @@ class IdentNoTypeAST(
 
 class ArrayElemAST(
     symbolTable: SymbolTable,
-    val arrayExpr: ExpressionAST,
-    val indexExpr: ExpressionAST
-) : ExpressionAST(symbolTable, (arrayExpr.type as ArrayType).elementType)
+    val arrayName: String,
+    val indexExpr: List<ExpressionAST>,
+    val elemType: Type
+) : ExpressionAST(symbolTable, elemType)
 
 class UnaryOpExprAST(
     symbolTable: SymbolTable,

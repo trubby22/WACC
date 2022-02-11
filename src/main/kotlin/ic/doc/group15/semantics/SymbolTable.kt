@@ -1,5 +1,7 @@
 package ic.doc.group15.semantics
 
+import java.util.regex.Pattern
+
 class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
 
     private val map: MutableMap<String, Identifier> = HashMap()
@@ -30,6 +32,38 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
     }
 
     fun lookup(name: String): Identifier? {
+        basicTypes.forEach {
+            if (Pattern.matches("${it.key}(\\[])+", name)) {
+                return ArrayType(it.value)
+            }
+        }
+
+        for (x in basicTypes) {
+            for (y in basicTypes) {
+                if (name == "pair(${x.key},${y.key})") {
+                    return PairType(x.value, y.value)
+                }
+            }
+        }
+
+        for (x in basicTypes) {
+            for (y in basicTypes) {
+                if (Pattern.matches("pair\\(${x.key},${y.key}\\)(\\[])+",
+                        name)) {
+                    return ArrayType(PairType(x.value, y.value))
+                }
+            }
+        }
+
+        for (x in basicTypes) {
+            for (y in basicTypes) {
+                if (Pattern.matches("pair\\(${x.key}(\\[])+,${y.key}(\\[])+\\)",
+                        name)) {
+                    return PairType(ArrayType(x.value), ArrayType(y.value))
+                }
+            }
+        }
+
         return map[name]
     }
 
