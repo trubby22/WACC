@@ -48,7 +48,7 @@ enum class BasicType : ReturnableType {
     }
 }
 
-class ArrayType(val elementType: Type, val size: Int) : ReturnableType, HeapAllocatedType {
+class ArrayType(val elementType: Type, val size: Int?) : ReturnableType, HeapAllocatedType {
     override fun compatible(type: Type): Boolean {
         if (type !is ArrayType) {
             return false

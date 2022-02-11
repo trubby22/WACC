@@ -29,16 +29,6 @@ class ParameterAST(
     lateinit var paramIdent: Param
 }
 
-class VariableAssignmentAST(
-    parent: BlockAST,
-    symbolTable: SymbolTable,
-    val lhs: ExpressionAST,
-    val rhs: ASTNode
-) : StatementAST(parent, symbolTable) {
-
-    lateinit var varIdent: Variable
-}
-
 class ReadStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
