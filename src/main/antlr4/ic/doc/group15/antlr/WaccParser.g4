@@ -25,13 +25,14 @@ stat: SKIP_STAT                                 #skipStat
     | IF expr THEN stat ELSE stat FI            #ifStat
     | WHILE expr DO stat DONE                   #whileStat
     | BEGIN stat END                            #beginEndStat
+    | return_stat                               #returnStat
     | stat END_STAT stat                        #sequenceStat
 ;
 
-return_stat: (stat END_STAT)? (RETURN | EXIT) expr;
+return_stat: (RETURN | EXIT) expr;
 
 // Needed for identifying return statements inside blocks
-valid_return_stat: return_stat
+valid_return_stat: (stat END_STAT)? return_stat
                  | WHILE expr DO valid_return_stat DONE
                  | IF expr THEN valid_return_stat ELSE valid_return_stat FI
                  | BEGIN valid_return_stat END
