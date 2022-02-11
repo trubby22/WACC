@@ -9,7 +9,7 @@ build-job:
     - when: manual
   script:
     - mvn clean
-    - mvn package -DskipTests
+    - mvn compile
 
 syntactic-test-job:
   stage: test
