@@ -32,10 +32,10 @@ stat: SKIP_STAT                                 #skipStat
 return_stat: (RETURN | EXIT) expr;
 
 // Needed for identifying return statements inside blocks
-valid_return_stat: (stat END_STAT)? return_stat
-                 | WHILE expr DO valid_return_stat DONE
-                 | IF expr THEN valid_return_stat ELSE valid_return_stat FI
-                 | BEGIN valid_return_stat END
+valid_return_stat: (stat END_STAT)? return_stat              #baseReturnStat
+| WHILE expr DO valid_return_stat DONE                       #singleRecursiveReturnStat
+| IF expr THEN valid_return_stat ELSE valid_return_stat FI   #doubleRecursiveReturnStat
+| BEGIN valid_return_stat END                                #singleRecursiveReturnStat
 ;
 
 assign_lhs: ident                               #identAssignLhs

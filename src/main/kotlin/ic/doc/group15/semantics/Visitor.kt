@@ -144,6 +144,7 @@ class Visitor(
         if (ctx.stat() != null) {
             visit(ctx.stat())
         }
+        visit(ctx.valid_return_stat())
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -323,6 +324,10 @@ class Visitor(
 
         val expr = visit(ctx.expr()) as ExpressionAST
 
+        log("we're in return stat")
+        log("asserted return type: $returnType")
+        log("actual return type: ${expr.type}")
+
         when {
             !returnType.compatible(expr.type) -> {
                 throw TypeError(
@@ -338,6 +343,28 @@ class Visitor(
         func.returnStat = returnStat
 
         return addToScope(returnStat)
+    }
+
+    override fun visitBaseReturnStat(ctx: WaccParser.BaseReturnStatContext):
+            ASTNode? {
+        visit(ctx.return_stat())
+
+        return null
+    }
+
+    override fun visitSingleRecursiveReturnStat(ctx: WaccParser
+    .SingleRecursiveReturnStatContext): ASTNode? {
+        visit(ctx.valid_return_stat())
+
+        return null
+    }
+
+    override fun visitDoubleRecursiveReturnStat(ctx: WaccParser
+    .DoubleRecursiveReturnStatContext): ASTNode? {
+        visit(ctx.valid_return_stat(0))
+        visit(ctx.valid_return_stat(1))
+
+        return null
     }
 
     override fun visitFreeStat(ctx: WaccParser.FreeStatContext): ASTNode {
