@@ -365,6 +365,7 @@ class Visitor(
         val typeName = type.text
         val ident = ctx.ident()
         val varName = ident.text
+        val rhs = visit(ident)
 
         log(
             """Visiting variable declaration 
@@ -398,13 +399,12 @@ class Visitor(
                     } $varName has already been declared"
                 )
             }
-        }
-
-        // TODO: check if index is int?
-        if (type is ArrayTypeContext) {
-            val arrayType = (ctx as ArrayTypeContext).array_type()
-            if (arrayType.getRuleIndex() < 0) {
-                throw DeclarationError("cannot initialise an array with sub-zero size")
+            !t.compatible(rhs) -> {
+                throw TypeError(
+                    "line: ${type.getStart().line} column: ${
+                        type.getStart().charPositionInLine
+                    } return expression type does not match function return type"
+                )
             }
         }
 
