@@ -19,6 +19,7 @@ class Visitor(
     private var symbolTable = topSymbolTable
 
     private val functionsToVisit: MutableMap<String, FuncContext> = mutableMapOf()
+    private val declaredFunctions: MutableMap<String, FunctionDeclarationAST> = mutableMapOf()
 
     companion object {
         private val LOG = Logger.getLogger(Visitor::class.java.name)
@@ -92,7 +93,7 @@ class Visitor(
 
         if (!functionsToVisit.containsKey(funcName)) {
             log("Function $funcName already declared!")
-            return null
+            return declaredFunctions[funcName]
         }
 
         log(
@@ -126,6 +127,7 @@ class Visitor(
         }
 
         val func = FunctionDeclarationAST(scopeAST, symbolTable, t, funcName)
+        declaredFunctions[funcName] = func
 
         log(
             """Visiting parameters of function ${func.funcName}"""
