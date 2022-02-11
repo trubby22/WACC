@@ -11,8 +11,8 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 class Visitor(
-    val topAst: AST,
-    val topSymbolTable: SymbolTable
+    private val topAst: AST,
+    private val topSymbolTable: SymbolTable
 ) : WaccParserBaseVisitor<ASTNode>() {
 
     private var scopeAST: BlockAST = topAst
@@ -120,9 +120,7 @@ class Visitor(
             }
         }
 
-        val func = FunctionDeclarationAST(
-            scopeAST, symbolTable, returnTypeName, funcName
-        )
+        val func = FunctionDeclarationAST(scopeAST, symbolTable, t, funcName)
 
         log(
             """Visiting parameters of function ${func.funcName}"""
@@ -321,18 +319,19 @@ class Visitor(
         }
 
         val func = enclosingAST as FunctionDeclarationAST
-        val returnType = symbolTable.lookupAll(func.returnTypeName)
+        val returnType = func.returnType
 
         log(" || return statement is under function ${func.funcName}")
 
         val expr = visit(ctx.expr()) as ExpressionAST
 
         when {
-            returnType != expr.type -> {
+            !returnType.compatible(expr.type) -> {
                 throw TypeError(
                     "line: ${ctx.expr().getStart().line} column: ${
                     ctx.expr().getStart().charPositionInLine
-                    } return expression type does not match function return type"
+                    } return expression type ${expr.type} does not match function return " +
+                    "type $returnType"
                 )
             }
         }
@@ -550,8 +549,6 @@ class Visitor(
 
         return funcCall
     }
-
-
 
     //endregion
 
