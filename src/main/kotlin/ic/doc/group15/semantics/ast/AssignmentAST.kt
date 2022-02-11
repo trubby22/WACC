@@ -28,8 +28,8 @@ class AssignToArrayElemAST(
 
 class AssignToPairElemAST(
     parent: BlockAST,
-    lhs: PairElemAST
-) : AssignmentAST(parent, lhs, lhs.elemType)
+    lhs: FstPairElemAST
+) : AssignmentAST(parent, lhs, lhs.type)
 
 class ArrayLiteralAST(
     symbolTable: SymbolTable,
