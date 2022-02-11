@@ -501,8 +501,8 @@ class Visitor(
         log("Visiting $funcName function call")
         var f = symbolTable.lookupAll(funcName)
 
-        val args: MutableList<WaccParser.ExprContext> = if (ctx.arg_list() !=
-            null) ctx.arg_list().expr() else mutableListOf()
+        val args: MutableList<WaccParser.ExprContext> =
+            if (ctx.arg_list() != null) ctx.arg_list().expr() else mutableListOf()
 
         when (f) {
             null -> {
@@ -717,13 +717,6 @@ class Visitor(
             }
         }
 
-        log("we're in binary expr: ${ctx.text}")
-        val expr1 = visit(ctx.expr(0)) as ExpressionAST
-        val expr2 = visit(ctx.expr(1)) as ExpressionAST
-
-        log("type of expr1: ${expr1.type}")
-        log("type of expr2: ${expr2.type}")
-
         return visitBinaryExprHelper(binOp, ctx.expr(0), ctx.expr(1))
     }
 
@@ -770,16 +763,20 @@ class Visitor(
 
         if (arrayOf(BinaryOp.AND, BinaryOp.OR).any { it == node.operator }) {
             if (!node.expr1.type.compatible(BasicType.BoolType) ||
-                !node.expr2.type.compatible(BasicType.BoolType)) {
-                throw TypeError("boolean operands expected in expression but " +
-                    "found operands of type ${node.expr1.type} and ${node.expr2.type} instead")
+                !node.expr2.type.compatible(BasicType.BoolType)
+            ) {
+                throw TypeError(
+                    "boolean operands expected in expression but " +
+                        "found operands of type ${node.expr1.type} and ${node.expr2.type} instead"
+                )
             }
         }
 
         if (!node.expr1.type.compatible(node.expr2.type)) {
-            throw TypeError("left operand of type ${node.expr1.type} is incompatible " +
-                "with right operand of type ${node.expr2.type}")
-
+            throw TypeError(
+                "left operand of type ${node.expr1.type} is incompatible " +
+                    "with right operand of type ${node.expr2.type}"
+            )
         }
 
         return node
