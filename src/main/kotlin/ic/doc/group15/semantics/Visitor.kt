@@ -383,6 +383,8 @@ class Visitor(
         val ident = ctx.ident()
         val varName = ident.text
 
+        visit(ctx.assign_rhs())
+
         log(
             """Visiting variable declaration 
                 || Type name: $typeName
@@ -412,9 +414,8 @@ class Visitor(
     }
 
     override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
-
-        val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST
         val assignRhs = visit(ctx.assign_rhs()) as AssignRhsAST
+        val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST
 
         log("Visiting variable assignment ${ctx.assign_lhs().text}")
 
@@ -495,7 +496,8 @@ class Visitor(
         log("Visiting $funcName function call")
         var f = symbolTable.lookupAll(funcName)
 
-        val args: MutableList<WaccParser.ExprContext> = ctx.arg_list().expr()
+        val args: MutableList<WaccParser.ExprContext> = if (ctx.arg_list() !=
+            null) ctx.arg_list().expr() else mutableListOf()
 
         when (f) {
             null -> {
@@ -615,7 +617,6 @@ class Visitor(
     }
 
     override fun visitArray_liter(ctx: WaccParser.Array_literContext): ASTNode {
-        assert(ctx.expr().isNotEmpty())
 
         val elems: MutableList<ExpressionAST> = LinkedList()
 
@@ -710,6 +711,13 @@ class Visitor(
                 return null
             }
         }
+
+        log("we're in binary expr: ${ctx.text}")
+        val expr1 = visit(ctx.expr(0)) as ExpressionAST
+        val expr2 = visit(ctx.expr(1)) as ExpressionAST
+
+        log("type of expr1: ${expr1.type}")
+        log("type of expr2: ${expr2.type}")
 
         return visitBinaryExprHelper(binOp, ctx.expr(0), ctx.expr(1))
     }

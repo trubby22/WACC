@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
 import kotlin.system.exitProcess
 
-class SyntacticErrorListener: BaseErrorListener() {
+class SyntacticErrorListener : BaseErrorListener() {
     private var errors = 0
 
     override fun syntaxError(
