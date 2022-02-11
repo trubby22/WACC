@@ -134,7 +134,9 @@ class Visitor(
         )
         parentScope.add(funcName, func.funcIdent)
         log("|| Visiting $funcName function body")
-        visit(ctx.stat())
+        if (ctx.stat() != null) {
+            visit(ctx.stat())
+        }
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 

@@ -33,33 +33,6 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
     }
 
     fun lookup(name: String): Identifier? {
-
-        val allowedTypes: MutableMap<String, Type> = mutableMapOf()
-        allowedTypes.putAll(basicTypes)
-        allowedTypes["pair"] = PairType()
-
-        allowedTypes.forEach {
-            if (Pattern.matches("${it.key}(\\[])+", name)) {
-                return ArrayType(it.value)
-            }
-        }
-
-        for (x in allowedTypes) {
-            for (y in allowedTypes) {
-                if (name == "pair(${x.key},${y.key})") {
-                    return PairType(x.value, y.value)
-                }
-                if (Pattern.matches("pair\\(${x.key},${y.key}\\)(\\[])+",
-                        name)) {
-                    return ArrayType(PairType(x.value, y.value))
-                }
-                if (Pattern.matches("pair\\(${x.key}(\\[])+,${y.key}(\\[])+\\)",
-                        name)) {
-                    return PairType(ArrayType(x.value), ArrayType(y.value))
-                }
-            }
-        }
-
         return map[name]
     }
 
