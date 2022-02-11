@@ -32,6 +32,7 @@ fun main() {
     try {
         visitor.visit(program)
     } catch (e: SemanticError) {
+        e.printStackTrace()
         exitProcess(200)
     }
 }
