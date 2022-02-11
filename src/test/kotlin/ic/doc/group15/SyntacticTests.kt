@@ -11,11 +11,6 @@ import java.nio.charset.StandardCharsets
 // Verify that parsing works properly
 class SyntacticTests {
 
-    enum class ErrorType(val type: String, val code: Int) {
-        SYNTAX("syntax", 100),
-        SEMANTICS("semantics", 200)
-    }
-
     private val validFolderPath = "wacc_examples/valid"
     private val invalidFolderPath = "wacc_examples/invalid"
 
@@ -26,7 +21,7 @@ class SyntacticTests {
         @ParameterizedTest(name = "check {0} source code is syntactically valid")
         @ValueSource(strings = ["binarySortTree", "hashTable", "ticTacToe"])
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$advancedValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$advancedValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -40,7 +35,7 @@ class SyntacticTests {
                 "arrayPrint", "arraySimple", "modifyString", "printRef"]
         )
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$arrayFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$arrayFolderPath/$fileName.wacc"))
         }
     }
 
@@ -55,7 +50,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is syntactically valid")
             @ValueSource(strings = ["exit-1", "exitBasic", "exitBasic2", "exitWrap"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$exitFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$exitFolderPath/$fileName.wacc"))
             }
         }
 
@@ -66,7 +61,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is syntactically valid")
             @ValueSource(strings = ["comment", "commentInLine", "skip"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$skipFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$skipFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -86,7 +81,7 @@ class SyntacticTests {
                 "plusExpr", "plusMinusExpr", "plusNoWhitespaceExpr", "plusPlusExpr", "sequentialCount", "stringEqualsExpr"]
         )
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$expressionsFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$expressionsFolderPath/$fileName.wacc"))
         }
     }
 
@@ -105,7 +100,7 @@ class SyntacticTests {
                     "simpleRecursion"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$nestedFunctionsFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$nestedFunctionsFolderPath/$fileName.wacc"))
             }
         }
 
@@ -121,7 +116,7 @@ class SyntacticTests {
                     "sameArgName2", "sameNameAsVar"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$simpleFunctionsFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$simpleFunctionsFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -133,7 +128,7 @@ class SyntacticTests {
         @ParameterizedTest(name = "check {0} source code is syntactically valid")
         @ValueSource(strings = ["if1", "if2", "if3", "if4", "if5", "if6", "ifBasic", "ifFalse", "ifTrue", "whitespace"])
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$ifValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$ifValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -144,7 +139,7 @@ class SyntacticTests {
         @ParameterizedTest(name = "check {0} source code is syntactically valid")
         @ValueSource(strings = ["IOLoop", "IOSequence"])
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$ioValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$ioValidFileFolderPath/$fileName.wacc"))
         }
 
         @Nested
@@ -158,7 +153,7 @@ class SyntacticTests {
                     "printInt", "println"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$printValidFileFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$printValidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -172,7 +167,7 @@ class SyntacticTests {
                     "read"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$readValidFileFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$readValidFileFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -188,7 +183,7 @@ class SyntacticTests {
                 "writeFst", "writeSnd"]
         )
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$pairsValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$pairsValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -203,7 +198,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is syntactically valid")
             @ValueSource(strings = ["arrayNegBounds", "arrayOutOfBounds", "arrayOutOfBoundsWrite"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$arrayOutOfBoundsValidFileFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$arrayOutOfBoundsValidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -214,7 +209,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is syntactically valid")
             @ValueSource(strings = ["divideByZero", "divZero", "modByZero"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$divideByZeroValidFileFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$divideByZeroValidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -228,7 +223,7 @@ class SyntacticTests {
                     "intnegateOverflow3", "intnegateOverflow4", "intUnderflow", "intWayOverflow"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$integerOverflowValidFileFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$integerOverflowValidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -239,7 +234,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is syntactically valid")
             @ValueSource(strings = ["freeNull", "readNull1", "readNull2", "setNull1", "setNull2", "useNull1", "useNull2"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxValid("$nullDereferenceValidFileFolderPath/$fileName.wacc"))
+                assertTrue(isSyntacticallyValid("$nullDereferenceValidFileFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -255,7 +250,7 @@ class SyntacticTests {
                 "scopeWhileNested", "scopeWhileRedefine"]
         )
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$scopeValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$scopeValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -269,7 +264,7 @@ class SyntacticTests {
                 "intAssignment", "intLeadingZeros", "stringAssignment"]
         )
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$sequenceValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$sequenceValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -284,7 +279,7 @@ class SyntacticTests {
                 "manyVariables", "negIntDeclaration", "puncCharDeclaration", "stringDeclaration", "zeroIntDeclaration"]
         )
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$variablesValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$variablesValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -298,7 +293,7 @@ class SyntacticTests {
                 "min", "rmStyleAdd", "rmStyleAddIO", "whileBasic", "whileBoolFlip", "whileCount", "whileFalse"]
         )
         fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-            assertTrue(isSyntaxValid("$whileValidFileFolderPath/$fileName.wacc"))
+            assertTrue(isSyntacticallyValid("$whileValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -313,7 +308,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["arrayExpr"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$arrayInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$arrayInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -327,7 +322,7 @@ class SyntacticTests {
                     "noBody", "skpErr", "unescapedChar"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$basicInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$basicInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -338,7 +333,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["missingOperand1", "missingOperand2", "printlnConcat"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$expressionsInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$expressionsInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -354,7 +349,7 @@ class SyntacticTests {
                     "mutualRecursionNoReturn", "noBodyAfterFuncs", "thisIsNotC"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$functionInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$functionInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -365,7 +360,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["ifiErr", "ifNoelse", "ifNofi", "ifNothen"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$ifInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$ifInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -376,7 +371,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["badLookup01", "badLookup02"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$pairsInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$pairsInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -387,7 +382,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["printlnCharArry"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$printInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$printInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -398,7 +393,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["doubleSeq", "emptySeq", "endSeq", "extraSeq", "missingSeq"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$sequenceInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$sequenceInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -412,7 +407,7 @@ class SyntacticTests {
                     "varNoName"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$variableInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$variableInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
 
@@ -423,12 +418,12 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["donoErr", "dooErr", "whileNodo", "whileNodone", "whilErr"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntaxInvalid("$whileInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$whileInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
             }
         }
     }
 
-    private fun isSyntaxValid(path: String):
+    private fun isSyntacticallyValid(path: String):
             Boolean {
         val process =
             ProcessBuilder(
@@ -460,7 +455,7 @@ class SyntacticTests {
         return num == 1
     }
 
-    private fun isSyntaxInvalid(path: String, errorType: ErrorType): Boolean {
+    private fun isSyntacticallyInvalid(path: String, errorType: ErrorType): Boolean {
         val process =
             ProcessBuilder(
                 "/bin/bash", "-c",

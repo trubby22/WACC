@@ -15,6 +15,7 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
             Pair("string", BasicType.StringType),
         )
 
+        // Create a top-level symbol table for AST initialisation
         fun topLevel(): SymbolTable {
             val st = SymbolTable(null)
             st.map.putAll(basicTypes)

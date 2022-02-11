@@ -1,6 +1,5 @@
 package ic.doc.group15.semantics.ast
 
-import ic.doc.group15.semantics.ASTNode
 import ic.doc.group15.semantics.Param
 import ic.doc.group15.semantics.SymbolTable
 import ic.doc.group15.semantics.Variable
@@ -33,8 +32,8 @@ class ParameterAST(
 class VariableAssignmentAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val varname: String,
-    val expr: ExpressionAST
+    val lhs: ExpressionAST,
+    val rhs: ASTNode
 ) : StatementAST(parent, symbolTable) {
 
     lateinit var varIdent: Variable
@@ -43,11 +42,8 @@ class VariableAssignmentAST(
 class ReadStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val varName: String
-) : StatementAST(parent, symbolTable) {
-
-    lateinit var varIdent: Variable
-}
+    val target: AssignmentAST
+) : StatementAST(parent, symbolTable)
 
 class SkipStatementAST(
     parent: BlockAST,

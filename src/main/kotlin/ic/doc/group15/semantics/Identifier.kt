@@ -7,9 +7,19 @@ interface Identifier
 
 interface Type : Identifier {
     fun compatible(type: Type): Boolean
+
+    companion object {
+        val ANY: Type = AnyType()
+
+        private class AnyType : Type {
+            override fun compatible(type: Type): Boolean = true
+        }
+    }
 }
 
 interface ReturnableType : Type
+
+interface HeapAllocatedType : Type
 
 data class Variable(val type: Type) : Identifier
 
@@ -38,7 +48,7 @@ enum class BasicType : ReturnableType {
     }
 }
 
-class ArrayType(val elementType: Type, val size: Int) : ReturnableType {
+class ArrayType(val elementType: Type, val size: Int) : ReturnableType, HeapAllocatedType {
     override fun compatible(type: Type): Boolean {
         if (type !is ArrayType) {
             return false
@@ -48,29 +58,23 @@ class ArrayType(val elementType: Type, val size: Int) : ReturnableType {
 }
 
 class PairType(
-    val leftType: Type?,
-    val rightType: Type?
-) : ReturnableType {
+    fstType: Type = Type.ANY,
+    sndType: Type = Type.ANY
+) : ReturnableType, HeapAllocatedType {
 
-    companion object {
-        fun typedPair(leftType: Type, rightType: Type): PairType {
-            return PairType(leftType, rightType)
-        }
+    val fstType: Type
+    val sndType: Type
 
-        fun typeErasedPair(): PairType {
-            return PairType(null, null)
-        }
+    init {
+        this.fstType = if (fstType is PairType) PairType() else fstType
+        this.sndType = if (sndType is PairType) PairType() else sndType
     }
 
     override fun compatible(type: Type): Boolean {
         if (type !is PairType) {
             return false
         }
-        if (leftType == null || rightType == null) {
-            assert(leftType == null && rightType == null)
-            return type.leftType == null && type.rightType == null
-        }
-        return leftType.compatible(type.leftType!!) && rightType.compatible(type.rightType!!)
+        return fstType.compatible(type.fstType) && sndType.compatible(type.sndType)
     }
 }
 
