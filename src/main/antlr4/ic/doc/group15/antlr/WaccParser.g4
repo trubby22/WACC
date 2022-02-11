@@ -34,9 +34,9 @@ valid_return_stat: return_stat
                  | BEGIN valid_return_stat END
 ;
 
-assign_lhs: ident                               #identAssign
-          | array_elem                          #arrayAssign
-          | pair_elem                           #pairAssign
+assign_lhs: ident
+          | array_elem
+          | pair_elem
 ;
 
 assign_rhs: expr                                              #exprAssign
