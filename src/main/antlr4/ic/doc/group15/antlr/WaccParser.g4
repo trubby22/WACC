@@ -71,22 +71,33 @@ pair_elem_type: base_type
               | PAIR
 ;
 
-expr: expr binary_op expr                   #binaryOpExpr
-| unary_op expr                             #unaryOpExpr
-| int_liter                                 #intLiterExpr
-| bool_liter                                #boolLiterExpr
-| char_liter                                #charLiterExpr
-| str_liter                                 #strLiterExpr
-| pair_liter                                #pairLiterExpr
-| array_elem                                #arrayElemExpr
-| ident                                     #identExpr
-| OPEN_PAREN expr CLOSE_PAREN               #bracketExpr
+expr: OPEN_PAREN expr CLOSE_PAREN               #bracketExpr
+    | int_liter                                 #singleElemExpr
+    | bool_liter                                #singleElemExpr
+    | char_liter                                #singleElemExpr
+    | str_liter                                 #singleElemExpr
+    | pair_liter                                #singleElemExpr
+    | array_elem                                #singleElemExpr
+    | ident                                     #identExpr
+    | BANG expr                                 #unaryExpr
+    | MINUS expr                                #unaryExpr
+    | LEN expr                                  #unaryExpr
+    | ORD expr                                  #unaryExpr
+    | CHR expr                                  #unaryExpr
+    | expr MULT expr                            #binaryExpr
+    | expr DIV expr                             #binaryExpr
+    | expr MOD expr                             #binaryExpr
+    | expr PLUS expr                            #binaryExpr
+    | expr MINUS expr                           #binaryExpr
+    | expr GT expr                              #binaryExpr
+    | expr GTE expr                             #binaryExpr
+    | expr LT expr                              #binaryExpr
+    | expr LTE expr                             #binaryExpr
+    | expr EQUALS expr                          #binaryExpr
+    | expr NOT_EQUALS expr                      #binaryExpr
+    | expr AND expr                             #binaryExpr
+    | expr OR expr                              #binaryExpr
 ;
-
-binary_op: OR | AND | EQUALS | NOT_EQUALS | LT | LTE | GT | GTE | PLUS |
-MINUS | MULT | DIV | MOD;
-
-unary_op: BANG | MINUS | LEN | ORD | CHR;
 
 ident: IDENT;
 

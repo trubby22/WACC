@@ -1,7 +1,6 @@
 package ic.doc.group15.semantics
 
 import ic.doc.group15.antlr.WaccParser
-import ic.doc.group15.antlr.WaccParser.ArrayTypeContext
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.semantics.ast.* // ktlint-disable no-unused-imports
 import java.util.*
@@ -432,13 +431,16 @@ class Visitor(
     }
 
     override fun visitIdentAssignLhs(ctx: WaccParser.IdentAssignLhsContext): ASTNode {
-        val ident = visitIdent(ctx.ident())
-        if (ident !is VariableIdentifierAST) {
+        val ident = scopeSymbols.lookupAll(ctx.text)
+        if (ident !is Variable) {
             throw TypeError(
                 "only variables can be assigned to"
             )
         }
-        return AssignToIdentAST(scopeAST, ident)
+        val variableAST = VariableIdentifierAST(scopeSymbols, ctx.text, ident
+            .type)
+
+        return AssignToIdentAST(scopeAST, variableAST)
     }
 
     override fun visitArrayElemAssignLhs(ctx: WaccParser.ArrayElemAssignLhsContext): ASTNode {
@@ -544,6 +546,14 @@ class Visitor(
 
     //region literals
 
+    override fun visitIdent(ctx: WaccParser.IdentContext): ASTNode {
+        return IdentNoTypeAST(scopeSymbols, ctx.text)
+    }
+
+    override fun visitInt_liter(ctx: WaccParser.Int_literContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
     override fun visitInt_liter_positive(ctx: WaccParser.Int_liter_positiveContext): ASTNode {
         val i = parseInt(ctx.POSITIVE_INTEGER().text)
         assert(i in 0..INT_MAX)
@@ -600,6 +610,98 @@ class Visitor(
         return ArrayLiteralAST(scopeSymbols, elemType, elems)
     }
 
+    override fun visitBracketExpr(ctx: WaccParser.BracketExprContext): ASTNode {
+        return visit(ctx.expr())
+    }
+
+    override fun visitSingleElemExpr(ctx: WaccParser.SingleElemExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitIdentExpr(ctx: WaccParser.IdentExprContext): ASTNode {
+        val variable = scopeSymbols.lookupAll(ctx.text) as Variable
+
+        return VariableIdentifierAST(scopeSymbols, ctx.text, variable.type)
+    }
+
+    override fun visitUnaryExpr(ctx: WaccParser.UnaryExprContext): ASTNode? {
+        val unOp: UnaryOp
+
+        when {
+            ctx.BANG() != null -> {
+                unOp = UnaryOp.BANG
+            }
+            ctx.MINUS() != null -> {
+                unOp = UnaryOp.MINUS
+            }
+            ctx.LEN() != null -> {
+                unOp = UnaryOp.LEN
+            }
+            ctx.ORD() != null -> {
+                unOp = UnaryOp.ORD
+            }
+            ctx.CHR() != null -> {
+                unOp = UnaryOp.CHR
+            }
+            else -> {
+                return null
+            }
+        }
+
+        return visitUnaryExprHelper(unOp, ctx.expr())
+    }
+
+    override fun visitBinaryExpr(ctx: WaccParser.BinaryExprContext): ASTNode? {
+        val binOp: BinaryOp
+
+        when {
+            ctx.MULT() != null -> {
+                binOp = BinaryOp.MULT
+            }
+            ctx.DIV() != null -> {
+                binOp = BinaryOp.DIV
+            }
+            ctx.MOD() != null -> {
+                binOp = BinaryOp.MOD
+            }
+            ctx.PLUS() != null -> {
+                binOp = BinaryOp.PLUS
+            }
+            ctx.MINUS() != null -> {
+                binOp = BinaryOp.MINUS
+            }
+            ctx.GT() != null -> {
+                binOp = BinaryOp.GT
+            }
+            ctx.GTE() != null -> {
+                binOp = BinaryOp.GTE
+            }
+            ctx.LT() != null -> {
+                binOp = BinaryOp.LT
+            }
+            ctx.LTE() != null -> {
+                binOp = BinaryOp.LTE
+            }
+            ctx.EQUALS() != null -> {
+                binOp = BinaryOp.EQUALS
+            }
+            ctx.NOT_EQUALS() != null -> {
+                binOp = BinaryOp.NOT_EQUALS
+            }
+            ctx.AND() != null -> {
+                binOp = BinaryOp.AND
+            }
+            ctx.OR() != null -> {
+                binOp = BinaryOp.OR
+            }
+            else -> {
+                return null
+            }
+        }
+
+        return visitBinaryExprHelper(binOp, ctx.expr(0), ctx.expr(1))
+    }
+
     //endregion
 
     //region helpers
@@ -614,7 +716,7 @@ class Visitor(
         }
     }
 
-    private fun visitUnaryExpr(
+    private fun visitUnaryExprHelper(
         unOp: UnaryOp,
         expr: WaccParser.ExprContext
     ): ASTNode {
@@ -624,7 +726,7 @@ class Visitor(
         return node
     }
 
-    private fun visitBinaryExpr(
+    private fun visitBinaryExprHelper(
         binOp: BinaryOp,
         expr1: WaccParser.ExprContext,
         expr2: WaccParser.ExprContext

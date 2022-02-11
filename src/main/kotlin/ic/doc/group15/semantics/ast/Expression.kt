@@ -20,6 +20,11 @@ class VariableIdentifierAST(
     val varType: Type
 ) : ExpressionAST(type = varType)
 
+class IdentNoTypeAST(
+    symbolTable: SymbolTable,
+    val varName: String
+) : ASTNode(symbolTable)
+
 class ArrayElemAST(
     symbolTable: SymbolTable,
     val arrayExpr: ExpressionAST,
