@@ -80,7 +80,6 @@ class Visitor(
         return program
     }
 
-    // TODO: handle array and pair return types
     override fun visitFunc(ctx: FuncContext): ASTNode {
         val funcName = ctx.ident().text
         log(
@@ -364,7 +363,7 @@ class Visitor(
         log("Visiting read statement")
 
         val target = visit(ctx.assign_lhs()) as AssignmentAST
-        if (target.type !is BasicType) {
+        if (target.type !is BasicType || target.type == BasicType.BoolType) {
             throw TypeError("cannot read input into target of type ${target.type}")
         }
 
