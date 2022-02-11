@@ -15,6 +15,7 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
             Pair("bool", BasicType.BoolType),
             Pair("char", BasicType.CharType),
             Pair("string", BasicType.StringType),
+            Pair("pair", PairType())
         )
 
         // Create a top-level symbol table for AST initialisation

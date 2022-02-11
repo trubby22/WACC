@@ -21,9 +21,9 @@ interface ReturnableType : Type
 
 interface HeapAllocatedType : Type
 
-data class Variable(val type: Type) : Identifier
+open class Variable(val type: Type) : Identifier
 
-data class Param(val type: Type) : Identifier
+class Param(type: Type) : Variable(type)
 
 enum class BasicType : ReturnableType {
     IntType {
@@ -79,10 +79,8 @@ class PairType(
         if (type !is PairType) {
             return false
         }
-        if (type.fstType == Type.ANY && type.sndType == Type.ANY) {
-            return true
-        }
-        return fstType.compatible(type.fstType) && sndType.compatible(type.sndType)
+        return (fstType.compatible(type.fstType) || type.fstType == Type.ANY) &&
+            (sndType.compatible(type.sndType) || type.sndType == Type.ANY)
     }
 }
 

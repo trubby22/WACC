@@ -25,13 +25,14 @@ stat: SKIP_STAT                                 #skipStat
     | IF expr THEN stat ELSE stat FI            #ifStat
     | WHILE expr DO stat DONE                   #whileStat
     | BEGIN stat END                            #beginEndStat
+    | return_stat                               #returnStat
     | stat END_STAT stat                        #sequenceStat
 ;
 
-return_stat: (stat END_STAT)? (RETURN | EXIT) expr;
+return_stat: (RETURN | EXIT) expr;
 
 // Needed for identifying return statements inside blocks
-valid_return_stat: return_stat
+valid_return_stat: (stat END_STAT)? return_stat
                  | WHILE expr DO valid_return_stat DONE
                  | IF expr THEN valid_return_stat ELSE valid_return_stat FI
                  | BEGIN valid_return_stat END
@@ -55,14 +56,16 @@ pair_elem: FST expr                             #fstPair
          | SND expr                             #sndPair
 ;
 
-type: base_type                                 #baseType
-    | array_type                                #arrayType
-    | pair_type                                 #pairType
+type: base_type
+    | array_type
+    | pair_type
 ;
 
 base_type: T_INT | T_BOOL | T_CHAR | T_STRING;
 
-array_type: (base_type | pair_type) (OPEN_BRACKETS CLOSE_BRACKETS)+;
+array_type: (base_type | pair_type) (array_brackets)+;
+
+array_brackets: OPEN_BRACKETS CLOSE_BRACKETS;
 
 pair_type: PAIR OPEN_PAREN pair_elem_type COMMA pair_elem_type CLOSE_PAREN;
 
