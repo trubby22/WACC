@@ -96,7 +96,7 @@ class Visitor(
             !t.compatible(rhs.type) -> {
                 throw TypeError(
                     "line: ${ctx.type().getStart().line} column: ${
-                        ctx.type().getStart().charPositionInLine
+                    ctx.type().getStart().charPositionInLine
                     } return expression type does not match function return type"
                 )
             }
@@ -409,7 +409,7 @@ class Visitor(
             !t.compatible(rhs.type) -> {
                 throw TypeError(
                     "line: ${type.getStart().line} column: ${
-                        type.getStart().charPositionInLine
+                    type.getStart().charPositionInLine
                     } return expression type does not match function return type"
                 )
             }
@@ -445,8 +445,11 @@ class Visitor(
                 "only variables can be assigned to"
             )
         }
-        val variableAST = VariableIdentifierAST(scopeSymbols, ctx.text, ident
-            .type)
+        val variableAST = VariableIdentifierAST(
+            scopeSymbols, ctx.text,
+            ident
+                .type
+        )
 
         return AssignToIdentAST(scopeAST, variableAST)
     }
@@ -616,14 +619,6 @@ class Visitor(
         }
 
         return ArrayLiteralAST(scopeSymbols, elemType, elems)
-    }
-
-    override fun visitBracketExpr(ctx: WaccParser.BracketExprContext): ASTNode {
-        return visit(ctx.expr())
-    }
-
-    override fun visitSingleElemExpr(ctx: WaccParser.SingleElemExprContext): ASTNode {
-        return visit(ctx.children[0])
     }
 
     override fun visitIdentExpr(ctx: WaccParser.IdentExprContext): ASTNode {
