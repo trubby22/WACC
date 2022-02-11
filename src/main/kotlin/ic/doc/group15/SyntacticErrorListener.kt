@@ -6,6 +6,8 @@ import org.antlr.v4.runtime.Recognizer
 import kotlin.system.exitProcess
 
 class SyntacticErrorListener: BaseErrorListener() {
+    private var errors = 0
+
     override fun syntaxError(
         recognizer: Recognizer<*, *>?,
         offendingSymbol: Any?,
@@ -14,7 +16,12 @@ class SyntacticErrorListener: BaseErrorListener() {
         msg: String?,
         e: RecognitionException?
     ) {
-        print("#syntax_error#")
-        exitProcess(100)
+        errors ++
+    }
+
+    fun terminateIfSyntacticErrorOccurred() {
+        if (errors > 0) {
+            exitProcess(100)
+        }
     }
 }

@@ -14,7 +14,6 @@ fun main() {
     val lexer = WaccLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = WaccParser(tokens)
-    parser.removeErrorListeners()
     val syntacticErrorListener = SyntacticErrorListener()
     parser.addErrorListener(syntacticErrorListener)
 
@@ -22,6 +21,7 @@ fun main() {
 //    val tree = program.toStringTree(parser)
 //    println(tree)
 
+    syntacticErrorListener.terminateIfSyntacticErrorOccurred()
     parser.removeErrorListener(syntacticErrorListener)
 
     val st = SymbolTable.topLevel()
