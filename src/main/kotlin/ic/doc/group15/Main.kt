@@ -19,8 +19,9 @@ fun main() {
     parser.addErrorListener(syntacticErrorListener)
 
     val program = parser.program()
-
-    println(program.toStringTree(parser))
+    val tree = program.toStringTree(parser)
+    
+    println(tree)
 
     parser.removeErrorListener(syntacticErrorListener)
 

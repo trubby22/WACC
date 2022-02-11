@@ -71,33 +71,22 @@ pair_elem_type: base_type
               | PAIR
 ;
 
-expr: OPEN_PAREN expr CLOSE_PAREN               #bracketExpr
-    | int_liter                                 #intLiterExpr
-    | bool_liter                                #boolLiterExpr
-    | char_liter                                #charLiterExpr
-    | str_liter                                 #strLiterExpr
-    | pair_liter                                #pairLiterExpr
-    | array_elem                                #arrayElemExpr
-    | ident                                     #identExpr
-    | BANG expr                                 #bangUnaryOp
-    | MINUS expr                                #minusUnaryOp
-    | LEN expr                                  #lenUnaryOp
-    | ORD expr                                  #ordUnaryOp
-    | CHR expr                                  #chrUnaryOp
-    | expr MULT expr                            #multBinaryOp
-    | expr DIV expr                             #divBinaryOp
-    | expr MOD expr                             #modBinaryOp
-    | expr PLUS expr                            #plusBinaryOp
-    | expr MINUS expr                           #minusBinaryOp
-    | expr GT expr                              #gtBinaryOp
-    | expr GTE expr                             #gteBinaryOp
-    | expr LT expr                              #ltBinaryOp
-    | expr LTE expr                             #lteBinaryOp
-    | expr EQUALS expr                          #equalsBinaryOp
-    | expr NOT_EQUALS expr                      #notEqualsBinaryOp
-    | expr AND expr                             #andBinaryOp
-    | expr OR expr                              #orBinaryOp
+expr: expr binary_op expr                   #binaryOpExpr
+| unary_op expr                             #unaryOpExpr
+| int_liter                                 #intLiterExpr
+| bool_liter                                #boolLiterExpr
+| char_liter                                #charLiterExpr
+| str_liter                                 #strLiterExpr
+| pair_liter                                #pairLiterExpr
+| array_elem                                #arrayElemExpr
+| ident                                     #identExpr
+| OPEN_PAREN expr CLOSE_PAREN               #bracketExpr
 ;
+
+binary_op: OR | AND | EQUALS | NOT_EQUALS | LT | LTE | GT | GTE | PLUS |
+MINUS | MULT | DIV | MOD;
+
+unary_op: BANG | MINUS | LEN | ORD | CHR;
 
 ident: IDENT;
 

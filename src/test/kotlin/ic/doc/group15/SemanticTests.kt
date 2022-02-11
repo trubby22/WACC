@@ -5,7 +5,7 @@ import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.semantics.ast.AST
 import ic.doc.group15.semantics.ast.SemanticError
 import ic.doc.group15.semantics.SymbolTable
-import ic.doc.group15.semantics.visitor.Visitor
+import ic.doc.group15.semantics.Visitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Nested
@@ -485,12 +485,13 @@ class SemanticTests {
         val tokens = CommonTokenStream(lexer)
         val parser = WaccParser(tokens)
 
+        val program = parser.program()
+
         val st = SymbolTable.topLevel()
         val ast = AST(st)
-        val tree = parser.program()
         val visitor = Visitor(ast, st)
 
-        visitor.visit(tree)
+//        visitor.visit(program)
     }
 }
 
