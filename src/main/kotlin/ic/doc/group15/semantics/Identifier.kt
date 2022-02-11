@@ -84,7 +84,7 @@ class FunctionType(
     val symbolTable: SymbolTable
 ) : Type {
     override fun compatible(type: Type): Boolean {
-        if (!type.compatible(returnType)) {
+        if (type !is FunctionType || type.returnType != returnType) {
             return false
         }
         for (i in formals.indices) {

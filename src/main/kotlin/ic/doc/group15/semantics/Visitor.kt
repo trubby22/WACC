@@ -62,6 +62,7 @@ class Visitor(
 
         val t = scopeSymbols.lookupAll(returnTypeName)
         val f = scopeSymbols.lookup(funcName)
+        val rhs = visit(ctx.ident()) as ExpressionAST
 
         when {
             t == null -> {
@@ -90,6 +91,13 @@ class Visitor(
                     "line: ${ctx.type().getStart().line} column: ${
                     ctx.type().getStart().charPositionInLine
                     } type().function $funcName already declared"
+                )
+            }
+            !t.compatible(rhs.type) -> {
+                throw TypeError(
+                    "line: ${ctx.type().getStart().line} column: ${
+                        ctx.type().getStart().charPositionInLine
+                    } return expression type does not match function return type"
                 )
             }
         }
@@ -364,7 +372,7 @@ class Visitor(
         val typeName = type.text
         val ident = ctx.ident()
         val varName = ident.text
-        val rhs = visit(ident)
+        val rhs = visit(ident) as ExpressionAST
 
         log(
             """Visiting variable declaration 
@@ -398,13 +406,13 @@ class Visitor(
                     } $varName has already been declared"
                 )
             }
-//            !t.compatible(rhs) -> {
-//                throw TypeError(
-//                    "line: ${type.getStart().line} column: ${
-//                        type.getStart().charPositionInLine
-//                    } return expression type does not match function return type"
-//                )
-//            }
+            !t.compatible(rhs.type) -> {
+                throw TypeError(
+                    "line: ${type.getStart().line} column: ${
+                        type.getStart().charPositionInLine
+                    } return expression type does not match function return type"
+                )
+            }
         }
 
         val varDecl = VariableDeclarationAST(scopeAST, scopeSymbols, typeName, varName)
