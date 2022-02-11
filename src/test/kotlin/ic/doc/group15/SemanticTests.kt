@@ -521,6 +521,6 @@ class SemanticTests {
         val ast = AST(st)
         val visitor = Visitor(ast, st)
 
-//        visitor.visit(program)
+        visitor.visit(program)
     }
 }
