@@ -7,6 +7,14 @@ interface Identifier
 
 interface Type : Identifier {
     fun compatible(type: Type): Boolean
+
+    companion object {
+        val ANY: Type = AnyType()
+
+        private class AnyType : Type {
+            override fun compatible(type: Type): Boolean = true
+        }
+    }
 }
 
 interface ReturnableType : Type
@@ -48,29 +56,15 @@ class ArrayType(val elementType: Type, val size: Int) : ReturnableType {
 }
 
 class PairType(
-    val leftType: Type?,
-    val rightType: Type?
+    val leftType: Type = Type.ANY,
+    val rightType: Type = Type.ANY
 ) : ReturnableType {
-
-    companion object {
-        fun typedPair(leftType: Type, rightType: Type): PairType {
-            return PairType(leftType, rightType)
-        }
-
-        fun typeErasedPair(): PairType {
-            return PairType(null, null)
-        }
-    }
 
     override fun compatible(type: Type): Boolean {
         if (type !is PairType) {
             return false
         }
-        if (leftType == null || rightType == null) {
-            assert(leftType == null && rightType == null)
-            return type.leftType == null && type.rightType == null
-        }
-        return leftType.compatible(type.leftType!!) && rightType.compatible(type.rightType!!)
+        return leftType.compatible(type.leftType) && rightType.compatible(type.rightType)
     }
 }
 

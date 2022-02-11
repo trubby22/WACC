@@ -3,6 +3,7 @@ package ic.doc.group15.semantics
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.semantics.ast.* // ktlint-disable no-unused-imports
+import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -273,7 +274,7 @@ class Visitor(
     }
 
     override fun visitNewPairAssign(ctx: WaccParser.NewPairAssignContext): ASTNode {
-        return PairAST(
+        return NewPairAST(
             scopeSymbols,
             visit(ctx.expr(0)) as ExpressionAST,
             visit(ctx.expr(1)) as ExpressionAST
@@ -490,15 +491,6 @@ class Visitor(
 //        symbolTable.add(varName, varIdent)
 //    }
 
-    override fun visitSequenceStat(ctx: WaccParser.SequenceStatContext): ASTNode {
-        return SequenceStatementAST(
-            scopeAST,
-            scopeSymbols,
-            visit(ctx.stat(0)) as StatementAST,
-            visit(ctx.stat(1)) as StatementAST
-        )
-    }
-
     override fun visitCallAssign(ctx: WaccParser.CallAssignContext): ASTNode {
         val funcName = ctx.ident().text
         val f = symbolTable.lookupAll(funcName)
@@ -530,9 +522,7 @@ class Visitor(
             }
         }
 
-        val funcCall = CallAST(scopeSymbols, funcName)
-
-        funcCall.funcIdent = f as FunctionType
+        val funcCall = CallAST(scopeSymbols, funcName, f as FunctionType)
 
         for (k in args.indices) {
             val argExpr = visit(args[k]) as ExpressionAST
@@ -555,10 +545,6 @@ class Visitor(
         assert(i in 0..INT_MAX)
 
         return IntLiteralAST(i)
-    }
-
-    override fun visitInt_liter(ctx: WaccParser.Int_literContext): ASTNode {
-        return visit(ctx.children[0])
     }
 
     override fun visitInt_liter_negative(ctx: WaccParser.Int_liter_negativeContext): ASTNode {
@@ -601,26 +587,23 @@ class Visitor(
     override fun visitArray_liter(ctx: WaccParser.Array_literContext): ASTNode {
         assert(ctx.expr().isNotEmpty())
 
-        var arrayLiteral: ArrayLiteralAST? = null
+        val elems: MutableList<ExpressionAST> = LinkedList()
 
-        var elemType: Type? = null
+        var elemType = Type.ANY
         for (expr in ctx.expr()) {
             val elem = visit(expr) as ExpressionAST
-            if (elemType == null) {
-                elemType = elem.type
-                arrayLiteral = ArrayLiteralAST(elemType)
-            } else if (!elemType.compatible(elem.type)) {
+            if (!elemType.compatible(elem.type)) {
                 throw TypeError(
                     "line: ${ctx.getStart().line} column: ${
                     ctx.getStart().charPositionInLine
                     } elements in array literal must all by the same type"
                 )
             }
-            arrayLiteral!!.elems.add(elem)
+            elemType = elem.type
+            elems.add(elem)
         }
-        assert(arrayLiteral != null)
 
-        return arrayLiteral!!
+        return ArrayLiteralAST(elemType, elems)
     }
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
