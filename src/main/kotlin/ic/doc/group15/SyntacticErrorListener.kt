@@ -14,7 +14,8 @@ class SyntacticErrorListener: BaseErrorListener() {
         msg: String?,
         e: RecognitionException?
     ) {
-        print("#syntax_error#")
+//        print("#syntax_error#")
+        println("a more informative message")
         exitProcess(100)
     }
 }
