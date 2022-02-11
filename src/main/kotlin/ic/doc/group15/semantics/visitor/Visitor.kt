@@ -186,43 +186,50 @@ class Visitor(
         return varDecl
     }
 
-//    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
-//
-//        val varName = ctx.().text
-//        val expr = ctx.expr()
-//        val exprName = expr.text
-//
-//        log(
-//            """Visiting variable assignment
-//                || Identifier: $varName
-//                || Expression: $exprName
-//            """.trimIndent()
-//        )
-//
-//        val varAssign = VariableAssignmentAST(scope, symbols, varName, exprName)
-//
-//        // identifier may be declared in parent scope
-//        val v = symbols.lookupAll(varName)
-//
-//        when {
-//            v == null -> {
-//                throw DeclarationError("$varName has not been declared")
-//            }
-//            v !is Variable -> {
-//                throw IdentifierError("$varName is not a variable")
-//            }
-//            v.type != expr.type -> {
-//                throw TypeError("$varName type(${v.type}) not compatible with expression type (${expr.type})")
-//            }
-//            else -> {
-//                varAssign.varIdent = expr
-//            }
-//        }
-//
-//        st.add(varName, varAssign.varIdent)
-//
-//        return varAssign
-//    }
+    override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
+        val assign_lhs = visit(ctx.assign_lhs()) as ExpressionAST
+        var assign_rhs = visit(ctx.assign_rhs())
+
+        if (assign_rhs is ExpressionAST) {
+            if (assign_lhs.type != assign_rhs.type) {
+                throw TypeError("trying to assign rhs of type ${assign_rhs
+                    .type} to lhs of type ${assign_lhs.type}")
+            }
+        } else {
+            assign_rhs = assign_rhs as CallAST
+            if (assign_lhs.type != assign_rhs.funcIdent.returnType) {
+                throw TypeError("trying to assign rhs of type ${assign_rhs
+                    .funcIdent.returnType} to lhs of type ${assign_lhs.type}")
+            }
+        }
+
+        return VariableAssignmentAST(scopeAST, scopeSymbols, assign_lhs,
+            assign_rhs)
+    }
+
+    override fun visitAssign_lhs(ctx: WaccParser.Assign_lhsContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitExprAssign(ctx: WaccParser.ExprAssignContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitArrayLiterAssign(ctx: WaccParser.ArrayLiterAssignContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitNewPairAssign(ctx: WaccParser.NewPairAssignContext): ASTNode {
+        return PairAST(
+            scopeSymbols,
+            visit(ctx.expr(0)) as ExpressionAST,
+            visit(ctx.expr(1)) as ExpressionAST)
+    }
+
+    override fun visitPairElemAssign(ctx: WaccParser.PairElemAssignContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
 
     override fun visitUnaryOpExpr(ctx: WaccParser.UnaryOpExprContext): ASTNode {
         log("Visiting unary operator expression")
@@ -248,10 +255,6 @@ class Visitor(
     override fun visitIdent(ctx: WaccParser.IdentContext?): ASTNode {
         val variable = scopeSymbols.lookupAll(ctx?.text!!)!! as Variable
         return VariableIdentifierAST(scopeSymbols, ctx.text!!, variable)
-    }
-
-    override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
-        return super.visitArray_elem(ctx)
     }
 
     override fun visitIfStat(ctx: WaccParser.IfStatContext): ASTNode {
@@ -432,6 +435,14 @@ class Visitor(
 //        symbolTable.add(varName, varIdent)
 //    }
 
+    override fun visitSequenceStat(ctx: WaccParser.SequenceStatContext): ASTNode {
+        return SequenceStatementAST(
+            scopeAST,
+            scopeSymbols,
+            visit(ctx.stat(0)) as StatementAST,
+            visit(ctx.stat(1)) as StatementAST)
+    }
+
     override fun visitCallAssign(ctx: WaccParser.CallAssignContext): ASTNode {
         val funcName = ctx.ident().text
         val f = symbolTable.lookupAll(funcName)
@@ -471,11 +482,43 @@ class Visitor(
         return funcCall
     }
 
+    override fun visitIntLiterExpr(ctx: WaccParser.IntLiterExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitBoolLiterExpr(ctx: WaccParser.BoolLiterExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitCharLiterExpr(ctx: WaccParser.CharLiterExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitStrLiterExpr(ctx: WaccParser.StrLiterExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitPairLiterExpr(ctx: WaccParser.PairLiterExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitIdentExpr(ctx: WaccParser.IdentExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
+    override fun visitArrayElemExpr(ctx: WaccParser.ArrayElemExprContext): ASTNode {
+        return visit(ctx.children[0])
+    }
+
     override fun visitInt_liter_positive(ctx: WaccParser.Int_liter_positiveContext): ASTNode {
         val i = parseInt(ctx.POSITIVE_INTEGER().text)
         assert(i in 0..INT_MAX)
 
         return IntLiteralAST(i)
+    }
+
+    override fun visitInt_liter(ctx: WaccParser.Int_literContext): ASTNode {
+        return visit(ctx.children[0])
     }
 
     override fun visitInt_liter_negative(ctx: WaccParser.Int_liter_negativeContext): ASTNode {
@@ -557,6 +600,23 @@ class Visitor(
 //
 //        return ArrayElemAST(scopeSymbols, )
 //    }
+
+    override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
+        val id = visit(ctx.ident()) as VariableIdentifierAST
+        val name = id.varName
+        val type = id.type
+        val expr = visit(ctx.expr(0)) as ExpressionAST
+
+        return ArrayElemAST(scopeSymbols, expr, name, type)
+    }
+
+    override fun visitFstPair(ctx: WaccParser.FstPairContext): ASTNode {
+        return visit(ctx.expr())
+    }
+
+    override fun visitSndPair(ctx: WaccParser.SndPairContext): ASTNode {
+        return visit(ctx.expr())
+    }
 
     private fun addToScope(stat: StatementAST): StatementAST {
         scopeAST.statements.add(stat)

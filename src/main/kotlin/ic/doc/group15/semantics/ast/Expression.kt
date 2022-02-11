@@ -29,10 +29,16 @@ class VariableIdentifierAST(
 
 class ArrayElemAST(
     symbolTable: SymbolTable,
-    val indexExp: ExpressionAST,
+    val firstIndexExp: ExpressionAST,
     val arrayName: String,
-    val varIdent: Variable
-) : ExpressionAST(symbolTable, (varIdent.type as ArrayType).elementType)
+    val arrType: Type
+) : ExpressionAST(symbolTable, arrType)
+
+class PairAST(
+    symbolTable: SymbolTable,
+    val fst: ExpressionAST,
+    val snd: ExpressionAST
+) : ExpressionAST(symbolTable, type = PairType(fst.type, snd.type))
 
 class UnaryOpExprAST(
     symbolTable: SymbolTable,

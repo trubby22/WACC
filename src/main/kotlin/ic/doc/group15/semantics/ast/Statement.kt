@@ -33,8 +33,8 @@ class ParameterAST(
 class VariableAssignmentAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val varname: String,
-    val expr: ExpressionAST
+    val lhs: ExpressionAST,
+    val rhs: ASTNode
 ) : StatementAST(parent, symbolTable) {
 
     lateinit var varIdent: Variable
@@ -80,4 +80,11 @@ class PrintlnStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
     val expr: ExpressionAST
+) : StatementAST(parent, symbolTable)
+
+class SequenceStatementAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable,
+    val stat1: StatementAST,
+    val stat2: StatementAST
 ) : StatementAST(parent, symbolTable)
