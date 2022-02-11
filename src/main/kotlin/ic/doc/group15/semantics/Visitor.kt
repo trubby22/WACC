@@ -360,55 +360,55 @@ class Visitor(
 
     //region assign_and_declare
 
-    override fun visitDeclarationStat(ctx: WaccParser.DeclarationStatContext): ASTNode {
-        val typeName = ctx.type()
-        val varName = ctx.ident().text
-
-        log(
-            """Visiting variable declaration 
-                || Type name: ${typeName.text}
-                || Var name: $varName
-            """
-        )
-
-        if (typeName is ArrayTypeContext) {
-
-        }
-
-        val t = scopeSymbols.lookupAll(typeName)
-        val v = scopeSymbols.lookup(varName)
-
-        when {
-            t == null -> {
-                throw TypeError(
-                    "line: ${ctx.type().getStart().line} column: ${
-                    ctx.type().getStart().charPositionInLine
-                    } unknown type $typeName"
-                )
-            }
-            t !is Type -> {
-                throw TypeError(
-                    "line: ${ctx.type().getStart().line} column: ${
-                    ctx.type().getStart().charPositionInLine
-                    } $typeName is not a type"
-                )
-            }
-            v != null -> {
-                throw DeclarationError(
-                    "line: ${ctx.ident().getStart().line} column: ${
-                    ctx.ident().getStart().charPositionInLine
-                    } $varName has already been declared"
-                )
-            }
-            else -> {
-                varDecl.varIdent = Variable(t)
-            }
-        }
-
-        scopeSymbols.add(varName, varDecl.varIdent)
-
-        return varDecl
-    }
+//    override fun visitDeclarationStat(ctx: WaccParser.DeclarationStatContext): ASTNode {
+//        val typeName = ctx.type()
+//        val varName = ctx.ident().text
+//
+//        log(
+//            """Visiting variable declaration
+//                || Type name: ${typeName.text}
+//                || Var name: $varName
+//            """
+//        )
+//
+//        if (typeName is ArrayTypeContext) {
+//
+//        }
+//
+//        val t = scopeSymbols.lookupAll(typeName)
+//        val v = scopeSymbols.lookup(varName)
+//
+//        when {
+//            t == null -> {
+//                throw TypeError(
+//                    "line: ${ctx.type().getStart().line} column: ${
+//                    ctx.type().getStart().charPositionInLine
+//                    } unknown type $typeName"
+//                )
+//            }
+//            t !is Type -> {
+//                throw TypeError(
+//                    "line: ${ctx.type().getStart().line} column: ${
+//                    ctx.type().getStart().charPositionInLine
+//                    } $typeName is not a type"
+//                )
+//            }
+//            v != null -> {
+//                throw DeclarationError(
+//                    "line: ${ctx.ident().getStart().line} column: ${
+//                    ctx.ident().getStart().charPositionInLine
+//                    } $varName has already been declared"
+//                )
+//            }
+//            else -> {
+//                varDecl.varIdent = Variable(t)
+//            }
+//        }
+//
+//        scopeSymbols.add(varName, varDecl.varIdent)
+//
+//        return varDecl
+//    }
 
     override fun visitAssignmentStat(ctx: WaccParser.AssignmentStatContext): ASTNode {
         val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST

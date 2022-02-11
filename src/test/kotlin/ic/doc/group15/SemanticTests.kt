@@ -1,11 +1,11 @@
 package ic.doc.group15
 
-import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.antlr.WaccLexer
+import ic.doc.group15.antlr.WaccParser
+import ic.doc.group15.semantics.SymbolTable
+import ic.doc.group15.semantics.Visitor
 import ic.doc.group15.semantics.ast.AST
 import ic.doc.group15.semantics.ast.SemanticError
-import ic.doc.group15.semantics.SymbolTable
-import ic.doc.group15.semantics.visitor.Visitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Nested
@@ -34,8 +34,10 @@ class SemanticTests {
 
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(
-            strings = ["array", "arrayBasic", "arrayEmpty", "arrayLength", "arrayLookup", "arrayNested",
-                "arrayPrint", "arraySimple", "modifyString", "printRef"]
+            strings = [
+                "array", "arrayBasic", "arrayEmpty", "arrayLength", "arrayLookup", "arrayNested",
+                "arrayPrint", "arraySimple", "modifyString", "printRef"
+            ]
         )
         fun checkSourceCodeIsSemanticallyValid(fileName: String) {
             isSemanticallyValid("$arrayFolderPath/$fileName.wacc")
@@ -75,13 +77,15 @@ class SemanticTests {
 
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(
-            strings = ["andExpr", "andOverOrExpr", "boolCalc", "boolExpr1", "charComparisonExpr", "divExpr",
+            strings = [
+                "andExpr", "andOverOrExpr", "boolCalc", "boolExpr1", "charComparisonExpr", "divExpr",
                 "equalsExpr", "equalsOverAnd", "equalsOverBool", "equalsOverOr", "greaterEqExpr", "greaterExpr", "intCalc",
                 "intExpr1", "lessCharExpr", "lessEqExpr", "lessExpr", "longExpr", "longExpr2", "longExpr3", "longSplitExpr",
                 "longSplitExpr2", "minusExpr", "minusMinusExpr", "minusNoWhitespaceExpr", "minusPlusExpr", "modExpr",
                 "multExpr", "multNoWhitespaceExpr", "negBothDiv", "negBothMod", "negDividendDiv", "negDividendMod",
                 "negDivisorDiv", "negDivisorMod", "negExpr", "notequalsExpr", "notExpr", "ordAndchrExpr", "orExpr",
-                "plusExpr", "plusMinusExpr", "plusNoWhitespaceExpr", "plusPlusExpr", "sequentialCount", "stringEqualsExpr"]
+                "plusExpr", "plusMinusExpr", "plusNoWhitespaceExpr", "plusPlusExpr", "sequentialCount", "stringEqualsExpr"
+            ]
         )
         fun checkSourceCodeIsSemanticallyValid(fileName: String) {
             isSemanticallyValid("$expressionsFolderPath/$fileName.wacc")
@@ -98,9 +102,11 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(
-                strings = ["fibonacciFullRec", "fibonacciRecursive", "fixedPointRealArithmetic",
+                strings = [
+                    "fibonacciFullRec", "fibonacciRecursive", "fixedPointRealArithmetic",
                     "functionConditionalReturn", "mutualRecursion", "printInputTriangle", "printTriangle",
-                    "simpleRecursion"]
+                    "simpleRecursion"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 isSemanticallyValid("$nestedFunctionsFolderPath/$fileName.wacc")
@@ -113,10 +119,12 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(
-                strings = ["asciiTable", "functionDeclaration", "functionDoubleReturn", "functionIfReturns",
+                strings = [
+                    "asciiTable", "functionDeclaration", "functionDoubleReturn", "functionIfReturns",
                     "functionManyArguments", "functionMultiReturns", "functionReturnPair", "functionSimple",
                     "functionSimpleLoop", "functionUpdateParameter", "incFunction", "negFunction", "sameArgName",
-                    "sameArgName2", "sameNameAsVar"]
+                    "sameArgName2", "sameNameAsVar"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 isSemanticallyValid("$simpleFunctionsFolderPath/$fileName.wacc")
@@ -151,9 +159,11 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(
-                strings = ["hashInProgram", "multipleStringsAssignment", "print", "print-backspace",
+                strings = [
+                    "hashInProgram", "multipleStringsAssignment", "print", "print-backspace",
                     "print-carridge-return", "printBool", "printChar", "printCharArray", "printCharAsString", "printEscChar",
-                    "printInt", "println"]
+                    "printInt", "println"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 isSemanticallyValid("$printValidFileFolderPath/$fileName.wacc")
@@ -166,8 +176,10 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(
-                strings = ["echoBigInt", "echoBigNegInt", "echoChar", "echoInt", "echoNegInt", "echoPuncChar",
-                    "read"]
+                strings = [
+                    "echoBigInt", "echoBigNegInt", "echoChar", "echoInt", "echoNegInt", "echoPuncChar",
+                    "read"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 isSemanticallyValid("$readValidFileFolderPath/$fileName.wacc")
@@ -181,9 +193,11 @@ class SemanticTests {
 
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(
-            strings = ["checkRefPair", "createPair", "createPair02", "createPair03", "createRefPair", "free",
+            strings = [
+                "checkRefPair", "createPair", "createPair02", "createPair03", "createRefPair", "free",
                 "linkedList", "nestedPair", "null", "printNull", "printNullPair", "printPair", "printPairOfNulls", "readPair",
-                "writeFst", "writeSnd"]
+                "writeFst", "writeSnd"
+            ]
         )
         fun checkSourceCodeIsSemanticallyValid(fileName: String) {
             isSemanticallyValid("$pairsValidFileFolderPath/$fileName.wacc")
@@ -222,8 +236,10 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(
-                strings = ["intJustOverflow", "intmultOverflow", "intnegateOverflow", "intnegateOverflow2",
-                    "intnegateOverflow3", "intnegateOverflow4", "intUnderflow", "intWayOverflow"]
+                strings = [
+                    "intJustOverflow", "intmultOverflow", "intnegateOverflow", "intnegateOverflow2",
+                    "intnegateOverflow3", "intnegateOverflow4", "intUnderflow", "intWayOverflow"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 isSemanticallyValid("$integerOverflowValidFileFolderPath/$fileName.wacc")
@@ -248,9 +264,11 @@ class SemanticTests {
 
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(
-            strings = ["ifNested1", "ifNested2", "indentationNotImportant", "intsAndKeywords", "printAllTypes",
+            strings = [
+                "ifNested1", "ifNested2", "indentationNotImportant", "intsAndKeywords", "printAllTypes",
                 "scope", "scopeBasic", "scopeIfRedefine", "scopeRedefine", "scopeSimpleRedefine", "scopeVars",
-                "scopeWhileNested", "scopeWhileRedefine"]
+                "scopeWhileNested", "scopeWhileRedefine"
+            ]
         )
         fun checkSourceCodeIsSemanticallyValid(fileName: String) {
             isSemanticallyValid("$scopeValidFileFolderPath/$fileName.wacc")
@@ -263,8 +281,10 @@ class SemanticTests {
 
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(
-            strings = ["basicSeq", "basicSeq2", "boolAssignment", "charAssignment", "exitSimple",
-                "intAssignment", "intLeadingZeros", "stringAssignment"]
+            strings = [
+                "basicSeq", "basicSeq2", "boolAssignment", "charAssignment", "exitSimple",
+                "intAssignment", "intLeadingZeros", "stringAssignment"
+            ]
         )
         fun checkSourceCodeIsSemanticallyValid(fileName: String) {
             isSemanticallyValid("$sequenceValidFileFolderPath/$fileName.wacc")
@@ -277,9 +297,11 @@ class SemanticTests {
 
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(
-            strings = ["_VarNames", "boolDeclaration", "boolDeclaration2", "capCharDeclaration",
+            strings = [
+                "_VarNames", "boolDeclaration", "boolDeclaration2", "capCharDeclaration",
                 "charDeclaration", "charDeclaration2", "emptyStringDeclaration", "intDeclaration", "longVarNames",
-                "manyVariables", "negIntDeclaration", "puncCharDeclaration", "stringDeclaration", "zeroIntDeclaration"]
+                "manyVariables", "negIntDeclaration", "puncCharDeclaration", "stringDeclaration", "zeroIntDeclaration"
+            ]
         )
         fun checkSourceCodeIsSemanticallyValid(fileName: String) {
             isSemanticallyValid("$variablesValidFileFolderPath/$fileName.wacc")
@@ -292,8 +314,10 @@ class SemanticTests {
 
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(
-            strings = ["fibonacciFullIt", "fibonacciIterative", "loopCharCondition", "loopIntCondition", "max",
-                "min", "rmStyleAdd", "rmStyleAddIO", "whileBasic", "whileBoolFlip", "whileCount", "whileFalse"]
+            strings = [
+                "fibonacciFullIt", "fibonacciIterative", "loopCharCondition", "loopIntCondition", "max",
+                "min", "rmStyleAdd", "rmStyleAddIO", "whileBasic", "whileBoolFlip", "whileCount", "whileFalse"
+            ]
         )
         fun checkSourceCodeIsSemanticallyValid(fileName: String) {
             isSemanticallyValid("$whileValidFileFolderPath/$fileName.wacc")
@@ -323,8 +347,10 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(
-                strings = ["boolOpTypeErr", "exprTypeErr", "intOpTypeErr", "lessPairExpr", "mixedOpTypeErr",
-                    "moreArrExpr", "stringElemErr"]
+                strings = [
+                    "boolOpTypeErr", "exprTypeErr", "intOpTypeErr", "lessPairExpr", "mixedOpTypeErr",
+                    "moreArrExpr", "stringElemErr"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 assertThrows<SemanticError> {
@@ -339,9 +365,11 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(
-                strings = ["functionAssign", "functionBadArgUse", "functionBadCall", "functionBadParam",
+                strings = [
+                    "functionAssign", "functionBadArgUse", "functionBadCall", "functionBadParam",
                     "functionBadReturn", "functionOverArgs", "functionRedefine", "functionSwapArgs", "functionUnderArgs",
-                    "funcVarAccess"]
+                    "funcVarAccess"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 assertThrows<SemanticError> {
@@ -447,10 +475,12 @@ class SemanticTests {
 
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(
-                strings = ["basicTypeErr01", "basicTypeErr02", "basicTypeErr03", "basicTypeErr04", "basicTypeErr05",
+                strings = [
+                    "basicTypeErr01", "basicTypeErr02", "basicTypeErr03", "basicTypeErr04", "basicTypeErr05",
                     "basicTypeErr06", "basicTypeErr07", "basicTypeErr08", "basicTypeErr09", "basicTypeErr10",
                     "basicTypeErr11", "basicTypeErr12", "caseMatters", "doubleDeclare", "undeclaredScopeVar",
-                    "undeclaredVar", "undeclaredVarAccess"]
+                    "undeclaredVar", "undeclaredVarAccess"
+                ]
             )
             fun checkSourceCodeIsSemanticallyValid(fileName: String) {
                 assertThrows<SemanticError> {
@@ -493,4 +523,3 @@ class SemanticTests {
         visitor.visit(tree)
     }
 }
-
