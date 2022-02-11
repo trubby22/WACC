@@ -17,29 +17,25 @@ class NullPairLiteralAST : ExpressionAST(type = PairType())
 class VariableIdentifierAST(
     symbolTable: SymbolTable,
     val varName: String,
-    val varType: Type
-) : ExpressionAST(type = varType)
-
-class IdentNoTypeAST(
-    symbolTable: SymbolTable,
-    val varName: String
-) : ASTNode(symbolTable)
+    val ident: Variable
+) : ExpressionAST(symbolTable, ident.type)
 
 class ArrayElemAST(
     symbolTable: SymbolTable,
-    val arrayExpr: ExpressionAST,
-    val indexExpr: ExpressionAST
-) : ExpressionAST(symbolTable, (arrayExpr.type as ArrayType).elementType)
+    val arrayName: String,
+    val indexExpr: List<ExpressionAST>,
+    val elemType: Type
+) : ExpressionAST(symbolTable, elemType)
 
 class UnaryOpExprAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST,
     val operator: UnaryOp
-) : ExpressionAST(symbolTable, type = operator.returnType)
+) : ExpressionAST(symbolTable, operator.returnType)
 
 class BinaryOpExprAST(
     symbolTable: SymbolTable,
     val expr1: ExpressionAST,
     val expr2: ExpressionAST,
     val operator: BinaryOp
-) : ExpressionAST(symbolTable, type = operator.returnType)
+) : ExpressionAST(symbolTable, operator.returnType)

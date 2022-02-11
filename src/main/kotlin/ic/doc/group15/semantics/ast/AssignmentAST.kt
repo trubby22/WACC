@@ -29,13 +29,13 @@ class AssignToArrayElemAST(
 class AssignToPairElemAST(
     parent: BlockAST,
     lhs: PairElemAST
-) : AssignmentAST(parent, lhs, lhs.elemType)
+) : AssignmentAST(parent, lhs, lhs.type)
 
 class ArrayLiteralAST(
     symbolTable: SymbolTable,
     elemType: Type,
     val elems: List<ExpressionAST>
-) : AssignRhsAST(symbolTable, ArrayType(elemType, elems.size))
+) : AssignRhsAST(symbolTable, ArrayType(elemType))
 
 class NewPairAST(
     symbolTable: SymbolTable,
@@ -45,19 +45,18 @@ class NewPairAST(
 
 abstract class PairElemAST protected constructor(
     symbolTable: SymbolTable,
-    val expr: ExpressionAST,
     val elemType: Type
 ) : AssignRhsAST(symbolTable, elemType)
 
 class FstPairElemAST(
     symbolTable: SymbolTable,
     val pairExpr: ExpressionAST
-) : AssignRhsAST(symbolTable, (pairExpr.type as PairType).fstType)
+) : PairElemAST(symbolTable, (pairExpr.type as PairType).fstType)
 
 class SndPairElemAST(
     symbolTable: SymbolTable,
     val pairExpr: ExpressionAST
-) : AssignRhsAST(symbolTable, (pairExpr.type as PairType).sndType)
+) : PairElemAST(symbolTable, (pairExpr.type as PairType).sndType)
 
 class CallAST(
     symbolTable: SymbolTable,

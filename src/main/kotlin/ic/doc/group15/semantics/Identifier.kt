@@ -21,9 +21,9 @@ interface ReturnableType : Type
 
 interface HeapAllocatedType : Type
 
-data class Variable(val type: Type) : Identifier
+open class Variable(val type: Type) : Identifier
 
-data class Param(val type: Type) : Identifier
+class Param(type: Type) : Variable(type)
 
 enum class BasicType : ReturnableType {
     IntType {
@@ -48,12 +48,17 @@ enum class BasicType : ReturnableType {
     }
 }
 
-class ArrayType(val elementType: Type, val size: Int) : ReturnableType, HeapAllocatedType {
+class ArrayType(val elementType: Type) : ReturnableType,
+    HeapAllocatedType {
     override fun compatible(type: Type): Boolean {
         if (type !is ArrayType) {
             return false
         }
         return elementType.compatible(type.elementType)
+    }
+
+    fun getInnerType(): Type {
+        return elementType
     }
 }
 
@@ -74,7 +79,8 @@ class PairType(
         if (type !is PairType) {
             return false
         }
-        return fstType.compatible(type.fstType) && sndType.compatible(type.sndType)
+        return (fstType.compatible(type.fstType) || type.fstType == Type.ANY) &&
+            (sndType.compatible(type.sndType) || type.sndType == Type.ANY)
     }
 }
 
