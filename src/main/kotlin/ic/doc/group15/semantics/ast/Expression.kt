@@ -14,10 +14,10 @@ class StringLiteralAST(val stringValue: String) : ExpressionAST(type = BasicType
 
 class NullPairLiteralAST : ExpressionAST(type = PairType())
 
-class VariableIdentifierAST(
+open class VariableIdentifierAST(
     symbolTable: SymbolTable,
     val varName: String,
-    val ident: Variable
+    open val ident: Variable
 ) : ExpressionAST(symbolTable, ident.type)
 
 class ArrayElemAST(
