@@ -1,12 +1,13 @@
 package ic.doc.group15
 
-import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
-import org.junit.jupiter.api.Assertions
+import ic.doc.group15.antlr.WaccLexer
+import ic.doc.group15.antlr.WaccParser
+import org.antlr.v4.runtime.*
+import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.nio.charset.StandardCharsets
 
 // Verify that parsing works properly
 class SyntacticTests {
@@ -308,7 +309,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["arrayExpr"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$arrayInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$arrayInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -322,7 +323,7 @@ class SyntacticTests {
                     "noBody", "skpErr", "unescapedChar"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$basicInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$basicInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -333,7 +334,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["missingOperand1", "missingOperand2", "printlnConcat"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$expressionsInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$expressionsInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -349,7 +350,7 @@ class SyntacticTests {
                     "mutualRecursionNoReturn", "noBodyAfterFuncs", "thisIsNotC"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$functionInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$functionInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -360,7 +361,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["ifiErr", "ifNoelse", "ifNofi", "ifNothen"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$ifInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$ifInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -371,7 +372,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["badLookup01", "badLookup02"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$pairsInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$pairsInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -382,7 +383,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["printlnCharArry"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$printInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$printInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -393,7 +394,7 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["doubleSeq", "emptySeq", "endSeq", "extraSeq", "missingSeq"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$sequenceInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$sequenceInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -407,7 +408,7 @@ class SyntacticTests {
                     "varNoName"]
             )
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$variableInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$variableInvalidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -418,72 +419,35 @@ class SyntacticTests {
             @ParameterizedTest(name = "check {0} source code is not syntactically valid")
             @ValueSource(strings = ["donoErr", "dooErr", "whileNodo", "whileNodone", "whilErr"])
             fun checkSourceCodeIsSyntacticallyValid(fileName: String) {
-                assertTrue(isSyntacticallyInvalid("$whileInvalidFileFolderPath/$fileName.wacc", ErrorType.SYNTAX))
+                assertTrue(isSyntacticallyInvalid("$whileInvalidFileFolderPath/$fileName.wacc"))
             }
         }
     }
 
-    private fun isSyntacticallyValid(path: String):
-            Boolean {
-        val process =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "java -jar " +
-                        "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
-                        "< $path 2>&1 | wc -l"
-            ).start()
-        var num = 0
-
-        try {
-            val exitCode = process.waitFor()
-            Assertions.assertEquals(0, exitCode)
-            num = Integer.parseInt(
-                IOUtils.toString(
-                    process.inputStream,
-                    StandardCharsets.UTF_8.name()
-                ).trim()
-            )
-        } catch (e: InterruptedException) {
-            System.err.println("$path is not syntactically valid!")
-        }
-
-        // Print files that cause parsing errors
-        if (num != 1) {
-            System.err.println("$path is not syntactically valid!")
-        }
-
-        return num == 1
+    private fun isSyntacticallyValid(path: String): Boolean {
+        val input = CharStreams.fromFileName(path)
+        val lexer = WaccLexer(input)
+        val tokens = CommonTokenStream(lexer)
+        val parser = WaccParser(tokens)
+        parser.removeErrorListeners()
+        parser.addErrorListener(DummyErrorListener())
+        val program = parser.program()
+        program.toStringTree(parser)
+        return true
     }
 
-    private fun isSyntacticallyInvalid(path: String, errorType: ErrorType): Boolean {
-        val process =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "java -jar " +
-                        "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
-                        "< $path 2>&1"
-            ).start()
+    class DummyErrorListener: BaseErrorListener() {
+        override fun syntaxError(recognizer: Recognizer<*, *>?, offendingSymbol: Any?, line: Int, charPositionInLine: Int, msg: String?, e: RecognitionException?) {
+            throw ParseCancellationException("Syntax error at line $line:$charPositionInLine: $msg")
+        }
+    }
 
-        var output = ""
-        var exitCode = -1
-
+    private fun isSyntacticallyInvalid(path: String): Boolean {
         try {
-            exitCode = process.waitFor()
-            output = IOUtils.toString(
-                process.inputStream,
-                StandardCharsets.UTF_8.name()
-            )
-        } catch (e: InterruptedException) {
-            System.err.println("$path is treated as syntactically valid when it should be the opposite!")
+            isSyntacticallyValid(path)
+        } catch (e: ParseCancellationException) {
+            return true
         }
-
-        val success = (output == "#${errorType.type}_error#" && exitCode == errorType.code)
-
-        // Print files that don't print the appropriate error msg
-        if (!success) {
-            System.err.println("$path is treated as syntactically valid when it should be the opposite!")
-        }
-
-        return success
+        return false
     }
 }
