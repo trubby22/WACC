@@ -5,8 +5,10 @@ import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.semantics.SymbolTable
 import ic.doc.group15.semantics.Visitor
 import ic.doc.group15.semantics.ast.AST
+import ic.doc.group15.semantics.ast.SemanticError
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import kotlin.system.exitProcess
 
 fun main() {
     val input = CharStreams.fromStream(System.`in`)
@@ -27,5 +29,9 @@ fun main() {
     val st = SymbolTable.topLevel()
     val ast = AST(st)
     val visitor = Visitor(ast, st)
-    visitor.visit(program)
+    try {
+        visitor.visit(program)
+    } catch (e: SemanticError) {
+        exitProcess(200)
+    }
 }
