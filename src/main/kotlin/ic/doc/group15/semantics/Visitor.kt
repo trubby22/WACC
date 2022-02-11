@@ -1,6 +1,7 @@
 package ic.doc.group15.semantics
 
 import ic.doc.group15.antlr.WaccParser
+import ic.doc.group15.antlr.WaccParser.FuncContext
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.semantics.ast.* // ktlint-disable no-unused-imports
 import java.util.*
@@ -10,12 +11,14 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 class Visitor(
-    ast: AST,
-    st: SymbolTable
+    val topAst: AST,
+    val topSymbolTable: SymbolTable
 ) : WaccParserBaseVisitor<ASTNode>() {
 
-    private var scopeAST: BlockAST = ast
-    private var symbolTable = st
+    private var scopeAST: BlockAST = topAst
+    private var symbolTable = topSymbolTable
+
+    private val functionsToVisit: MutableMap<String, FuncContext> = mutableMapOf()
 
     companion object {
         private val LOG = Logger.getLogger(Visitor::class.java.name)
@@ -33,9 +36,7 @@ class Visitor(
         }
     }
 
-    override fun visitBeginEndStat(ctx: WaccParser.BeginEndStatContext):
-            ASTNode? {
-
+    override fun visitBeginEndStat(ctx: WaccParser.BeginEndStatContext): ASTNode {
         symbolTable = symbolTable.subScope()
         val node = visit(ctx.stat())
         symbolTable = symbolTable.parentScope()!!
@@ -54,6 +55,12 @@ class Visitor(
             """
         )
         val program = scopeAST as AST
+
+        log("Getting function names")
+        for (func in ctx.func()) {
+            functionsToVisit[func.ident().text] = func
+        }
+        log("Function names noted")
 
         log("Visiting function definitions")
         for (func in ctx.func()) {
@@ -74,7 +81,7 @@ class Visitor(
     }
 
     // TODO: handle array and pair return types
-    override fun visitFunc(ctx: WaccParser.FuncContext): ASTNode {
+    override fun visitFunc(ctx: FuncContext): ASTNode {
         val funcName = ctx.ident().text
         log(
             """Visiting function declaration
@@ -87,7 +94,10 @@ class Visitor(
         log(""" || Return type: $returnTypeName""")
 
         if (!symbolTable.isTopLevel()) {
-            throw DeclarationError("line: ${ctx.getStart().line} column: ${ctx.getStart().charPositionInLine} functions cannot be declared in this scope")
+            throw DeclarationError(
+                "line: ${ctx.getStart().line} column: ${ctx.getStart().charPositionInLine} " +
+                    "functions cannot be declared in this scope"
+            )
         }
 
         val t = TypeParser.parse(symbolTable, ctx.type())
@@ -386,24 +396,10 @@ class Visitor(
         val v = symbolTable.lookup(varName)
 
         when {
-            t == null -> {
-                throw TypeError(
-                    "line: ${type.getStart().line} column: ${
-                    type.getStart().charPositionInLine
-                    } unknown type $typeName"
-                )
-            }
-            t !is Type -> {
-                throw TypeError(
-                    "line: ${type.getStart().line} column: ${
-                    type.getStart().charPositionInLine
-                    } $typeName is not a type"
-                )
-            }
             !t.compatible(t) -> {
                 throw TypeError(
                     "line: ${type.getStart().line} column: ${
-                        type.getStart().charPositionInLine
+                    type.getStart().charPositionInLine
                     } return expression type does not match function return type"
                 )
             }
@@ -448,7 +444,7 @@ class Visitor(
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
         val arr = (symbolTable.lookupAll(ctx.ident().text) as Variable).type
-                as ArrayType
+            as ArrayType
         val indexList = mutableListOf<ExpressionAST>()
 
         for (expr in ctx.expr()) {
@@ -459,8 +455,10 @@ class Visitor(
             indexList.add(indexExpr)
         }
 
-        return ArrayElemAST(symbolTable, ctx.ident().text, indexList,
-            arr.elementType)
+        return ArrayElemAST(
+            symbolTable, ctx.ident().text, indexList,
+            arr.elementType
+        )
     }
 
     override fun visitNewPairAssignRhs(ctx: WaccParser.NewPairAssignRhsContext): ASTNode {
@@ -490,33 +488,49 @@ class Visitor(
     override fun visitCallAssignRhs(ctx: WaccParser.CallAssignRhsContext): ASTNode {
         val funcName = ctx.ident().text
         log("Visiting $funcName function call")
-        val f = symbolTable.lookupAll(funcName)
+        var f = symbolTable.lookupAll(funcName)
 
         val args: MutableList<WaccParser.ExprContext> = ctx.arg_list().expr()
 
-        when {
-            f == null -> {
+        when (f) {
+            null -> {
+                if (functionsToVisit.containsKey(funcName)) {
+                    log("Function $funcName called before it was defined!")
+                    val oldAst = scopeAST
+                    val oldSt = symbolTable
+                    // Go back to the top scope as that is the only place where functions can be
+                    // defined
+                    scopeAST = topAst
+                    symbolTable = topSymbolTable
+                    f = (visitFunc(functionsToVisit[funcName]!!) as FunctionDeclarationAST)
+                        .funcIdent
+                    scopeAST = oldAst
+                    symbolTable = oldSt
+                    functionsToVisit.remove(funcName)
+                }
+
                 throw IdentifierError(
                     "line: ${ctx.ident().getStart().line} column: ${
                     ctx.ident().getStart().charPositionInLine
                     } function $funcName not found"
                 )
             }
-            f !is FunctionType -> {
+            !is FunctionType -> {
                 throw TypeError(
                     "line: ${ctx.ident().getStart().line} column: ${
                     ctx.ident().getStart().charPositionInLine
                     } $funcName is not a function"
                 )
             }
-            f.formals.size != args.size -> {
-                throw ParameterError(
-                    "line: ${ctx.ident().getStart().line} column: ${
-                    ctx.ident().getStart().charPositionInLine
-                    } wrong number of arguments for $funcName: " +
-                        "expected ${f.formals.size}, got ${args.size}"
-                )
-            }
+        }
+
+        if ((f as FunctionType).formals.size != args.size) {
+            throw ParameterError(
+                "line: ${ctx.ident().getStart().line} column: ${
+                ctx.ident().getStart().charPositionInLine
+                } wrong number of arguments for $funcName: " +
+                    "expected ${f.formals.size}, got ${args.size}"
+            )
         }
 
         val funcCall = CallAST(symbolTable, funcName, f as FunctionType)
@@ -536,6 +550,8 @@ class Visitor(
 
         return funcCall
     }
+
+
 
     //endregion
 
