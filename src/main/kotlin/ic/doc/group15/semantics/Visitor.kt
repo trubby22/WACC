@@ -33,7 +33,7 @@ class Visitor(
 
         private fun log(message: String) {
 //            LOG.log(Level.FINE, message.trimMargin())
-            println(message.trimMargin())
+//            println(message.trimMargin())
         }
     }
 
