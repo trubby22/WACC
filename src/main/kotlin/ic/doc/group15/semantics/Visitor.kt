@@ -708,6 +708,10 @@ class Visitor(
         return visitBinaryExprHelper(binOp, ctx.expr(0), ctx.expr(1))
     }
 
+    override fun visitBracketExpr(ctx: WaccParser.BracketExprContext): ASTNode {
+        return visit(ctx.expr())
+    }
+
     //endregion
 
     //region helpers
