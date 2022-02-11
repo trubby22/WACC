@@ -23,7 +23,7 @@ class VariableIdentifierAST(
     symbolTable: SymbolTable,
     val varName: String,
     val varIdent: Variable
-) : ExpressionAST(type = varIdent.type)
+) : ExpressionAST(symbolTable, type = varIdent.type)
 
 class ArrayElemAST(
     symbolTable: SymbolTable,
@@ -36,15 +36,14 @@ class UnaryOpExprAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST,
     val operator: UnaryOp
-) : ExpressionAST(symbolTable, type = expr.type)
+) : ExpressionAST(symbolTable, type = operator.returnType)
 
 class BinaryOpExprAST(
     symbolTable: SymbolTable,
     val expr1: ExpressionAST,
     val expr2: ExpressionAST,
-    val operator: BinaryOp,
-    val exprType: Type
-) : ExpressionAST(symbolTable, type = exprType)
+    val operator: BinaryOp
+) : ExpressionAST(symbolTable, type = operator.returnType)
 
 class CallAST(
     symbolTable: SymbolTable,

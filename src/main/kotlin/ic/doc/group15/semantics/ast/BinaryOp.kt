@@ -1,22 +1,22 @@
 package ic.doc.group15.semantics.ast
 
-import ic.doc.group15.semantics.BasicType
+import ic.doc.group15.semantics.BasicType.*
 import ic.doc.group15.semantics.ReturnableType
 import ic.doc.group15.semantics.SymbolTable
-import ic.doc.group15.semantics.TypeError
 
-private val intOnly = setOf<ReturnableType>(BasicType.IntType)
-private val comparables = setOf<ReturnableType>(BasicType.IntType, BasicType.CharType)
-private val boolOnly = setOf<ReturnableType>(BasicType.BoolType)
+private val intOnly = setOf<ReturnableType>(IntType)
+private val comparables = setOf<ReturnableType>(IntType, CharType)
+private val boolOnly = setOf<ReturnableType>(BoolType)
 
 enum class BinaryOp(
-    private val allowedTypes: Set<ReturnableType>? = intOnly
+    private val allowedTypes: Set<ReturnableType>? = intOnly,
+    val returnType: ReturnableType = BoolType
 ) {
-    MULT,
-    DIV,
-    MOD,
-    PLUS,
-    MINUS,
+    MULT(returnType = IntType),
+    DIV(returnType = IntType),
+    MOD(returnType = IntType),
+    PLUS(returnType = IntType),
+    MINUS(returnType = IntType),
     GT(comparables),
     GTE(comparables),
     LT(comparables),
@@ -35,7 +35,7 @@ enum class BinaryOp(
             throw TypeError(
                 "operands of binary operation expressions must have the same type"
             )
-        } else if (allowedTypes != null && !allowedTypes!!.contains(expr1.type)) {
+        } else if (allowedTypes != null && !allowedTypes.contains(expr1.type)) {
             throw TypeError(
                 "cannot apply $this to arguments of type ${expr1.type}"
             )

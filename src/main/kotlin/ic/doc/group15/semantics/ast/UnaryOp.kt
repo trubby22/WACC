@@ -1,16 +1,18 @@
 package ic.doc.group15.semantics.ast
 
 import ic.doc.group15.semantics.*
+import ic.doc.group15.semantics.BasicType.*
 import kotlin.reflect.KClass
 
 enum class UnaryOp(
-    private val expectedTypeClass: KClass<out ReturnableType>
+    private val expectedTypeClass: KClass<out ReturnableType>,
+    val returnType: ReturnableType
 ) {
-    BANG(BasicType.BoolType::class),
-    MINUS(BasicType.IntType::class),
-    LEN(ArrayType::class),
-    ORD(BasicType.CharType::class),
-    CHR(BasicType.IntType::class);
+    BANG(BoolType::class, BoolType),
+    MINUS(IntType::class, IntType),
+    LEN(ArrayType::class, IntType),
+    ORD(CharType::class, IntType),
+    CHR(IntType::class, CharType);
 
     fun generateNode(
         st: SymbolTable,

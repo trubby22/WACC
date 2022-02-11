@@ -105,7 +105,7 @@ class Visitor(
             func.formals.add(visitParam(param) as ParameterAST)
         }
         scopeSymbols = scopeSymbols.parentScope()!!
-        scopeAST = scopeAST.parent!! as BlockAST
+        scopeAST = scopeAST.parent!!
 
         func.funcIdent = FunctionType(
             t as ReturnableType,
@@ -270,7 +270,7 @@ class Visitor(
 //
 //        return varAssign
 //    }
-    
+
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext?): ASTNode {
         return super.visitArray_elem(ctx)
     }
@@ -338,7 +338,7 @@ class Visitor(
         scopeSymbols = scopeSymbols.subScope()
         visit(ctx.stat()) as StatementAST
         scopeSymbols = scopeSymbols.parentScope()!!
-        scopeAST = scopeAST.parent!! as BlockAST
+        scopeAST = scopeAST.parent!!
 
         return addToScope(whileBlock)
     }
