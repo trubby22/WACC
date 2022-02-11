@@ -38,7 +38,11 @@ class Visitor(
     override fun visitProgram(ctx: WaccParser.ProgramContext): ASTNode {
         assert(symbolTable.isTopLevel())
 
-        log("Begin program semantic analysis")
+        log(
+            """----------------
+               |Begin program semantic analysis
+            """
+        )
         val program = scopeAST as AST
 
         log("Visiting function definitions")
@@ -49,7 +53,12 @@ class Visitor(
         log("Visiting main program")
         visit(ctx.stat())
 
-        log("Semantic analysis complete!")
+        log(
+            """Semantic analysis complete!
+               |----------------
+               |
+            """
+        )
 
         return program
     }
@@ -73,7 +82,6 @@ class Visitor(
 
         val t = TypeParser.parse(symbolTable, ctx.type())
         val f = symbolTable.lookup(funcName)
-        val rhs = visit(ctx.ident()) as ExpressionAST
 
         when {
             t !is ReturnableType -> {
@@ -90,13 +98,6 @@ class Visitor(
                     } type().function $funcName already declared"
                 )
             }
-            !t.compatible(rhs.type) -> {
-                throw TypeError(
-                    "line: ${ctx.type().getStart().line} column: ${
-                    ctx.type().getStart().charPositionInLine
-                    } return expression type does not match function return type"
-                )
-            }
         }
 
         val func = FunctionDeclarationAST(
@@ -107,22 +108,25 @@ class Visitor(
             """Visiting parameters of function ${func.funcName}"""
         )
 
+        // Add function identifier to symbol table so that it can be recursively accessed
+
+        val parentScope = symbolTable
+
         symbolTable = symbolTable.subScope()
         scopeAST = func
         for (param in ctx.param()) {
             func.formals.add(visitParam(param) as ParameterAST)
         }
-        symbolTable = symbolTable.parentScope()!!
-        scopeAST = scopeAST.parent!!
-
         func.funcIdent = FunctionType(
             t as ReturnableType,
             func.formals.map { p -> p.paramIdent },
             symbolTable
         )
-        symbolTable.add(funcName, func.funcIdent)
-
+        parentScope.add(funcName, func.funcIdent)
+        log("|| Visiting $funcName function body")
         visit(ctx.stat())
+        symbolTable = symbolTable.parentScope()!!
+        scopeAST = scopeAST.parent!!
 
         return func
     }
@@ -485,6 +489,7 @@ class Visitor(
 
     override fun visitCallAssignRhs(ctx: WaccParser.CallAssignRhsContext): ASTNode {
         val funcName = ctx.ident().text
+        log("Visiting $funcName function call")
         val f = symbolTable.lookupAll(funcName)
 
         val args: MutableList<WaccParser.ExprContext> = ctx.arg_list().expr()
