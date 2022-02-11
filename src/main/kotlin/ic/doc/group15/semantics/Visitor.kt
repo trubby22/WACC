@@ -383,8 +383,6 @@ class Visitor(
         val ident = ctx.ident()
         val varName = ident.text
 
-        visit(ctx.assign_rhs())
-
         log(
             """Visiting variable declaration 
                 || Type name: $typeName
@@ -398,6 +396,13 @@ class Visitor(
         val assignRhs = visit(ctx.assign_rhs()) as AssignRhsAST
 
         when {
+            v != null -> {
+                if (v !is FunctionType) {
+                    throw DeclarationError(
+                        "variable with name $varName has already been defined in this scope"
+                    )
+                }
+            }
             !t.compatible(assignRhs.type) -> {
                 throw TypeError(
                     "line: ${type.getStart().line} column: ${
