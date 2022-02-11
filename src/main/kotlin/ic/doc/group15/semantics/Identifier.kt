@@ -56,6 +56,9 @@ class ArrayType(val elementType: Type) : ReturnableType, HeapAllocatedType {
         if (type !is ArrayType) {
             return false
         }
+        if (elementType == Type.ANY || type.elementType == Type.ANY) {
+            return true
+        }
         return elementType.compatible(type.elementType)
     }
 }
@@ -90,11 +93,6 @@ class FunctionType(
     override fun compatible(type: Type): Boolean {
         if (type !is FunctionType || type.returnType != returnType) {
             return false
-        }
-        for (i in formals.indices) {
-//            if (!formals[i].type.compatible(type.formals[i].type)) {
-//                return false
-//            }
         }
         return true
     }
