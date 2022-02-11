@@ -79,6 +79,9 @@ class PairType(
         if (type !is PairType) {
             return false
         }
+        if (type.fstType == Type.ANY && type.sndType == Type.ANY) {
+            return true
+        }
         return fstType.compatible(type.fstType) && sndType.compatible(type.sndType)
     }
 }
