@@ -42,11 +42,8 @@ class VariableAssignmentAST(
 class ReadStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val varName: String
-) : StatementAST(parent, symbolTable) {
-
-    lateinit var varIdent: Variable
-}
+    val target: AssignmentAST
+) : StatementAST(parent, symbolTable)
 
 class SkipStatementAST(
     parent: BlockAST,

@@ -19,6 +19,8 @@ interface Type : Identifier {
 
 interface ReturnableType : Type
 
+interface HeapAllocatedType : Type
+
 data class Variable(val type: Type) : Identifier
 
 data class Param(val type: Type) : Identifier
@@ -46,7 +48,7 @@ enum class BasicType : ReturnableType {
     }
 }
 
-class ArrayType(val elementType: Type, val size: Int) : ReturnableType {
+class ArrayType(val elementType: Type, val size: Int) : ReturnableType, HeapAllocatedType {
     override fun compatible(type: Type): Boolean {
         if (type !is ArrayType) {
             return false
@@ -55,7 +57,10 @@ class ArrayType(val elementType: Type, val size: Int) : ReturnableType {
     }
 }
 
-class PairType(fstType: Type = Type.ANY, sndType: Type = Type.ANY) : ReturnableType {
+class PairType(
+    fstType: Type = Type.ANY,
+    sndType: Type = Type.ANY
+) : ReturnableType, HeapAllocatedType {
 
     val fstType: Type
     val sndType: Type
