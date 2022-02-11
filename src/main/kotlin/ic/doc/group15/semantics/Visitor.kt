@@ -443,7 +443,7 @@ class Visitor(
     }
 
     override fun visitPairElemAssignLhs(ctx: WaccParser.PairElemAssignLhsContext): ASTNode {
-        return AssignToPairElemAST(scopeAST, visit(ctx.pair_elem()) as FstPairElemAST)
+        return AssignToPairElemAST(scopeAST, visit(ctx.pair_elem()) as PairElemAST)
     }
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
