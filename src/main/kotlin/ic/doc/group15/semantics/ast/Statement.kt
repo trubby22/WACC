@@ -12,22 +12,15 @@ abstract class StatementAST protected constructor(
 open class VariableDeclarationAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val typeName: String,
-    val varName: String
-) : StatementAST(parent, symbolTable) {
-
-    lateinit var varIdent: Variable
-}
+    val varName: String,
+    val varIdent: Variable
+) : StatementAST(parent, symbolTable)
 
 class ParameterAST(
-    parent: BlockAST,
     symbolTable: SymbolTable,
-    typeName: String,
-    paramName: String
-) : VariableDeclarationAST(parent, symbolTable, typeName, paramName) {
-
-    lateinit var paramIdent: Param
-}
+    paramName: String,
+    override val ident: Param
+) : VariableIdentifierAST(symbolTable, paramName, ident)
 
 class ReadStatementAST(
     parent: BlockAST,

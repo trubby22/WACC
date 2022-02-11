@@ -137,7 +137,7 @@ class Visitor(
         }
         func.funcIdent = FunctionType(
             t as ReturnableType,
-            func.formals.map { p -> p.paramIdent },
+            func.formals.map { p -> p.ident },
             symbolTable
         )
         parentScope.add(funcName, func.funcIdent)
@@ -163,8 +163,7 @@ class Visitor(
             """
         )
 
-        val parameterAST =
-            ParameterAST(scopeAST, symbolTable, typeName, paramName)
+        val parameterAST: ParameterAST
 
         val t = TypeParser.parse(symbolTable, type)
         val p = symbolTable.lookup(paramName)
@@ -193,11 +192,11 @@ class Visitor(
                 }
             }
             else -> {
-                parameterAST.paramIdent = Param(t)
+                parameterAST = ParameterAST(symbolTable, paramName, Param(t))
             }
         }
 
-        symbolTable.add(paramName, parameterAST.paramIdent)
+        symbolTable.add(paramName, parameterAST.ident)
 
         return parameterAST
     }
@@ -331,7 +330,7 @@ class Visitor(
                     "line: ${ctx.expr().getStart().line} column: ${
                     ctx.expr().getStart().charPositionInLine
                     } return expression type ${expr.type} does not match function return " +
-                    "type $returnType"
+                        "type $returnType"
                 )
             }
         }
@@ -394,8 +393,10 @@ class Visitor(
         val t = TypeParser.parse(symbolTable, type)
         val v = symbolTable.lookup(varName)
 
+        val assignRhs = visit(ctx.assign_rhs()) as AssignRhsAST
+
         when {
-            !t.compatible(t) -> {
+            !t.compatible(assignRhs.type) -> {
                 throw TypeError(
                     "line: ${type.getStart().line} column: ${
                     type.getStart().charPositionInLine
@@ -404,8 +405,7 @@ class Visitor(
             }
         }
 
-        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, typeName, varName)
-        varDecl.varIdent = Variable(t)
+        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, typeName, Variable(t))
         symbolTable.add(varName, varDecl.varIdent)
 
         return varDecl
@@ -442,8 +442,11 @@ class Visitor(
     }
 
     override fun visitArray_elem(ctx: WaccParser.Array_elemContext): ASTNode {
-        val arr = (symbolTable.lookupAll(ctx.ident().text) as Variable).type
-            as ArrayType
+        val ident = visitIdent(ctx.ident()) as VariableIdentifierAST
+        if (ident.type !is ArrayType) {
+            throw TypeError("cannot index a non-array type")
+        }
+        val arr = (symbolTable.lookupAll(ident.varName) as Variable).type as ArrayType
         val indexList = mutableListOf<ExpressionAST>()
 
         for (expr in ctx.expr()) {

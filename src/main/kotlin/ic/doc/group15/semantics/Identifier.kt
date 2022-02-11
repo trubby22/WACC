@@ -1,5 +1,8 @@
 package ic.doc.group15.semantics
 
+import com.sun.jdi.CharType
+import ic.doc.group15.semantics.BasicType.StringType
+
 const val INT_MAX = Int.MAX_VALUE
 const val INT_MIN = Int.MIN_VALUE
 
@@ -48,17 +51,12 @@ enum class BasicType : ReturnableType {
     }
 }
 
-class ArrayType(val elementType: Type) : ReturnableType,
-    HeapAllocatedType {
+class ArrayType(val elementType: Type) : ReturnableType, HeapAllocatedType {
     override fun compatible(type: Type): Boolean {
         if (type !is ArrayType) {
             return false
         }
         return elementType.compatible(type.elementType)
-    }
-
-    fun getInnerType(): Type {
-        return elementType
     }
 }
 
