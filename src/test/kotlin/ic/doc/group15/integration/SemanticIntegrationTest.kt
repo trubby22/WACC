@@ -1,4 +1,4 @@
-package ic.doc.group15
+package ic.doc.group15.integration
 
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
@@ -8,12 +8,13 @@ import ic.doc.group15.semantics.ast.AST
 import ic.doc.group15.semantics.ast.SemanticError
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-class SemanticTests {
+class SemanticIntegrationTest {
     private val validFolderPath = "wacc_examples/valid"
     private val invalidFolderPath = "wacc_examples/invalid"
 
@@ -21,6 +22,7 @@ class SemanticTests {
     inner class AdvancedValidFiles {
         private val advancedValidFileFolderPath = "$validFolderPath/advanced"
 
+        @Disabled
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(strings = ["binarySortTree", "hashTable", "ticTacToe"])
         fun testSemanticallyValid(fileName: String) {

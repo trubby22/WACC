@@ -1,4 +1,4 @@
-package ic.doc.group15
+package ic.doc.group15.unit
 
 //import ic.doc.group15.antlr.WaccLexer
 //import ic.doc.group15.antlr.WaccParser

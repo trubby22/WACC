@@ -5,14 +5,11 @@ import ic.doc.group15.antlr.WaccParser.FuncContext
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.semantics.ast.* // ktlint-disable no-unused-imports
 import java.util.*
-import java.util.logging.ConsoleHandler
-import java.util.logging.Handler
-import java.util.logging.Level
-import java.util.logging.Logger
 
 class Visitor(
     private val topAst: AST,
-    private val topSymbolTable: SymbolTable
+    private val topSymbolTable: SymbolTable,
+    private val enableLogging: Boolean = false
 ) : WaccParserBaseVisitor<ASTNode>() {
 
     private var scopeAST: BlockAST = topAst
@@ -20,22 +17,6 @@ class Visitor(
 
     private val functionsToVisit: MutableMap<String, FuncContext> = mutableMapOf()
     private val declaredFunctions: MutableMap<String, FunctionDeclarationAST> = mutableMapOf()
-
-    companion object {
-        private val LOG = Logger.getLogger(Visitor::class.java.name)
-        private val handler: Handler = ConsoleHandler()
-
-        init {
-            handler.level = Level.ALL
-            LOG.addHandler(handler)
-            LOG.level = Level.ALL
-        }
-
-        private fun log(message: String) {
-//            LOG.log(Level.FINE, message.trimMargin())
-//            println(message.trimMargin())
-        }
-    }
 
     override fun visitBeginEndStat(ctx: WaccParser.BeginEndStatContext): ASTNode {
         symbolTable = symbolTable.subScope()
@@ -821,6 +802,12 @@ class Visitor(
     private fun addToScope(stat: StatementAST): StatementAST {
         scopeAST.statements.add(stat)
         return stat
+    }
+
+    private fun log(message: String) {
+        if (enableLogging) {
+            println(message.trimMargin())
+        }
     }
 
     //endregion
