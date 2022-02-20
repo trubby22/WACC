@@ -426,7 +426,7 @@ class Visitor(
                 throw TypeError(
                     "line: ${type.getStart().line} column: ${
                     type.getStart().charPositionInLine
-                    } return expression type does not match function return type"
+                    } expression type ${assignRhs.type} does not match declaration type $t"
                 )
             }
         }

@@ -35,7 +35,7 @@ class ArrayLiteralAST(
     symbolTable: SymbolTable,
     elemType: Type,
     val elems: List<ExpressionAST>
-) : AssignRhsAST(symbolTable, ArrayType(elemType))
+) : AssignRhsAST(symbolTable, ArrayType(elemType, 1))
 
 class NewPairAST(
     symbolTable: SymbolTable,

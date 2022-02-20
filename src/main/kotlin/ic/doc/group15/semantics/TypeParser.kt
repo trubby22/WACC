@@ -53,17 +53,14 @@ class TypeParser {
         }
 
         private fun parse(symbolTable: SymbolTable, ctx: Array_typeContext): Type {
-            var type: Type
+            val type: Type
             if (ctx.pair_type() != null) {
                 type = parse(symbolTable, ctx.pair_type() as Pair_typeContext)
             } else {
                 assert(ctx.base_type() != null)
                 type = parse(symbolTable, ctx.base_type() as Base_typeContext)
             }
-            for (i in ctx.array_brackets()) {
-                type = ArrayType(type)
-            }
-            return type
+            return ArrayType(type, ctx.array_brackets().size)
         }
     }
 }

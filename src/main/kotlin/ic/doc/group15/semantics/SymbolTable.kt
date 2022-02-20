@@ -1,7 +1,5 @@
 package ic.doc.group15.semantics
 
-import java.util.regex.Pattern
-
 class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
 
     private val map: MutableMap<String, Identifier> = HashMap()
