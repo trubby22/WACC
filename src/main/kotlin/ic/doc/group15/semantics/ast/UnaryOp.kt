@@ -5,14 +5,15 @@ import ic.doc.group15.semantics.BasicType.*
 import kotlin.reflect.KClass
 
 enum class UnaryOp(
+    private val str: String,
     private val expectedTypeClass: KClass<out ReturnableType>,
     val returnType: ReturnableType
 ) {
-    BANG(BoolType::class, BoolType),
-    MINUS(IntType::class, IntType),
-    LEN(ArrayType::class, IntType),
-    ORD(CharType::class, IntType),
-    CHR(IntType::class, CharType);
+    BANG("!", BoolType::class, BoolType),
+    MINUS("-", IntType::class, IntType),
+    LEN("len", ArrayType::class, IntType),
+    ORD("ord", CharType::class, IntType),
+    CHR("chr", IntType::class, CharType);
 
     fun generateNode(
         st: SymbolTable,
@@ -20,7 +21,7 @@ enum class UnaryOp(
     ): UnaryOpExprAST {
         if (expectedTypeClass != expr.type::class) {
             throw TypeError(
-                "operands of binary operation expressions must have the same type"
+                "cannot apply $str to ${expr.type} type"
             )
         }
         return UnaryOpExprAST(st, expr, this)
