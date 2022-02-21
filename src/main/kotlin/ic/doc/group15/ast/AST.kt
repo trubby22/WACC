@@ -1,6 +1,6 @@
-package ic.doc.group15.semantics.ast
+package ic.doc.group15.ast
 
-import ic.doc.group15.semantics.SymbolTable
+import ic.doc.group15.SymbolTable
 
 abstract class ASTNode protected constructor(
     val symbolTable: SymbolTable = SymbolTable.emptyTable

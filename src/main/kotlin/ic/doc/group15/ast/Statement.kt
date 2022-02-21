@@ -1,8 +1,7 @@
-package ic.doc.group15.semantics.ast
+package ic.doc.group15.ast
 
-import ic.doc.group15.semantics.Param
-import ic.doc.group15.semantics.SymbolTable
-import ic.doc.group15.semantics.Variable
+import ic.doc.group15.SymbolTable
+import ic.doc.group15.type.*
 
 abstract class StatementAST protected constructor(
     val parent: BlockAST?,

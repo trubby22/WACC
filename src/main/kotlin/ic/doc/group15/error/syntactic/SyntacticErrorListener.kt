@@ -1,4 +1,4 @@
-package ic.doc.group15.error
+package ic.doc.group15.error.syntactic
 
 import org.antlr.v4.runtime.BaseErrorListener
 import org.antlr.v4.runtime.RecognitionException

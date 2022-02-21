@@ -1,6 +1,7 @@
-package ic.doc.group15.semantics.ast
+package ic.doc.group15.ast
 
-import ic.doc.group15.semantics.*
+import ic.doc.group15.SymbolTable
+import ic.doc.group15.type.*
 import java.util.*
 
 abstract class AssignRhsAST protected constructor(

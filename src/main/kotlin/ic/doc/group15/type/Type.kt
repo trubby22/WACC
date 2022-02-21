@@ -1,4 +1,6 @@
-package ic.doc.group15.semantics
+package ic.doc.group15.type
+
+import ic.doc.group15.SymbolTable
 
 const val INT_MAX = Int.MAX_VALUE
 const val INT_MIN = Int.MIN_VALUE
@@ -14,6 +16,10 @@ interface Type : Identifier {
 
         private class AnyType : Type {
             override fun compatible(type: Type): Boolean = true
+
+            override fun toString(): String {
+                return "any"
+            }
         }
     }
 }
@@ -70,6 +76,10 @@ class ArrayType(elementType: Type, dimension: Int) : ReturnableType, HeapAllocat
     val elementType: Type
     val dimension: Int
 
+    companion object {
+        val ANY_ARRAY = ArrayType(Type.ANY, 1)
+    }
+
     init {
         val type: Type
         val dim: Int
@@ -89,11 +99,11 @@ class ArrayType(elementType: Type, dimension: Int) : ReturnableType, HeapAllocat
         if (type !is ArrayType) {
             return false
         }
-        if (dimension != type.dimension) {
-            return false
-        }
         if (elementType == Type.ANY || type.elementType == Type.ANY) {
             return true
+        }
+        if (dimension != type.dimension) {
+            return false
         }
         assert(elementType !is ArrayType)
         assert(type.elementType !is ArrayType)
@@ -112,6 +122,10 @@ class PairType(
 
     val fstType: Type = if (fstType is PairType) PairType() else fstType
     val sndType: Type = if (sndType is PairType) PairType() else sndType
+
+    companion object {
+        val ANY_PAIR = PairType()
+    }
 
     override fun compatible(type: Type): Boolean {
         if (type !is PairType) {

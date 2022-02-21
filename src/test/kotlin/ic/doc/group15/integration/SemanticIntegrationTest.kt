@@ -2,10 +2,11 @@ package ic.doc.group15.integration
 
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
-import ic.doc.group15.semantics.SymbolTable
-import ic.doc.group15.semantics.Visitor
-import ic.doc.group15.semantics.ast.AST
-import ic.doc.group15.semantics.ast.SemanticError
+import ic.doc.group15.SymbolTable
+import ic.doc.group15.Visitor
+import ic.doc.group15.ast.AST
+import ic.doc.group15.error.SemanticErrorList
+import ic.doc.group15.error.semantic.SemanticError
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Disabled
@@ -521,8 +522,11 @@ class SemanticIntegrationTest {
 
         val st = SymbolTable.topLevel()
         val ast = AST(st)
-        val visitor = Visitor(ast, st)
+        val errors = SemanticErrorList()
+        val visitor = Visitor(ast, st, errors)
 
         visitor.visit(program)
+
+        errors.checkErrors()
     }
 }
