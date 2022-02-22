@@ -12,6 +12,7 @@ open class VariableDeclarationAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
     val varName: String,
+    val rhs: AssignRhsAST,
     val varIdent: Variable
 ) : StatementAST(parent, symbolTable)
 
