@@ -6,6 +6,10 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
 
     private val map: MutableMap<String, Identifier> = HashMap()
 
+    fun getMap() : MutableMap<String, Identifier> {
+        return map
+    }
+
     companion object {
 
         val emptyTable: SymbolTable = SymbolTable(null)

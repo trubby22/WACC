@@ -21,7 +21,7 @@ interface ReturnableType : Type
 
 interface HeapAllocatedType : Type
 
-open class Variable(val type: Type) : Identifier
+open class Variable(val type: Type, var stackPos : Int = Int.MIN_VALUE) : Identifier
 
 class Param(type: Type) : Variable(type)
 
