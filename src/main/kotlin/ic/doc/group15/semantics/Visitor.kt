@@ -337,7 +337,7 @@ class Visitor(
         log("actual return type: ${expr.type}")
 
         when {
-            !returnType.compatible(expr.type) -> {
+            ctx.RETURN() != null && !returnType.compatible(expr.type) -> {
                 throw TypeError(
                     "line: ${ctx.expr().getStart().line} column: ${
                     ctx.expr().getStart().charPositionInLine
@@ -355,6 +355,9 @@ class Visitor(
 
     override fun visitBaseReturnStat(ctx: WaccParser.BaseReturnStatContext):
         ASTNode? {
+        if (ctx.stat() != null) {
+            visit(ctx.stat())
+        }
         visit(ctx.return_stat())
 
         return null
