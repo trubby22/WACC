@@ -36,4 +36,5 @@ emulation-test-job:
     - when: manual
   script:
     - mvn package -DskipTests
+    - chmod +x wacc_examples/refCompile wacc_examples/refEmulate
     - mvn test -Dtest=ic.doc.group15.EmulationTests*
