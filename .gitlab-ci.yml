@@ -8,6 +8,9 @@ build-job:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
   script:
+    - which apk
+    - which apt-get
+    - apk update && apk upgrade && apk add -y ruby
     - mvn clean
     - mvn compile
 
