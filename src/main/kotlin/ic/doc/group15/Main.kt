@@ -47,5 +47,5 @@ fun main(args: Array<String>) {
             "       PUSH {lr}\n" +
             "       LDR r0, =0\n" +
             "       POP {pc}\n" +
-            "       .ltorg")
+            "       .ltorg\n")
 }
