@@ -21,6 +21,7 @@ interface ReturnableType : Type
 
 interface HeapAllocatedType : Type
 
+// we assign the stackPos to be Int.MIN_VALUE until stackPos is actually assigned
 open class Variable(val type: Type, var stackPos : Int = Int.MIN_VALUE) : Identifier
 
 class Param(type: Type) : Variable(type)

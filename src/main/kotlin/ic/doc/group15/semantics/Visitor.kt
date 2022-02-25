@@ -450,7 +450,7 @@ class Visitor(
             }
         }
 
-        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, typeName, Variable(t))
+        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, typeName, assignRhs, Variable(t))
         symbolTable.add(varName, varDecl.varIdent)
 
         return varDecl

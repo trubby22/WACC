@@ -1,24 +1,34 @@
 package ic.doc.group15.codegeneration
 
 import com.sun.jdi.BooleanType
+import com.sun.jdi.IntegerType
 import ic.doc.group15.semantics.*
 import ic.doc.group15.semantics.ast.*
 
+const val STACK_SIZE = 10000
+
 class ASTCodeGen {
 
-    var sp : Int = Int.MAX_VALUE;
+    var sp : Int = STACK_SIZE - 1
 
     companion object {
         // this map stores mappings of labels to the number of words they require for storage and the complete string
         var data : MutableMap<String, Pair<Int, String>> = mutableMapOf()
+
+        // any string literals in the code need to be defined at the top of the assembly file with a unique msg label
+        // so this bit of code is just for generating a new unique labels on demand
         var nextLabelNum = 0
-        fun nextLabelNum() : Int {
+        fun nextLabel() : String {
             nextLabelNum++
-            return nextLabelNum - 1
+            return "msg_" + (nextLabelNum - 1).toString()
         }
     }
 
-    fun createStackSpace(node : BlockAST) : Int {
+    // when we enter a block, we will prematurely calculate how much stack space that block will need by summing the
+    // size in bytes of each of the variables in its symbol table. then we will be able to decrement the stack pointer
+    // by this amount in one go leaving enough space for the execution of the entire block. the below function takes
+    // in a block and returns the amount of stack space it will require
+    fun requiredStackSpace(node : BlockAST) : Int {
         var stackSpace = 0
         val st = node.symbolTable
         val map = st.getMap()
@@ -33,130 +43,126 @@ class ASTCodeGen {
                 }
             }
         }
-        sp -= stackSpace
         return stackSpace
-        // check symbol table variables
-        // to see how much to move sp
-        // can then store the variables positions in the stack relative to the stack pointer in the symbol table (do here or in assign visitgen)
-        // do variable register colouring here? idk tho cus this is a tree and for so we will need to be able to see the order of variable use within the scope
     }
 
-    fun blockGen(block : BlockAST) {
-        var nextRelativeStackSlot = createStackSpace(block)
+    // generates the assembly code for a BlockAST node and returns the list of instructions
+    fun transBlock(block : BlockAST, resultReg: Int) : List<Instr> {
+        val instructions = mutableListOf<Instr>()
+        var stackSpace = requiredStackSpace(block)
+        sp -= stackSpace
         val statements : List<StatementAST> = block.statements
         for (stat in statements) {
             when (stat) {
-                is BlockAST -> blockGen(stat)
-                is VariableDeclarationAST -> {
-                    when (stat.varIdent.type) {
-                        BasicType.IntType -> { nextRelativeStackSlot -= 4
-                                               stat.varIdent.stackPos = sp + nextRelativeStackSlot
-                                               assignToIntIdentDeclarationGen(stat) }
-                        BasicType.BoolType -> { nextRelativeStackSlot -= 1
-                                                stat.varIdent.stackPos = sp + nextRelativeStackSlot
-                                                assignToBoolIdentDeclarationGen(stat) }
-                        BasicType.CharType -> { nextRelativeStackSlot -= 1
-                                                stat.varIdent.stackPos = sp + nextRelativeStackSlot
-                                                assignToCharIdentDeclarationGen(stat) }
-                        BasicType.StringType -> { nextRelativeStackSlot -= 4
-                                                  stat.varIdent.stackPos = sp + nextRelativeStackSlot
-                                                  assignToStringIdentDeclarationGen(stat) }
-                    }
-                    // need to go over rest of statement types
-                }
-                is AssignToIdentAST -> {
-                    when (stat.type) {
-                        BasicType.IntType -> assignToIntIdentGen(stat)
-                        BasicType.BoolType -> assignToBoolIdentGen(stat)
-                        BasicType.CharType -> assignToCharIdentGen(stat)
-                        BasicType.StringType -> assignToStringIdentGen(stat)
-                    }
-                }
+                is BlockAST -> instructions.addAll(transBlock(stat, resultReg))
+                is VariableDeclarationAST -> instructions.addAll(transVarDeclaration(stat, resultReg))
+                is AssignToIdentAST -> instructions.addAll(transVarAssignToIdent(stat, resultReg))
+                // complete remaining statement types...
             }
         }
+        sp += stackSpace
+        return instructions
     }
 
-    // need to evaluate the rhs of expressions before making assignment
-    fun evaluateIntExp() : Int {
-        return 0
+    // generates the assembly code for an ExpressionAST node and returns the list of instructions
+    fun transExp(expr: ExpressionAST, resultReg: Int) : List<Instr> {
+        val instructions: MutableList<Instr> = mutableListOf()
+        when (expr) {
+            is IntLiteralAST -> {
+                instructions.add(LDRimmInt(resultReg, expr.intValue))
+            }
+            is BoolLiteralAST -> {
+                instructions.add(MOVimmBool(resultReg, expr.boolValue))
+            }
+            is CharLiteralAST -> {
+                instructions.add(MOVimmChar(resultReg, expr.charValue))
+            }
+            is StringLiteralAST -> {
+                val label = nextLabel()
+                data.put(label, Pair(expr.stringValue.length, expr.stringValue))
+                instructions.add(LDRimmString(resultReg, label))
+            }
+            is VariableIdentifierAST -> {
+                when (expr.type) {
+                    BasicType.IntType -> instructions.add(LDRsp(resultReg, expr.ident.stackPos - sp))
+                    BasicType.BoolType -> instructions.add(LDRSBsp(resultReg, expr.ident.stackPos - sp))
+                    BasicType.CharType -> instructions.add(LDRSBsp(resultReg, expr.ident.stackPos - sp))
+                    BasicType.StringType -> instructions.add(LDRsp(resultReg, expr.ident.stackPos - sp))
+                }
+            }
+            is BinaryOpExprAST -> instructions.addAll(transBinOp(expr, resultReg))
+        }
+        return instructions
     }
 
-    fun evaluateBoolExp() : Boolean {
-        return true
+    // generates the assembly code for a BinaryOpExprAST node and returns the list of instructions
+    fun transBinOp(expr: BinaryOpExprAST, resultReg : Int) : List<Instr> {
+        val instructions = mutableListOf<Instr>()
+        instructions.addAll(transExp(expr.expr1, resultReg))
+        instructions.addAll(transExp(expr.expr2, resultReg + 1))
+        when (expr.expr1.type) {
+            BasicType.IntType -> {
+                when (expr.operator) {
+                    BinaryOp.MULT -> instructions.add(SMULL(resultReg, resultReg + 1, resultReg, resultReg + 1))
+                    // BinaryOp.DIV -> dont rly know whats going on with this one ¯\_(ツ)_/¯
+                    // BinaryOp.MOD -> same here, seems like the reference compiler just has a spazm
+                    BinaryOp.PLUS -> instructions.add(ADDS(resultReg, resultReg, resultReg + 1))
+                    // complete remaining operators...
+
+                }
+            }
+            BasicType.BoolType -> {
+                instructions.addAll(transExp(expr.expr1, resultReg))
+                instructions.addAll(transExp(expr.expr2, resultReg + 1))
+                when (expr.operator) {
+                    BinaryOp.EQUALS -> instructions.addAll(mutableListOf(CMP(resultReg, resultReg + 1), MOVEQ(resultReg, true), MOVNE(resultReg, false)))
+                    BinaryOp.NOT_EQUALS -> instructions.addAll(mutableListOf(CMP(resultReg, resultReg + 1), MOVNE(resultReg, true), MOVEQ(resultReg, false)))
+                    // complete remaining operators...
+                }
+            }
+//          BasicType.CharType -> {
+//
+//          }
+//          BasicType.StringType -> {
+//
+//          }
+        }
+        return instructions
     }
 
-    fun evaluateCharExp() : Char {
-        return 'a'
+    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
+    fun transAssignRhs(node: AssignRhsAST, resultReg: Int) : List<Instr> {
+        val instructions = mutableListOf<Instr>()
+        when (node) {
+            is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
+            // complete remaining types...
+        }
+        return instructions
     }
 
-    fun evaluateStringExp() : String {
-        return "yep"
+    // generates assembly code for a VarialeDeclarationAST node and returns the list of instructions
+    fun transVarDeclaration(node: VariableDeclarationAST, resultReg: Int) : List<Instr> {
+        val instructions = mutableListOf<Instr>()
+        var spDecrement = 0
+        when (node.varIdent.type) {
+            BasicType.IntType -> spDecrement = 4
+            BasicType.BoolType -> spDecrement = 1
+            BasicType.CharType -> spDecrement = 1
+            BasicType.StringType -> spDecrement = 4
+        }
+        sp -= spDecrement
+        node.varIdent.stackPos = sp
+        instructions.add(STRsp(resultReg, node.varIdent.stackPos))
+        return instructions
     }
 
-    fun assignToIntIdentDeclarationGen(node: VariableDeclarationAST) : List<Instr> {
-        val rhsVal = evaluateIntExp(/* the right hand side of the expression wherever it is */)
-        val loadInstr = LDRimmInt(4, rhsVal) 
-        val storeInstr = STRsp(4, node.varIdent.stackPos)
-        return mutableListOf(loadInstr, storeInstr);
+    // this function will generate the assembly code for an AssignToIdentAST node and return the list of instructions
+    fun transVarAssignToIdent(node: AssignToIdentAST, resultReg: Int) : List<Instr> {
+        val instructions = mutableListOf<Instr>()
+        instructions.addAll(transAssignRhs(node.rhs, resultReg))
+        instructions.add(STRsp(resultReg, (node.lhs as VariableIdentifierAST).ident.stackPos)) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
+        return instructions
     }
-
-    fun assignToBoolIdentDeclarationGen(node: VariableDeclarationAST) : List<Instr> {
-        val rhsVal = evaluateBoolExp(/* the right hand side of the expression wherever it is */)
-        val moveInstr = MOVimmBool(4, rhsVal)
-        val storeInstr = STRBsp(4, node.varIdent.stackPos)
-        return mutableListOf(moveInstr, storeInstr);
-    }
-
-    fun assignToCharIdentDeclarationGen(node: VariableDeclarationAST) : List<Instr> {
-        val rhsVal = evaluateCharExp(/* the right hand side of the expression wherever it is */)
-        val moveInstr = MOVimmChar(4, rhsVal)
-        val storeInstr = STRBsp(4, node.varIdent.stackPos)
-        return mutableListOf(moveInstr, storeInstr);
-    }
-
-    fun assignToStringIdentDeclarationGen(node: VariableDeclarationAST) : List<Instr> {
-        val rhsVal = evaluateStringExp(/* the right hand side of the expression wherever it is */)
-        val label : String = "msg_" + nextLabelNum().toString()
-        data.put(label, Pair(rhsVal.length, rhsVal))
-        val loadInstr = LDRimmString(4, label)
-        val storeInstr = STRsp(4, node.varIdent.stackPos)
-        return mutableListOf(loadInstr, storeInstr);
-    }
-
-    fun assignToIntIdentGen(node: AssignToIdentAST) : List<Instr> {
-        //val identEntry = node.symbolTable.lookup(node.toString()) as IntVariable
-        val rhsVal: Int = evaluateIntExp(/* the right hand side of the expression wherever it is */)
-        val loadInstr = LDRimmInt(4, rhsVal) // put garbage placeholder register and stack pointer values for now
-        val storeInstr = STRsp(4, (node.lhs as VariableIdentifierAST).ident.stackPos)
-        return mutableListOf(loadInstr, storeInstr);
-    }
-
-    fun assignToBoolIdentGen(node: AssignToIdentAST) : List<Instr> {
-        val rhsVal: Boolean = evaluateBoolExp(/* the right hand side of the expression wherever it is */)
-        val moveInstr = MOVimmBool(4, rhsVal)
-        val storeInstr = STRBsp(4, (node.lhs as VariableIdentifierAST).ident.stackPos)
-        return mutableListOf(moveInstr, storeInstr);
-    }
-
-    fun assignToCharIdentGen(node: AssignToIdentAST) : List<Instr> {
-        val rhsVal: Char = evaluateCharExp(/* the right hand side of the expression wherever it is */)
-        val moveInstr = MOVimmChar(4, rhsVal)
-        val storeInstr = STRBsp(4, (node.lhs as VariableIdentifierAST).ident.stackPos)
-        return mutableListOf(moveInstr, storeInstr);
-    }
-
-    fun assignToStringIdentGen(node: AssignToIdentAST) : List<Instr> {
-        val rhsVal: String = evaluateStringExp(/* the right hand side of the expression wherever it is */)
-        val label : String = "msg_" + nextLabelNum().toString()
-        data.put(label, Pair(rhsVal.length, rhsVal))
-        val loadInstr = LDRimmString(4, label)
-        val storeInstr = STRsp(4, (node.lhs as VariableIdentifierAST).ident.stackPos)
-        return mutableListOf(loadInstr, storeInstr);
-    }
-
-    // so basically, declaration statements are in the AST as VariableDeclarationAST nodes and have an AssignRhsAST subchild for what it is assigned to
-    // and assignment statements are in the AST as AssigmentAST nodes and have an AssignRhsAST subchild for what it is assigned to
-    // AssignToIdent is a sub class of AssignmentAST for assigning to variables and is for when the variable already exists, otherwise it would be a VariableDeclarationAST but theres also AssignToArrayElemAST and AssignToPairElemAST for assigning to arrays and pairs
 }
 
 
