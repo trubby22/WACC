@@ -28,3 +28,12 @@ semantic-test-job:
   script:
     - mvn package -DskipTests
     - mvn test -Dtest=ic.doc.group15.SemanticTests*
+
+emulation-test-job:
+  stage: test
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+    - when: manual
+  script:
+    - mvn package -DskipTests
+    - mvn test -Dtest=ic.doc.group15.EmulationTests*
