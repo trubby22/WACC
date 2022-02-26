@@ -1,5 +1,6 @@
-package ic.doc.group15
+package ic.doc.group15.visitor
 
+import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccParser.*
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.ast.* // ktlint-disable no-unused-imports
@@ -67,7 +68,7 @@ class Visitor(
         return program
     }
 
-    override fun visitFunc(ctx: FuncContext): ASTNode? {
+    override fun visitFunc(ctx: FuncContext): ASTNode {
         val ident = ctx.ident()
         val funcName = ident.text
 
@@ -76,8 +77,9 @@ class Visitor(
         }
 
         if (!functionsToVisit.containsKey(funcName)) {
+            assert(declaredFunctions.containsKey(funcName))
             log("Function $funcName already declared!")
-            return declaredFunctions[funcName]
+            return declaredFunctions[funcName]!!
         }
 
         log(
@@ -257,7 +259,7 @@ class Visitor(
         return addToScope(ExitStatementAST(scopeAST, expr))
     }
 
-    override fun visitReturn_stat(ctx: Return_statContext): ASTNode {
+    override fun visitReturn_stat(ctx: Return_statContext): ASTNode? {
         log("Visiting return statement")
 
         var enclosingAST: BlockAST? = scopeAST
@@ -268,6 +270,7 @@ class Visitor(
 
         if (enclosingAST == null) {
             errors.addError(IllegalReturnStatementError(ctx.start))
+            return null
         }
 
         val func = enclosingAST as FunctionDeclarationAST
@@ -293,24 +296,24 @@ class Visitor(
         return addToScope(returnStat)
     }
 
-    override fun visitBaseReturnStat(ctx: BaseReturnStatContext): ASTNode? {
-        visit(ctx.return_stat())
-
-        return null
-    }
-
-    override fun visitSingleRecursiveReturnStat(ctx: SingleRecursiveReturnStatContext): ASTNode? {
-        visit(ctx.valid_return_stat())
-
-        return null
-    }
-
-    override fun visitDoubleRecursiveReturnStat(ctx: DoubleRecursiveReturnStatContext): ASTNode? {
-        visit(ctx.valid_return_stat(0))
-        visit(ctx.valid_return_stat(1))
-
-        return null
-    }
+//    override fun visitBaseReturnStat(ctx: BaseReturnStatContext): ASTNode {
+//        visit(ctx.return_stat())
+//
+//        return null
+//    }
+//
+//    override fun visitSingleRecursiveReturnStat(ctx: SingleRecursiveReturnStatContext): ASTNode {
+//        visit(ctx.valid_return_stat())
+//
+//        return null
+//    }
+//
+//    override fun visitDoubleRecursiveReturnStat(ctx: DoubleRecursiveReturnStatContext): ASTNode {
+//        visit(ctx.valid_return_stat(0))
+//        visit(ctx.valid_return_stat(1))
+//
+//        return null
+//    }
 
     override fun visitFreeStat(ctx: FreeStatContext): ASTNode {
         log("Visiting free statement")
@@ -417,10 +420,13 @@ class Visitor(
     override fun visitArray_elem(ctx: Array_elemContext): ASTNode {
         val identCtx = ctx.ident()
         val ident = visitIdent(identCtx) as VariableIdentifierAST
+        val arr: ArrayType
         if (ident.type !is ArrayType) {
             errors.addError(IndexingNonArrayTypeError(identCtx.start, ident.type))
+            arr = ArrayType.ANY_ARRAY
+        } else {
+            arr = (symbolTable.lookupAll(ident.varName) as Variable).type as ArrayType
         }
-        val arr = (symbolTable.lookupAll(ident.varName) as Variable).type as ArrayType
         val indexList = mutableListOf<ExpressionAST>()
 
         for (expr in ctx.expr()) {
@@ -495,41 +501,41 @@ class Visitor(
         }
         f = f as FunctionType
 
+        val actuals: MutableList<ExpressionAST> = LinkedList()
+
         if (f.formals.size != args.size) {
             errors.addError(
                 NumArgumentsError(ctx.arg_list().start, funcName, f.formals.size, args.size)
             )
-        }
-
-        val funcCall = CallAST(symbolTable, funcName, f)
-
-        for (k in args.indices) {
-            val arg = args[k]
-            val argExpr = visit(arg) as ExpressionAST
-            if (f.formals[k].type.compatible(argExpr.type)) {
-                errors.addError(
-                    ParameterTypeError(arg.start, funcName, k, f.formals[k].type, argExpr.type)
-                )
+        } else {
+            for (k in args.indices) {
+                val arg = args[k]
+                val argExpr = visit(arg) as ExpressionAST
+                if (f.formals[k].type.compatible(argExpr.type)) {
+                    errors.addError(
+                        ParameterTypeError(arg.start, funcName, k, f.formals[k].type, argExpr.type)
+                    )
+                }
+                actuals.add(argExpr)
             }
-            funcCall.actuals.add(argExpr)
         }
 
-        return funcCall
+        return CallAST(symbolTable, funcName, f, actuals)
     }
 
     //endregion
 
     //region literals
 
-    override fun visitIdent(ctx: IdentContext): ASTNode? {
+    override fun visitIdent(ctx: IdentContext): ASTNode {
         log("Visiting identifier with name ${ctx.text}")
-        val ident = symbolTable.lookupAll(ctx.text)
+        var ident = symbolTable.lookupAll(ctx.text)
         if (ident == null) {
             errors.addError(IdentifierNotDefinedError(ctx.start, ctx.text))
-            return null
+            ident = Variable.ANY_VAR
         } else if (ident !is Variable) {
             errors.addError(IdentifierNotAVariableError(ctx.start, ctx.text))
-            return null
+            ident = Variable.ANY_VAR
         }
         log("Identifier is variable with type ${ident.type}")
         return VariableIdentifierAST(symbolTable, ctx.text, ident)
@@ -590,7 +596,7 @@ class Visitor(
         return ArrayLiteralAST(symbolTable, elemType, elems)
     }
 
-    override fun visitUnaryExpr(ctx: UnaryExprContext): ASTNode? {
+    override fun visitUnaryExpr(ctx: UnaryExprContext): ASTNode {
         log("Visiting unary operator expression")
 
         val unOp: UnaryOp = when {

@@ -13,14 +13,21 @@ abstract class ErrorList<T : WaccError> protected constructor(private val errorC
         errors.add(error)
     }
 
-    fun checkErrors() {
-        if (errors.isEmpty()) {
-            return
-        }
+    fun hasErrors(): Boolean {
+        return errors.isNotEmpty()
+    }
+
+    fun printErrors() {
         for (e in errors) {
             println(e)
         }
-        exitProcess(errorCode)
+    }
+
+    fun checkErrors() {
+        if (hasErrors()) {
+            printErrors()
+            exitProcess(errorCode)
+        }
     }
 }
 

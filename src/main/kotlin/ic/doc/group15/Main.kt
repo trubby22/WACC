@@ -5,6 +5,7 @@ import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.ast.AST
+import ic.doc.group15.visitor.Visitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 

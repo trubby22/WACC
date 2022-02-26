@@ -28,7 +28,11 @@ interface ReturnableType : Type
 
 interface HeapAllocatedType : Type
 
-open class Variable(val type: Type) : Identifier
+open class Variable(val type: Type) : Identifier {
+    companion object {
+        val ANY_VAR = Variable(Type.ANY)
+    }
+}
 
 class Param(type: Type) : Variable(type)
 

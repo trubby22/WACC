@@ -62,8 +62,6 @@ class SndPairElemAST(
 class CallAST(
     symbolTable: SymbolTable,
     val funcName: String,
-    val funcIdent: FunctionType
-) : AssignRhsAST(symbolTable, funcIdent.returnType) {
-
-    val actuals: MutableList<ExpressionAST> = LinkedList()
-}
+    val funcIdent: FunctionType,
+    val actuals: MutableList<ExpressionAST>
+) : AssignRhsAST(symbolTable, funcIdent.returnType)

@@ -1,17 +1,17 @@
 package ic.doc.group15.integration
 
+import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
-import ic.doc.group15.SymbolTable
-import ic.doc.group15.Visitor
 import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
-import ic.doc.group15.error.semantic.SemanticError
+import ic.doc.group15.visitor.Visitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
@@ -27,7 +27,7 @@ class SemanticIntegrationTest {
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(strings = ["binarySortTree", "hashTable", "ticTacToe"])
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$advancedValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$advancedValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -43,7 +43,7 @@ class SemanticIntegrationTest {
             ]
         )
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$arrayFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$arrayFolderPath/$fileName.wacc"))
         }
     }
 
@@ -58,7 +58,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(strings = ["exit-1", "exitBasic", "exitBasic2", "exitWrap"])
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$exitFolderPath/$fileName.wacc")
+                assertTrue(isSemanticallyValid("$exitFolderPath/$fileName.wacc"))
             }
         }
 
@@ -69,7 +69,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(strings = ["comment", "commentInLine", "skip"])
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$skipFolderPath/$fileName.wacc")
+                assertTrue(isSemanticallyValid("$skipFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -91,7 +91,7 @@ class SemanticIntegrationTest {
             ]
         )
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$expressionsFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$expressionsFolderPath/$fileName.wacc"))
         }
     }
 
@@ -112,7 +112,7 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$nestedFunctionsFolderPath/$fileName.wacc")
+                assertTrue(isSemanticallyValid("$nestedFunctionsFolderPath/$fileName.wacc"))
             }
         }
 
@@ -130,7 +130,7 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$simpleFunctionsFolderPath/$fileName.wacc")
+                assertTrue(isSemanticallyValid("$simpleFunctionsFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -142,7 +142,7 @@ class SemanticIntegrationTest {
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(strings = ["if1", "if2", "if3", "if4", "if5", "if6", "ifBasic", "ifFalse", "ifTrue", "whitespace"])
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$ifValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$ifValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -153,7 +153,7 @@ class SemanticIntegrationTest {
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(strings = ["IOLoop", "IOSequence"])
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$ioValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$ioValidFileFolderPath/$fileName.wacc"))
         }
 
         @Nested
@@ -169,7 +169,7 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$printValidFileFolderPath/$fileName.wacc")
+                assertTrue(isSemanticallyValid("$printValidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -185,7 +185,7 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$readValidFileFolderPath/$fileName.wacc")
+                assertTrue(isSemanticallyValid("$readValidFileFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -203,7 +203,7 @@ class SemanticIntegrationTest {
             ]
         )
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$pairsValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$pairsValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -218,7 +218,12 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(strings = ["arrayNegBounds", "arrayOutOfBounds", "arrayOutOfBoundsWrite"])
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$arrayOutOfBoundsValidFileFolderPath/$fileName.wacc")
+                assertTrue(
+                    isSemanticallyValid(
+                        "$arrayOutOfBoundsValidFileFolderPath/$fileName" +
+                            ".wacc"
+                    )
+                )
             }
         }
 
@@ -229,7 +234,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(strings = ["divideByZero", "divZero", "modByZero"])
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$divideByZeroValidFileFolderPath/$fileName.wacc")
+                assertTrue(isSemanticallyValid("$divideByZeroValidFileFolderPath/$fileName.wacc"))
             }
         }
 
@@ -245,7 +250,12 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$integerOverflowValidFileFolderPath/$fileName.wacc")
+                assertTrue(
+                    isSemanticallyValid(
+                        "$integerOverflowValidFileFolderPath/$fileName" +
+                            ".wacc"
+                    )
+                )
             }
         }
 
@@ -256,7 +266,12 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(strings = ["freeNull", "readNull1", "readNull2", "setNull1", "setNull2", "useNull1", "useNull2"])
             fun testSemanticallyValid(fileName: String) {
-                isSemanticallyValid("$nullDereferenceValidFileFolderPath/$fileName.wacc")
+                assertTrue(
+                    isSemanticallyValid(
+                        "$nullDereferenceValidFileFolderPath/$fileName" +
+                            ".wacc"
+                    )
+                )
             }
         }
     }
@@ -274,7 +289,7 @@ class SemanticIntegrationTest {
             ]
         )
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$scopeValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$scopeValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -290,7 +305,7 @@ class SemanticIntegrationTest {
             ]
         )
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$sequenceValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$sequenceValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -307,7 +322,7 @@ class SemanticIntegrationTest {
             ]
         )
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$variablesValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$variablesValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -323,7 +338,7 @@ class SemanticIntegrationTest {
             ]
         )
         fun testSemanticallyValid(fileName: String) {
-            isSemanticallyValid("$whileValidFileFolderPath/$fileName.wacc")
+            assertTrue(isSemanticallyValid("$whileValidFileFolderPath/$fileName.wacc"))
         }
     }
 
@@ -338,7 +353,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["badCharExit", "exitNonInt", "globalReturn"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$exitInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -356,7 +371,7 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$expressionsInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -375,7 +390,7 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$functionInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -388,7 +403,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["ifIntCondition"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$ifInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -401,7 +416,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["readTypeErr"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$ioInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -414,7 +429,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["funcMess", "ifAndWhileErrs", "messyExpr", "multiCaseSensitivity", "multiTypeErrs"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$multipleInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -427,7 +442,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["freeNonPair", "fstNull", "sndNull"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$pairsInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -440,7 +455,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["printTypeErr01"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$printInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -453,7 +468,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["readTypeErr01"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$readInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -466,7 +481,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["badScopeRedefine"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$scopeInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -486,7 +501,7 @@ class SemanticIntegrationTest {
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$variableInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -499,7 +514,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is not semantically valid")
             @ValueSource(strings = ["falsErr", "truErr", "whileIntCondition"])
             fun testSemanticallyValid(fileName: String) {
-                assertThrows<SemanticError> {
+                assertFalse {
                     isSemanticallyValid("$whileInvalidFileFolderPath/$fileName.wacc")
                 }
             }
@@ -512,7 +527,7 @@ class SemanticIntegrationTest {
      * @param path Path to the file to be checked semantically.
      * @exception ic.doc.group15.semantics.ast.SemanticError
      */
-    private fun isSemanticallyValid(path: String) {
+    private fun isSemanticallyValid(path: String): Boolean {
         val input = CharStreams.fromFileName(path)
         val lexer = WaccLexer(input)
         val tokens = CommonTokenStream(lexer)
@@ -527,6 +542,10 @@ class SemanticIntegrationTest {
 
         visitor.visit(program)
 
-        errors.checkErrors()
+        if (errors.hasErrors()) {
+            println(path)
+            errors.printErrors()
+        }
+        return !errors.hasErrors()
     }
 }
