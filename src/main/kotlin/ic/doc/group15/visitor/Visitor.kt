@@ -285,7 +285,7 @@ class Visitor(
         log("actual return type: ${expr.type}")
 
         when {
-            !returnType.compatible(expr.type) -> {
+            ctx.RETURN() != null && !returnType.compatible(expr.type) -> {
                 errors.addError(ReturnTypeError(ctx.expr().start, returnType, expr.type))
             }
         }
@@ -296,24 +296,14 @@ class Visitor(
         return addToScope(returnStat)
     }
 
-//    override fun visitBaseReturnStat(ctx: BaseReturnStatContext): ASTNode {
-//        visit(ctx.return_stat())
-//
-//        return null
-//    }
-//
-//    override fun visitSingleRecursiveReturnStat(ctx: SingleRecursiveReturnStatContext): ASTNode {
-//        visit(ctx.valid_return_stat())
-//
-//        return null
-//    }
-//
-//    override fun visitDoubleRecursiveReturnStat(ctx: DoubleRecursiveReturnStatContext): ASTNode {
-//        visit(ctx.valid_return_stat(0))
-//        visit(ctx.valid_return_stat(1))
-//
-//        return null
-//    }
+    override fun visitBaseReturnStat(ctx: BaseReturnStatContext): ASTNode? {
+        if (ctx.stat() != null) {
+            visit(ctx.stat())
+        }
+        visit(ctx.return_stat())
+
+        return null
+    }
 
     override fun visitFreeStat(ctx: FreeStatContext): ASTNode {
         log("Visiting free statement")

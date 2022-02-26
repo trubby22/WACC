@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -23,7 +22,6 @@ class SemanticIntegrationTest {
     inner class AdvancedValidFiles {
         private val advancedValidFileFolderPath = "$validFolderPath/advanced"
 
-        @Disabled
         @ParameterizedTest(name = "check {0} source code is semantically valid")
         @ValueSource(strings = ["binarySortTree", "hashTable", "ticTacToe"])
         fun testSemanticallyValid(fileName: String) {
