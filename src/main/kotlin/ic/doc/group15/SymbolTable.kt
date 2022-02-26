@@ -1,6 +1,7 @@
-package ic.doc.group15.semantics
+package ic.doc.group15
 
-import java.util.regex.Pattern
+import ic.doc.group15.type.* // ktlint-disable no-unused-imports
+import ic.doc.group15.type.BasicType.*
 
 class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
 
@@ -15,10 +16,10 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
         val emptyTable: SymbolTable = SymbolTable(null)
 
         private val basicTypes = mapOf(
-            Pair("int", BasicType.IntType),
-            Pair("bool", BasicType.BoolType),
-            Pair("char", BasicType.CharType),
-            Pair("string", BasicType.StringType),
+            Pair("int", IntType),
+            Pair("bool", BoolType),
+            Pair("char", CharType),
+            Pair("string", StringType),
             Pair("pair", PairType())
         )
 

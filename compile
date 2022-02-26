@@ -3,5 +3,5 @@
 # You are free to change the language used for this script,
 # but do *not* change its name.
 
-system("java -jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar < #{ARGV[0]}")
+system("java -jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar #{ARGV[0]} < #{ARGV[0]}")
 exit $?.exitstatus
