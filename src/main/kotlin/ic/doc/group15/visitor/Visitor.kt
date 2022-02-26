@@ -507,17 +507,20 @@ class Visitor(
             errors.addError(
                 NumArgumentsError(ctx.arg_list().start, funcName, f.formals.size, args.size)
             )
-        } else {
-            for (k in args.indices) {
-                val arg = args[k]
-                val argExpr = visit(arg) as ExpressionAST
-                if (f.formals[k].type.compatible(argExpr.type)) {
-                    errors.addError(
-                        ParameterTypeError(arg.start, funcName, k, f.formals[k].type, argExpr.type)
-                    )
-                }
-                actuals.add(argExpr)
+        }
+
+        for (k in args.indices) {
+            if (k >= f.formals.size) {
+                break
             }
+            val arg = args[k]
+            val argExpr = visit(arg) as ExpressionAST
+            if (!f.formals[k].type.compatible(argExpr.type)) {
+                errors.addError(
+                    ParameterTypeError(arg.start, funcName, k, f.formals[k].type, argExpr.type)
+                )
+            }
+            actuals.add(argExpr)
         }
 
         return CallAST(symbolTable, funcName, f, actuals)
