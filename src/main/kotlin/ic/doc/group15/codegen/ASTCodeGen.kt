@@ -17,10 +17,16 @@ class ASTCodeGen {
 
         // any string literals in the code need to be defined at the top of the assembly file with a unique msg label
         // so this bit of code is just for generating a new unique labels on demand
-        var nextLabelNum = 0
-        fun nextLabel() : String {
-            nextLabelNum++
-            return "msg_" + (nextLabelNum - 1).toString()
+        var nextStringLabel = 0
+        fun nextStringLabel() : String {
+            nextStringLabel++
+            return "msg_" + (nextStringLabel - 1).toString()
+        }
+
+        var nextBranchLabel = 0
+        fun nextBranchLabel() : String {
+            nextBranchLabel++
+            return "L" + (nextBranchLabel - 1).toString()
         }
     }
 
@@ -47,26 +53,84 @@ class ASTCodeGen {
     }
 
     // generates the assembly code for a BlockAST node and returns the list of instructions
-    fun transBlock(block : BlockAST, resultReg: Int) : List<Instr> {
-        val instructions = mutableListOf<Instr>()
+    fun transBlock(block : BlockAST, resultReg: Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
         var stackSpace = requiredStackSpace(block)
         sp -= stackSpace
         val statements : List<StatementAST> = block.statements
         for (stat in statements) {
-            when (stat) {
-                is BlockAST -> instructions.addAll(transBlock(stat, resultReg))
-                is VariableDeclarationAST -> instructions.addAll(transVarDeclaration(stat, resultReg))
-                is AssignToIdentAST -> instructions.addAll(transVarAssignToIdent(stat, resultReg))
-                // complete remaining statement types...
-            }
+            transStat(stat, resultReg)
         }
         sp += stackSpace
         return instructions
     }
 
+    // generates the assembly code for a StatementAST node and returns the list of instructions
+    fun transStat(stat : StatementAST, resultReg: Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        when (stat) {
+            is BlockAST -> instructions.addAll(transBlock(stat, resultReg))
+            is VariableDeclarationAST -> instructions.addAll(transVarDeclaration(stat, resultReg))
+            is AssignToIdentAST -> instructions.addAll(transVarAssignToIdent(stat, resultReg))
+            is IfBlockAST -> instructions.addAll(transIfBlock(stat, resultReg))
+            // complete remaining statement types...
+        }
+        return instructions
+    }
+
+    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
+    fun transVarDeclaration(node: VariableDeclarationAST, resultReg: Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        var spDecrement = 0
+        when (node.varIdent.type) {
+            BasicType.IntType -> spDecrement = 4
+            BasicType.BoolType -> spDecrement = 1
+            BasicType.CharType -> spDecrement = 1
+            BasicType.StringType -> spDecrement = 4
+        }
+        sp -= spDecrement
+        node.varIdent.stackPos = sp
+        instructions.add(STRsp(resultReg, node.varIdent.stackPos))
+        return instructions
+    }
+
+    // this function will generate the assembly code for an AssignToIdentAST node and return the list of instructions
+    fun transVarAssignToIdent(node: AssignToIdentAST, resultReg: Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        instructions.addAll(transAssignRhs(node.rhs, resultReg))
+        instructions.add(STRsp(resultReg, (node.lhs as VariableIdentifierAST).ident.stackPos)) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
+        return instructions
+    }
+
+    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
+    fun transAssignRhs(node: AssignRhsAST, resultReg: Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        when (node) {
+            is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
+            // complete remaining types...
+        }
+        return instructions
+    }
+
+    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
+    fun transIfBlock(stat : IfBlockAST, resultReg: Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        instructions.addAll(transExp(stat.condExpr, resultReg))
+        instructions.add(CMPimm(resultReg, 0))
+        val elseLabel = nextBranchLabel()
+        instructions.add(BEQ(elseLabel))
+        instructions.addAll(transStat(stat.thenStat, resultReg))
+        val endLabel = nextBranchLabel()
+        instructions.add(B(endLabel))
+        instructions.add(Label(elseLabel))
+        instructions.addAll(transStat(stat.elseStat, resultReg))
+        instructions.add(Label(endLabel))
+        return instructions
+    }
+
     // generates the assembly code for an ExpressionAST node and returns the list of instructions
-    fun transExp(expr: ExpressionAST, resultReg: Int) : List<Instr> {
-        val instructions: MutableList<Instr> = mutableListOf()
+    fun transExp(expr: ExpressionAST, resultReg: Int) : List<Line> {
+        val instructions: MutableList<Line> = mutableListOf()
         when (expr) {
             is IntLiteralAST -> {
                 instructions.add(LDRimmInt(resultReg, expr.intValue))
@@ -78,7 +142,7 @@ class ASTCodeGen {
                 instructions.add(MOVimmChar(resultReg, expr.charValue))
             }
             is StringLiteralAST -> {
-                val label = nextLabel()
+                val label = nextStringLabel()
                 data.put(label, Pair(expr.stringValue.length, expr.stringValue))
                 instructions.add(LDRimmString(resultReg, label))
             }
@@ -96,11 +160,11 @@ class ASTCodeGen {
     }
 
     // generates the assembly code for a BinaryOpExprAST node and returns the list of instructions
-    fun transBinOp(expr: BinaryOpExprAST, resultReg : Int) : List<Instr> {
-        val instructions = mutableListOf<Instr>()
+    fun transBinOp(expr: BinaryOpExprAST, resultReg : Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(expr.expr1, resultReg))
         instructions.addAll(transExp(expr.expr2, resultReg + 1))
-        when (expr.expr1.type) {
+        when (expr.type) {
             BasicType.IntType -> {
                 when (expr.operator) {
                     BinaryOp.MULT -> instructions.add(SMULL(resultReg, resultReg + 1, resultReg, resultReg + 1))
@@ -115,8 +179,8 @@ class ASTCodeGen {
                 instructions.addAll(transExp(expr.expr1, resultReg))
                 instructions.addAll(transExp(expr.expr2, resultReg + 1))
                 when (expr.operator) {
-                    BinaryOp.EQUALS -> instructions.addAll(mutableListOf(CMP(resultReg, resultReg + 1), MOVEQ(resultReg, true), MOVNE(resultReg, false)))
-                    BinaryOp.NOT_EQUALS -> instructions.addAll(mutableListOf(CMP(resultReg, resultReg + 1), MOVNE(resultReg, true), MOVEQ(resultReg, false)))
+                    BinaryOp.EQUALS -> instructions.addAll(mutableListOf(CMPimm(resultReg, resultReg + 1), MOVEQ(resultReg, true), MOVNE(resultReg, false)))
+                    BinaryOp.NOT_EQUALS -> instructions.addAll(mutableListOf(CMPimm(resultReg, resultReg + 1), MOVNE(resultReg, true), MOVEQ(resultReg, false)))
                     // complete remaining operators...
                 }
             }
@@ -127,40 +191,6 @@ class ASTCodeGen {
 //
 //          }
         }
-        return instructions
-    }
-
-    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
-    fun transAssignRhs(node: AssignRhsAST, resultReg: Int) : List<Instr> {
-        val instructions = mutableListOf<Instr>()
-        when (node) {
-            is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
-            // complete remaining types...
-        }
-        return instructions
-    }
-
-    // generates assembly code for a VarialeDeclarationAST node and returns the list of instructions
-    fun transVarDeclaration(node: VariableDeclarationAST, resultReg: Int) : List<Instr> {
-        val instructions = mutableListOf<Instr>()
-        var spDecrement = 0
-        when (node.varIdent.type) {
-            BasicType.IntType -> spDecrement = 4
-            BasicType.BoolType -> spDecrement = 1
-            BasicType.CharType -> spDecrement = 1
-            BasicType.StringType -> spDecrement = 4
-        }
-        sp -= spDecrement
-        node.varIdent.stackPos = sp
-        instructions.add(STRsp(resultReg, node.varIdent.stackPos))
-        return instructions
-    }
-
-    // this function will generate the assembly code for an AssignToIdentAST node and return the list of instructions
-    fun transVarAssignToIdent(node: AssignToIdentAST, resultReg: Int) : List<Instr> {
-        val instructions = mutableListOf<Instr>()
-        instructions.addAll(transAssignRhs(node.rhs, resultReg))
-        instructions.add(STRsp(resultReg, (node.lhs as VariableIdentifierAST).ident.stackPos)) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
         return instructions
     }
 }

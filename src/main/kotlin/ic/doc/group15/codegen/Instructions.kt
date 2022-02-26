@@ -1,6 +1,14 @@
 package ic.doc.group15.codegeneration
 
-abstract class Instr
+abstract class Line
+
+abstract class Instr : Line() {
+    private var label : String = ""
+
+    fun setLabel(label : String) {
+        this.label = label
+    }
+}
 
 class LDRimmInt(val regNum: Int, val loadVal: Int) : Instr()
 class LDRimmString(val regNum: Int, val loadVal: String) : Instr()
@@ -13,6 +21,11 @@ class STRBsp(val regNum: Int, val spPos: Int) : Instr()
 class ADDS(val reg1: Int, val reg2: Int, val re3: Int) : Instr()
 class AND(val reg1: Int, val reg2: Int, val re3: Int) : Instr()
 class SMULL(val reg1: Int, val reg2: Int, val reg3: Int, val reg4: Int) : Instr()
-class CMP(val reg1: Int, val reg2: Int) : Instr()
+class CMPreg(val reg1: Int, val reg2: Int) : Instr()
+class CMPimm(val reg1: Int, val value: Int) : Instr()
 class MOVEQ(val regNum: Int, val value: Boolean) : Instr()
 class MOVNE(val regNum: Int, val value: Boolean) : Instr()
+class BEQ(val label : String) : Instr()
+class B(val label : String) : Instr()
+
+class Label(val label: String) : Line()
