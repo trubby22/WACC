@@ -10,16 +10,16 @@ abstract class Instr : Line() {
     }
 }
 
-class LDRimmInt(val reg: Int, val loadVal: Int) : Instr()
-class LDRimmString(val reg: Int, val loadVal: String) : Instr()
-class LDRsp(val reg: Int, val spOffset: Int) : Instr()
-class LDRSBsp(val reg: Int, val spOffset: Int) : Instr()
-class MOVimmBool(val reg : Int, val movVal : Boolean) : Instr()
-class MOVimmChar(val reg : Int, val movVal : Char) : Instr()
+class LDRimmInt(val reg: Int, val loadVal: Int) : Instr() // LDR r4, =5
+class LDRimmString(val reg: Int, val loadVal: String) : Instr() // LDR r4, =msg_0
+class LDRsp(val reg: Int, val spOffset: Int) : Instr() // LDR r4, [sp, #4]
+class LDRSBsp(val reg: Int, val spOffset: Int) : Instr() // LDRSB r4, [sp, #1]
+class MOVimmBool(val reg : Int, val movVal : Boolean) : Instr() // MOV r4, #1
+class MOVimmChar(val reg : Int, val movVal : Char) : Instr() // e.g. MOV r4, #'c'
 class MOVreg(val reg1 : Int, val reg2: Int) : Instr()
 class MOVEQ(val reg: Int, val value: Boolean) : Instr()
 class MOVNE(val reg: Int, val value: Boolean) : Instr()
-class STRsp(val reg: Int, val spPos: Int) : Instr()
+class STRsp(val reg: Int, val spPos: Int) : Instr() // STR r4, [sp]
 class STRBsp(val reg: Int, val spPos: Int) : Instr()
 class ADDS(val reg1: Int, val reg2: Int, val re3: Int) : Instr()
 class ADD(val reg1: Int, val reg2: Int, val value: Int) : Instr()

@@ -5,11 +5,11 @@ import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Identifier
 import ic.doc.group15.type.Variable
 
-const val STACK_SIZE = 10000
+const val START_VAL = 0
 
 class ASTCodeGen {
 
-    var sp: Int = STACK_SIZE - 1
+    var sp: Int = START_VAL - 1
 
     companion object {
         // this map stores mappings of labels to the number of words they require for storage and the complete string
@@ -65,7 +65,7 @@ class ASTCodeGen {
         sp -= stackSpace
         val statements: List<StatementAST> = block.statements
         for (stat in statements) {
-            transStat(stat, resultReg)
+            instructions.addAll(transStat(stat, resultReg))
         }
         sp += stackSpace
         return instructions
@@ -78,7 +78,7 @@ class ASTCodeGen {
             is SkipStatementAST -> {}
             is VariableDeclarationAST -> instructions.addAll(transVarDeclaration(stat, resultReg))
             is AssignToIdentAST -> instructions.addAll(transVarAssignToIdent(stat, resultReg))
-            is ReadStatementAST -> instructions.addAll(transReadStatement(stat, resultReg))
+            // is ReadStatementAST -> instructions.addAll(transReadStatement(stat, resultReg)) // needs to add instructions to the end
             is IfBlockAST -> instructions.addAll(transIfBlock(stat, resultReg))
             is BlockAST -> instructions.addAll(transBlock(stat, resultReg))
             // complete remaining statement types...
@@ -98,6 +98,7 @@ class ASTCodeGen {
         }
         sp -= spDecrement
         node.varIdent.stackPos = sp
+        instructions.addAll(transAssignRhs(node.rhs, resultReg))
         instructions.add(STRsp(resultReg, node.varIdent.stackPos))
         return instructions
     }
@@ -106,7 +107,7 @@ class ASTCodeGen {
     fun transVarAssignToIdent(node: AssignToIdentAST, resultReg: Int): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
-        instructions.add(STRsp(resultReg, (node.lhs as VariableIdentifierAST).ident.stackPos)) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
+        instructions.add(STRsp(resultReg, (node.lhs as VariableIdentifierAST).ident.stackPos - sp)) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
         return instructions
     }
 
@@ -181,7 +182,7 @@ class ASTCodeGen {
                 instructions.add(MOVimmChar(resultReg, expr.charValue))
             }
             is StringLiteralAST -> {
-                val label = nextStringLabel()
+                val label : String = nextStringLabel()
                 data.put(label, Pair(expr.stringValue.length, expr.stringValue))
                 instructions.add(LDRimmString(resultReg, label))
             }
