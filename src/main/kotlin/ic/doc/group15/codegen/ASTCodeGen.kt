@@ -28,6 +28,12 @@ class ASTCodeGen {
             nextBranchLabel++
             return "L" + (nextBranchLabel - 1).toString()
         }
+
+        // throughout the program there may be calls to (inbuilt?) functions like p_read_int the implementation of which
+        // you can find in the reference compiler. if any of the functions have been called, then we need to add their
+        // implementation to our instructions list. to avoid adding them twice, we store a map that tells us which of them
+        // have been defined so far
+        val defined : MutableMap<String, Boolean> = mutableMapOf(Pair("p_read_int", false)) // add all other predefined functions functions
     }
 
     // when we enter a block, we will prematurely calculate how much stack space that block will need by summing the
@@ -69,10 +75,12 @@ class ASTCodeGen {
     fun transStat(stat : StatementAST, resultReg: Int) : List<Line> {
         val instructions = mutableListOf<Line>()
         when (stat) {
-            is BlockAST -> instructions.addAll(transBlock(stat, resultReg))
+            is SkipStatementAST -> {}
             is VariableDeclarationAST -> instructions.addAll(transVarDeclaration(stat, resultReg))
             is AssignToIdentAST -> instructions.addAll(transVarAssignToIdent(stat, resultReg))
+            is ReadStatementAST -> instructions.addAll(transReadStatement(stat, resultReg))
             is IfBlockAST -> instructions.addAll(transIfBlock(stat, resultReg))
+            is BlockAST -> instructions.addAll(transBlock(stat, resultReg))
             // complete remaining statement types...
         }
         return instructions
@@ -109,6 +117,37 @@ class ASTCodeGen {
             is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
             // complete remaining types...
         }
+        return instructions
+    }
+
+    // generates the assembly code for an ReadStatementAST node and returns the list of instructions
+    fun transReadStatement(node : ReadStatementAST, resultReg: Int) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        when(node.target.type) {
+            BasicType.IntType -> {
+                instructions.add(ADDspImm(resultReg, 0))
+                instructions.add(MOVreg(0, resultReg))
+                instructions.add(BL("p_read_int"))
+                instructions.addAll(define_p_read_int())
+            }
+            // complete remaining types...
+        }
+        return instructions
+    }
+
+    // returns the code for the p_read_int instruction
+    fun define_p_read_int() : List<Line> {
+        val label = nextStringLabel()
+        data.put(label, Pair(3, "%d\\0"))
+        val instructions = mutableListOf<Line>(
+            Label("p_read_int"),
+            PUSHlr(),
+            MOVreg(1, 0),
+            LDRimmString(0, label),
+            ADD(0, 0, 5),
+            BL("scanf"),
+            POPpc())
+        defined["p_read_int"] = true
         return instructions
     }
 
