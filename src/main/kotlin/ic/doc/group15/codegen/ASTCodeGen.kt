@@ -124,7 +124,7 @@ class ASTCodeGen {
     fun transReadStatement(node : ReadStatementAST, resultReg: Int) : List<Line> {
         val instructions = mutableListOf<Line>()
         when(node.target.type) {
-            BasicType.IntType -> {
+            IntType -> {
                 instructions.add(ADDspImm(resultReg, 0))
                 instructions.add(MOVreg(0, resultReg))
                 instructions.add(BL("p_read_int"))
@@ -222,10 +222,10 @@ class ASTCodeGen {
                     // complete remaining operators...
                 }
             }
-//          BasicType.CharType -> {
+//          .CharType -> {
 //
 //          }
-//          BasicType.StringType -> {
+//          .StringType -> {
 //
 //          }
         }
