@@ -1,6 +1,7 @@
-package ic.doc.group15.semantics.ast
+package ic.doc.group15.ast
 
-import ic.doc.group15.semantics.*
+import ic.doc.group15.SymbolTable
+import ic.doc.group15.type.*
 import java.util.*
 
 abstract class AssignRhsAST protected constructor(
@@ -35,7 +36,7 @@ class ArrayLiteralAST(
     symbolTable: SymbolTable,
     elemType: Type,
     val elems: List<ExpressionAST>
-) : AssignRhsAST(symbolTable, ArrayType(elemType))
+) : AssignRhsAST(symbolTable, ArrayType(elemType, 1))
 
 class NewPairAST(
     symbolTable: SymbolTable,
@@ -61,8 +62,6 @@ class SndPairElemAST(
 class CallAST(
     symbolTable: SymbolTable,
     val funcName: String,
-    val funcIdent: FunctionType
-) : AssignRhsAST(symbolTable, funcIdent.returnType) {
-
-    val actuals: MutableList<ExpressionAST> = LinkedList()
-}
+    val funcIdent: FunctionType,
+    val actuals: MutableList<ExpressionAST>
+) : AssignRhsAST(symbolTable, funcIdent.returnType)

@@ -1,4 +1,4 @@
-package ic.doc.group15
+package ic.doc.group15.integration
 
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
@@ -10,7 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 // Verify that parsing works properly
-class SyntacticTests {
+class SyntacticIntegrationTest {
 
     private val validFolderPath = "wacc_examples/valid"
     private val invalidFolderPath = "wacc_examples/invalid"

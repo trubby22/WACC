@@ -20,9 +20,14 @@ all:
 test:
 	$(MVN) test
 
+asm:
+	rm *.s
+
 # clean up all of the compiled files
-clean:
+clean-mvn:
 	$(MVN) clean
 	$(RM) $(ANTLR_DIR_1) $(ANTLR_DIR_2) $(GEN_DIR_1) $(GEN_DIR_2)
 
-.PHONY: all test clean
+clean: clean-mvn asm
+
+.PHONY: all test clean-mvn asm clean
