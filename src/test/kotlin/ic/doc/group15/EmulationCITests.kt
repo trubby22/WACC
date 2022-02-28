@@ -154,7 +154,8 @@ class EmulationCITests {
 
         assertEquals(0, exitCode1)
 
-        val expectedLst = File("model_output/$path").readLines()
+        val txtPath = path.substring(0, path.length - 4) + "txt"
+        val expectedLst = File("model_output/$txtPath").readLines()
         val actualLst = actual.split("\n")
 
         val actualOutput = actualLst.subList(0, actualLst.size - 1)
