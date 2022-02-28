@@ -124,15 +124,14 @@ class EmulationTests {
         val emulate =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "echo '' | ./wacc_examples/refEmulate $asmFilename"
+                "echo '' | ./wacc_examples/refEmulate $asmFilename 2>&1"
             ).start()
 
-        try {
-            val exitCode = emulate.waitFor()
-            assertEquals(0, exitCode)
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+//        try {
+        val exitCode = emulate.waitFor()
+//        } catch (e: InterruptedException) {
+//            e.printStackTrace()
+//        }
 
 //        println("Emulate completed")
 
@@ -141,10 +140,15 @@ class EmulationTests {
             StandardCharsets.UTF_8.name()
         ).trim()
 
+        println("actual:")
+        println(actual)
+
+        assertEquals(0, exitCode)
+
         val modelSolution =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "echo '' | ./wacc_examples/refCompile -ax $path"
+                "echo '' | ./wacc_examples/refCompile -ax $path 2>&1"
             ).start()
 
         try {
