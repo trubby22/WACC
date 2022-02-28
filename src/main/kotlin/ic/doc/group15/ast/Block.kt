@@ -30,8 +30,12 @@ class IfBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
     val condExpr: ExpressionAST,
-    val thenStat: StatementAST,
-    val elseStat: StatementAST
+    val elseStat: ElseBlockAST
+) : BlockAST(parent, symbolTable)
+
+class ElseBlockAST(
+    parent: IfBlockAST,
+    symbolTable: SymbolTable
 ) : BlockAST(parent, symbolTable)
 
 class WhileBlockAST(

@@ -1,6 +1,7 @@
-package ic.doc.group15.codegeneration
+package ic.doc.group15.codegen
 
 import ic.doc.group15.ast.*
+import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Identifier
 import ic.doc.group15.type.Variable
@@ -11,23 +12,12 @@ class ASTCodeGen {
 
     var sp: Int = START_VAL - 1
 
+    private val stringLabel = UniqueStringLabel()
+    private val branchLabel = UniqueBranchLabel()
+
     companion object {
         // this map stores mappings of labels to the number of words they require for storage and the complete string
         var data: MutableMap<String, Pair<Int, String>> = mutableMapOf()
-
-        // any string literals in the code need to be defined at the top of the assembly file with a unique msg label
-        // so this bit of code is just for generating a new unique labels on demand
-        var nextStringLabel = 0
-        fun nextStringLabel(): String {
-            nextStringLabel++
-            return "msg_" + (nextStringLabel - 1).toString()
-        }
-
-        var nextBranchLabel = 0
-        fun nextBranchLabel(): String {
-            nextBranchLabel++
-            return "L" + (nextBranchLabel - 1).toString()
-        }
 
         val funcDefs : MutableList<Line> = mutableListOf()
 
@@ -64,17 +54,15 @@ class ASTCodeGen {
         val instructions = mutableListOf<Line>()
         val statements: List<StatementAST> = program.statements
         for (stat in statements) {
-            if (stat is FunctionDeclarationAST) {
-                //instructions.addAll(transFunctionDeclaration(stat))
-            } else if (stat is StatementAST) {
-                instructions.addAll(transStat(stat, 4))
-            }
+            instructions.addAll(transStat(stat, 4))
         }
         return instructions
     }
 
+    //region statement
+
     // generates the assembly code for a BlockAST node and returns the list of instructions
-    fun transBlock(block: BlockAST, resultReg: Int): List<Line> {
+    fun transStat(block: BlockAST, resultReg: Int): List<Line> {
         val instructions = mutableListOf<Line>()
         var stackSpace = requiredStackSpace(block)
         sp -= stackSpace
@@ -88,23 +76,8 @@ class ASTCodeGen {
         return instructions
     }
 
-    // generates the assembly code for a StatementAST node and returns the list of instructions
-    fun transStat(stat: StatementAST, resultReg: Int): List<Line> {
-        val instructions = mutableListOf<Line>()
-        when (stat) {
-            is SkipStatementAST -> {}
-            is VariableDeclarationAST -> instructions.addAll(transVarDeclaration(stat, resultReg))
-            is AssignToIdentAST -> instructions.addAll(transVarAssignToIdent(stat, resultReg))
-            is ReadStatementAST -> instructions.addAll(transReadStatement(stat, resultReg)) // needs to add instructions to the end
-            is IfBlockAST -> instructions.addAll(transIfBlock(stat, resultReg))
-            is BlockAST -> instructions.addAll(transBlock(stat, resultReg))
-            // complete remaining statement types...
-        }
-        return instructions
-    }
-
     // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transVarDeclaration(node: VariableDeclarationAST, resultReg: Int): List<Line> {
+    fun transStat(node: VariableDeclarationAST, resultReg: Int): List<Line> {
         val instructions = mutableListOf<Line>()
         var spDecrement = 0
         when (node.varIdent.type) {
@@ -121,25 +94,15 @@ class ASTCodeGen {
     }
 
     // this function will generate the assembly code for an AssignToIdentAST node and return the list of instructions
-    fun transVarAssignToIdent(node: AssignToIdentAST, resultReg: Int): List<Line> {
+    fun transStat(node: AssignToIdentAST, resultReg: Int): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
         instructions.add(STRsp(resultReg, (node.lhs as VariableIdentifierAST).ident.stackPos - sp)) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
         return instructions
     }
 
-    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
-    fun transAssignRhs(node: AssignRhsAST, resultReg: Int): List<Line> {
-        val instructions = mutableListOf<Line>()
-        when (node) {
-            is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
-            // complete remaining types...
-        }
-        return instructions
-    }
-
     // generates the assembly code for an ReadStatementAST node and returns the list of instructions
-    fun transReadStatement(node : ReadStatementAST, resultReg: Int) : List<Line> {
+    fun transStat(node : ReadStatementAST, resultReg: Int) : List<Line> {
         val instructions = mutableListOf<Line>()
         when(node.target.type) {
             IntType -> {
@@ -153,9 +116,39 @@ class ASTCodeGen {
         return instructions
     }
 
+    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
+    fun transBlock(ifBlock: IfBlockAST, resultReg: Int, instructions : List<Line>): List<Line> {
+        val instructions = mutableListOf<Line>()
+        instructions.addAll(transExp(ifBlock.condExpr, resultReg))
+        instructions.add(CMPimm(resultReg, 0))
+        val elseLabel = branchLabel.generate()
+        instructions.add(BEQ(elseLabel))
+        for (stat in ifBlock.statements) {
+            instructions.addAll(transStat(stat, resultReg))
+        }
+        val endLabel = branchLabel.generate()
+        instructions.add(B(endLabel))
+        instructions.add(Label(elseLabel))
+        instructions.addAll(transStat(ifBlock.elseStat, resultReg))
+        instructions.add(Label(endLabel))
+        return instructions
+    }
+
+    //endregion
+
+    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
+    fun transAssignRhs(node: AssignRhsAST, resultReg: Int): List<Line> {
+        val instructions = mutableListOf<Line>()
+        when (node) {
+            is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
+            // complete remaining types...
+        }
+        return instructions
+    }
+
     // returns the code for the p_read_int instruction
     fun define_p_read_int() {
-        val label = nextStringLabel()
+        val label = stringLabel.generate()
         data.put(label, Pair(3, "%d\\0"))
         funcDefs.addAll(mutableListOf(
             Label("p_read_int"),
@@ -164,24 +157,9 @@ class ASTCodeGen {
             LDRimmString(0, label),
             ADD(0, 0, 5),
             BL("scanf"),
-            POPpc()))
+            POPpc()
+        ))
         defined["p_read_int"] = true
-    }
-
-    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transIfBlock(stat: IfBlockAST, resultReg: Int, instructions : List<Line>): List<Line> {
-        val instructions = mutableListOf<Line>()
-        instructions.addAll(transExp(stat.condExpr, resultReg))
-        instructions.add(CMPimm(resultReg, 0))
-        val elseLabel = nextBranchLabel()
-        instructions.add(BEQ(elseLabel))
-        instructions.addAll(transStat(stat.thenStat, resultReg))
-        val endLabel = nextBranchLabel()
-        instructions.add(B(endLabel))
-        instructions.add(Label(elseLabel))
-        instructions.addAll(transStat(stat.elseStat, resultReg))
-        instructions.add(Label(endLabel))
-        return instructions
     }
 
     // generates the assembly code for an ExpressionAST node and returns the list of instructions
@@ -198,7 +176,7 @@ class ASTCodeGen {
                 instructions.add(MOVimmChar(resultReg, expr.charValue))
             }
             is StringLiteralAST -> {
-                val label : String = nextStringLabel()
+                val label : String = stringLabel.generate()
                 data.put(label, Pair(expr.stringValue.length, expr.stringValue))
                 instructions.add(LDRimmString(resultReg, label))
             }
