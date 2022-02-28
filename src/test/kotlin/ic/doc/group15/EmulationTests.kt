@@ -109,12 +109,12 @@ class EmulationTests {
                         "$path < $path"
             ).start()
 
-//        try {
-        val exitCode1 = compile.waitFor()
-        assertEquals(0, exitCode1)
-//        } catch (e: InterruptedException) {
-//            e.printStackTrace()
-//        }
+        try {
+            val exitCode = compile.waitFor()
+            assertEquals(0, exitCode)
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
 
 //        println("Compile completed")
 
@@ -127,11 +127,12 @@ class EmulationTests {
                 "echo '' | ./wacc_examples/refEmulate $asmFilename"
             ).start()
 
-//        try {
-        val exitCode2 = emulate.waitFor()
-//        } catch (e: InterruptedException) {
-//            e.printStackTrace()
-//        }
+        try {
+            val exitCode = emulate.waitFor()
+            assertEquals(0, exitCode)
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
 
 //        println("Emulate completed")
 
@@ -140,21 +141,18 @@ class EmulationTests {
             StandardCharsets.UTF_8.name()
         ).trim()
 
-        println(actual)
-
-        assertEquals(0, exitCode2)
-
         val modelSolution =
             ProcessBuilder(
                 "/bin/bash", "-c",
                 "echo '' | ./wacc_examples/refCompile -ax $path"
             ).start()
 
-//        try {
-        val exitCode3 = modelSolution.waitFor()
-//        } catch (e: InterruptedException) {
-//            e.printStackTrace()
-//        }
+        try {
+            val exitCode = modelSolution.waitFor()
+            assertEquals(0, exitCode)
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
 
 //        println("ModelSolution completed")
 
@@ -162,10 +160,6 @@ class EmulationTests {
             modelSolution.inputStream,
             StandardCharsets.UTF_8.name()
         ).trim()
-
-        println(expected)
-
-        assertEquals(0, exitCode3)
 
         val actualOutput = actual
             .split("-- Emulation Output:\n")[1]
