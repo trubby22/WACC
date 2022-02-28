@@ -98,7 +98,7 @@ class EmulationCITests {
     private fun checkAssembly(path: String): Boolean {
 
 //        Compile and emulate a wacc program and check against model solution
-//        coming from refCompile -x
+//        coming from refCompile -x (and stored under model_output/ for speed)
 
 //        println("Testing $path")
 
@@ -184,17 +184,15 @@ class EmulationCITests {
             println()
         }
 
-        if (!success) {
-            println("Expected exit code: $expectedExitCode")
-            println("Actual exit code: $actualExitCode")
-
-            println("Expected output:")
-            println(expectedOutput)
-            println("Actual output:")
-            println(actualOutput)
-        }
-
-//        println("Path: $path")
+//        if (!success) {
+//            println("Expected exit code: $expectedExitCode")
+//            println("Actual exit code: $actualExitCode")
+//
+//            println("Expected output:")
+//            println(expectedOutput)
+//            println("Actual output:")
+//            println(actualOutput)
+//        }
 
         return success
     }
