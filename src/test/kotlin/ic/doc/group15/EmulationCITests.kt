@@ -12,11 +12,7 @@ class EmulationCITests {
 
     private val validFolder = "wacc_examples/valid"
 
-//    @Test
-//    fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/advanced")
-//    }
-//
+
 //    @Test
 //    fun arrayEmulationProducesRightExitCodesAndOutput() {
 //        checkAssemblyFolder("$validFolder/array")
@@ -89,9 +85,8 @@ class EmulationCITests {
         val res = Files.walk(Paths.get(path))
             .filter(Files::isRegularFile)
             .filter { path -> path.toString().endsWith(".wacc") }
-            .filter { path -> !path.toString().endsWith("IOLoop.wacc") }
-            .filter { path -> !path.toString().endsWith("ticTacToe.wacc") }
-            .filter { path -> !path.toString().endsWith("hashTable.wacc") }
+            .filter { path -> !path.toString().endsWith("IOLoop.wacc") } //
+                // IOLoop.wacc gives ugly output - need to test by hand
             .map {
                 checkAssembly(
                     it.toString())
