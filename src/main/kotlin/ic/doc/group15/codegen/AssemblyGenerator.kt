@@ -2,6 +2,7 @@ package ic.doc.group15.codegen
 
 import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
+import ic.doc.group15.codegen.assembly.UtilFunction.P_READ_INT
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Identifier
 import ic.doc.group15.type.Variable
@@ -18,6 +19,7 @@ class AssemblyGenerator {
      * Contains info for raw data in memory, such as string literals.
      */
     private val data: MutableMap<String, Data> = mutableMapOf()
+    private val utilData: MutableMap<String, Data> = mutableMapOf()
 
     /**
      * Represents the ".text" section of the assembly code.
@@ -25,6 +27,7 @@ class AssemblyGenerator {
      * Contains labels that can be branched to, and the main function.
      */
     private val text: MutableMap<String, BranchLabel> = mutableMapOf()
+    private val utilText: MutableMap<String, BranchLabel> = mutableMapOf()
 
     private val stringLabel = UniqueStringLabel()
     private val branchLabel = UniqueBranchLabel()
@@ -107,10 +110,10 @@ class AssemblyGenerator {
         val instructions = mutableListOf<Line>()
         when(node.target.type) {
             IntType -> {
+                defineUtilFuncs(P_READ_INT)
                 instructions.add(ADDspImm(resultReg, 0))
                 instructions.add(MOVreg(0, resultReg))
-                instructions.add(BL("p_read_int"))
-                define_p_read_int()
+                instructions.add(BL(P_READ_INT.labelName))
             }
             // complete remaining types...
         }
@@ -118,7 +121,7 @@ class AssemblyGenerator {
     }
 
     // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transBlock(ifBlock: IfBlockAST, resultReg: Int, instructions : List<Line>): List<Line> {
+    fun transBlock(ifBlock: IfBlockAST, resultReg: Int): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(ifBlock.condExpr, resultReg))
         instructions.add(CMPimm(resultReg, 0))
@@ -147,22 +150,6 @@ class AssemblyGenerator {
         return instructions
     }
 
-    // returns the code for the p_read_int instruction
-    fun define_p_read_int() {
-        val label = stringLabel.generate()
-        data.put(label, Pair(3, "%d\\0"))
-        funcDefs.addAll(mutableListOf(
-            Label("p_read_int"),
-            PUSHlr(),
-            MOVreg(1, 0),
-            LDRimmString(0, label),
-            ADD(0, 0, 5),
-            BL("scanf"),
-            POPpc()
-        ))
-        defined["p_read_int"] = true
-    }
-
     // generates the assembly code for an ExpressionAST node and returns the list of instructions
     fun transExp(expr: ExpressionAST, resultReg: Int): List<Line> {
         val instructions: MutableList<Line> = mutableListOf()
@@ -178,7 +165,7 @@ class AssemblyGenerator {
             }
             is StringLiteralAST -> {
                 val label : String = stringLabel.generate()
-                data.put(label, Pair(expr.stringValue.length, expr.stringValue))
+                data.put(label, StringData(label, expr.stringValue))
                 instructions.add(LDRimmString(resultReg, label))
             }
             is VariableIdentifierAST -> {
@@ -226,5 +213,16 @@ class AssemblyGenerator {
 //          }
         }
         return instructions
+    }
+
+    private fun defineUtilFuncs(vararg funcs: UtilFunction) {
+        funcs.forEach { func ->
+            if (!utilText.containsKey(func.labelName)) {
+                func.dataBlocks.forEach {
+                    utilData[it.name] = it
+                }
+                utilText[func.labelName] = func.labelBlock
+            }
+        }
     }
 }

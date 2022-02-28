@@ -8,7 +8,7 @@ abstract class Data protected constructor(
     vararg lines: DataLine
 ) : Label<DataLine>(labelName, Word(byteSize), *lines)
 
-class StringData(name: String, val str: String) : Data(name, str.length, Ascii(str))
+class StringData(name: String, val str: String) : Data(name, str.length + 1, Ascii(str))
 
 private class Word(val byteSize: Int) : DataLine() {
     override fun toString(): String {

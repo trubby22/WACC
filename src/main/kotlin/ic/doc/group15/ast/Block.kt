@@ -30,7 +30,7 @@ class IfBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
     val condExpr: ExpressionAST,
-    val elseStat: ElseBlockAST
+    val elseStat: ElseBlockAST?
 ) : BlockAST(parent, symbolTable)
 
 class ElseBlockAST(

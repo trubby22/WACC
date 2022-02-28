@@ -2,7 +2,7 @@ package ic.doc.group15.codegen.assembly
 
 import java.util.concurrent.atomic.AtomicInteger
 
-abstract class UniqueLabel protected constructor(private val startingString: String) {
+open class UniqueLabel(private val startingString: String) {
 
     private val counter = AtomicInteger(0)
 

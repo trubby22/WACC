@@ -1,6 +1,9 @@
 package ic.doc.group15.codegen.assembly
 
-class BranchLabel(name: String) : Label<Instruction>(name)
+class BranchLabel : Label<Instruction> {
+    constructor(name: String, lines: List<Instruction>) : super(name, lines)
+    constructor(name: String) : super(name)
+}
 
 class LDRimmInt(val reg: Int, val loadVal: Int) : Instruction() // LDR r4, =5
 class LDRimmString(val reg: Int, val loadVal: String) : Instruction() // LDR r4, =msg_0
