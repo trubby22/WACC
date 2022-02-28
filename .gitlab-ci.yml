@@ -13,7 +13,7 @@ build-job:
     - mvn clean
     - mvn package -DskipTests
 
-general-test-job:
+syntactic-test-job:
   stage: test
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
@@ -21,20 +21,14 @@ general-test-job:
   dependencies:
     - build-job
   script:
-    - mvn surefire:test
+    - mvn surefire:test -Dtest=ic.doc.group15.SyntacticTests*
 
-#syntactic-test-job:
-#  stage: test
-#  rules:
-#    - if: '$CI_COMMIT_REF_NAME == "master"'
-#    - when: manual
-#  script:
-#    - mvn surefire:test -Dtest=ic.doc.group15.SyntacticTests*
-#
-#semantic-test-job:
-#  stage: test
-#  rules:
-#    - if: '$CI_COMMIT_REF_NAME == "master"'
-#    - when: manual
-#  script:
-#    - mvn surefire:test -Dtest=ic.doc.group15.SemanticTests*
+semantic-test-job:
+  stage: test
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+    - when: manual
+  dependencies:
+    - build-job
+  script:
+    - mvn surefire:test -Dtest=ic.doc.group15.SemanticTests*
