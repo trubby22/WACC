@@ -11,70 +11,70 @@ class EmulationTests {
 
     private val validFolder = "wacc_examples/valid"
 
-//    @Test
-//    fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/advanced")
-//    }
-//
-//    @Test
-//    fun arrayEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/array")
-//    }
+    @Test
+    fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/advanced")
+    }
+
+    @Test
+    fun arrayEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/array")
+    }
 
     @Test
     fun basicEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/basic")
     }
 
-//    @Test
-//    fun expressionsEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/expressions")
-//    }
-//
-//    @Test
-//    fun functionEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/function")
-//    }
-//
-//    @Test
-//    fun ifEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/if")
-//    }
-//
-//    @Test
-//    fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/IO")
-//    }
-//
-//    @Test
-//    fun pairsEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/pairs")
-//    }
-//
-//    @Test
-//    fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/runtimeErr")
-//    }
-//
-//    @Test
-//    fun scopeEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/scope")
-//    }
-//
-//    @Test
-//    fun sequenceEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/sequence")
-//    }
-//
-//    @Test
-//    fun variablesEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/variables")
-//    }
-//
-//    @Test
-//    fun whileEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/while")
-//    }
+    @Test
+    fun expressionsEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/expressions")
+    }
+
+    @Test
+    fun functionEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/function")
+    }
+
+    @Test
+    fun ifEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/if")
+    }
+
+    @Test
+    fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/IO")
+    }
+
+    @Test
+    fun pairsEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/pairs")
+    }
+
+    @Test
+    fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/runtimeErr")
+    }
+
+    @Test
+    fun scopeEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/scope")
+    }
+
+    @Test
+    fun sequenceEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/sequence")
+    }
+
+    @Test
+    fun variablesEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/variables")
+    }
+
+    @Test
+    fun whileEmulationProducesRightExitCodesAndOutput() {
+        checkAssemblyFolder("$validFolder/while")
+    }
 
     private fun checkAssemblyFolder(path: String) {
         val res = Files.walk(Paths.get(path))
@@ -119,19 +119,27 @@ class EmulationTests {
 //        println("Compile completed")
 
         val filename = path.split("/").last()
-        val asmFilename = filename.substring(0, filename.length - 4) + "s"
+        val executable = filename.substring(0, filename.length - 4)
+        val asmFilename = executable + "s"
+
+        val emulateOnline = "./wacc_examples/refEmulate $asmFilename"
+        val emulateLocal = "arm-linux-gnueabi-gcc -o $executable " +
+                "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $asmFilename; " +
+                "qemu-arm -L /usr/arm-linux-gnueabi $executable"
 
         val emulate =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "echo '' | ./wacc_examples/refEmulate $asmFilename 2>&1"
+                "echo '' | $emulateLocal 2>&1"
             ).start()
 
-//        try {
-        val exitCode = emulate.waitFor()
-//        } catch (e: InterruptedException) {
-//            e.printStackTrace()
-//        }
+        var exitCode1 = -1
+
+        try {
+            exitCode1 = emulate.waitFor()
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
 
 //        println("Emulate completed")
 
@@ -140,10 +148,10 @@ class EmulationTests {
             StandardCharsets.UTF_8.name()
         ).trim()
 
-        println("actual:")
-        println(actual)
+//        println("actual:")
+//        println(actual)
 
-        assertEquals(0, exitCode)
+        assertEquals(0, exitCode1)
 
         val modelSolution =
             ProcessBuilder(
@@ -151,19 +159,25 @@ class EmulationTests {
                 "echo '' | ./wacc_examples/refCompile -ax $path 2>&1"
             ).start()
 
+        var exitCode2 = -1
+
         try {
-            val exitCode = modelSolution.waitFor()
-            assertEquals(0, exitCode)
+            exitCode2 = modelSolution.waitFor()
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
-
-//        println("ModelSolution completed")
 
         val expected = IOUtils.toString(
             modelSolution.inputStream,
             StandardCharsets.UTF_8.name()
         ).trim()
+
+//        println("expected:")
+//        println(expected)
+
+        assertEquals(0, exitCode2)
+
+//        println("ModelSolution completed")
 
         val actualOutput = actual
             .split("-- Emulation Output:\n")[1]
