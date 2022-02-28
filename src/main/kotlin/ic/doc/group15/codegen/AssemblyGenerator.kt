@@ -8,25 +8,26 @@ import ic.doc.group15.type.Variable
 
 const val START_VAL = 0
 
-class ASTCodeGen {
+class AssemblyGenerator {
 
     var sp: Int = START_VAL - 1
 
+    /**
+     * Represents the ".data" section of the assembly code.
+     *
+     * Contains info for raw data in memory, such as string literals.
+     */
+    private val data: MutableMap<String, Data> = mutableMapOf()
+
+    /**
+     * Represents the ".text" section of the assembly code.
+     *
+     * Contains labels that can be branched to, and the main function.
+     */
+    private val text: MutableMap<String, BranchLabel> = mutableMapOf()
+
     private val stringLabel = UniqueStringLabel()
     private val branchLabel = UniqueBranchLabel()
-
-    companion object {
-        // this map stores mappings of labels to the number of words they require for storage and the complete string
-        var data: MutableMap<String, Pair<Int, String>> = mutableMapOf()
-
-        val funcDefs : MutableList<Line> = mutableListOf()
-
-        // throughout the program there may be calls to (inbuilt?) functions like p_read_int the implementation of which
-        // you can find in the reference compiler. if any of the functions have been called, then we need to add their
-        // implementation to our instructions list. to avoid adding them twice, we store a map that tells us which of them
-        // have been defined so far
-        val defined : MutableMap<String, Boolean> = mutableMapOf(Pair("p_read_int", false)) // add all other predefined functions functions
-    }
 
     // when we enter a block, we will prematurely calculate how much stack space that block will need by summing the
     // size in bytes of each of the variables in its symbol table. then we will be able to decrement the stack pointer
