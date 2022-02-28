@@ -130,7 +130,7 @@ class EmulationTests {
         val emulate =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "echo '' | $emulateLocal 2>&1"
+                "echo '' | $emulateOnline 2>&1"
             ).start()
 
         var exitCode1 = -1
