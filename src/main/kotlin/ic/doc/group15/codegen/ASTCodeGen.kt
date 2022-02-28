@@ -65,21 +65,11 @@ class ASTCodeGen {
         val statements: List<StatementAST> = program.statements
         for (stat in statements) {
             if (stat is FunctionDeclarationAST) {
-                instructions.addAll(transFunctionDeclaration(stat))
+                //instructions.addAll(transFunctionDeclaration(stat))
             } else if (stat is StatementAST) {
                 instructions.addAll(transStat(stat, 4))
             }
         }
-        return instructions
-    }
-
-    fun transFunctionDeclaration(funcDec : FunctionDeclarationAST) : List<Line> {
-        val instructions = mutableListOf<Line>()
-        val stackSpace = requiredStackSpace(funcDec)
-        sp-= stackSpace
-        instructions.addAll(mutableListOf(Label("f_" + funcDec.funcName),
-                                          PUSHlr(),
-                                          SUBspSpImm(stackSpace)))
         return instructions
     }
 
@@ -179,7 +169,7 @@ class ASTCodeGen {
     }
 
     // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transIfBlock(stat: IfBlockAST, resultReg: Int): List<Line> {
+    fun transIfBlock(stat: IfBlockAST, resultReg: Int, instructions : List<Line>): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(stat.condExpr, resultReg))
         instructions.add(CMPimm(resultReg, 0))
