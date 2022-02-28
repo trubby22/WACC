@@ -10,14 +10,15 @@ build-job:
   script:
     - mvn clean
     - mvn package -DskipTests
-
-general-test-job:
-  stage: test
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "master"'
-    - when: manual
-  script:
     - mvn surefire:test
+
+#general-test-job:
+#  stage: test
+#  rules:
+#    - if: '$CI_COMMIT_REF_NAME == "master"'
+#    - when: manual
+#  script:
+#    - mvn surefire:test
 
 #syntactic-test-job:
 #  stage: test
