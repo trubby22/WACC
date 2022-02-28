@@ -7,44 +7,38 @@ build-job:
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  artifacts:
+    untracked: true
   script:
     - mvn clean
-    - mvn compile
+    - mvn package -DskipTests
 
 syntactic-test-job:
   stage: test
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  dependencies:
+    - build-job
   script:
-    - mvn package -DskipTests
-    - mvn test -Dtest=ic.doc.group15.SyntacticTests*
-    - make asm
+    - mvn surefire:test -Dtest=ic.doc.group15.SyntacticTests*
 
 semantic-test-job:
   stage: test
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  dependencies:
+    - build-job
   script:
-    - mvn package -DskipTests
-    - mvn test -Dtest=ic.doc.group15.SemanticTests*
-    - make asm
+    - mvn surefire:test -Dtest=ic.doc.group15.SemanticTests*
 
 emulation-test-job:
   stage: test
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  dependencies:
+    - build-job
   script:
-    - mvn package -DskipTests
-    - mvn test -Dtest=ic.doc.group15.EmulationCITests*
-    - make asm
-
-cleanup:
-  stage: .post
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == "master"'
-    - when: manual
-  script:
-    - make clean
+    - mvn surefire:test -Dtest=ic.doc.group15.EmulationCITests*
