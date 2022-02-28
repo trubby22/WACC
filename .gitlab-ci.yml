@@ -19,7 +19,7 @@ general-test-job:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
   dependencies:
-    - build
+    - build-job
   script:
     - mvn surefire:test
 
