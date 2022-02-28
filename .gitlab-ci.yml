@@ -17,7 +17,7 @@ syntactic-test-job:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
   script:
-    - mvn package -DskipTests
+#    - mvn package -DskipTests
     - mvn test -Dtest=ic.doc.group15.SyntacticTests*
 
 semantic-test-job:
@@ -26,5 +26,5 @@ semantic-test-job:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
   script:
-    - mvn package -DskipTests
+#    - mvn package -DskipTests
     - mvn test -Dtest=ic.doc.group15.SemanticTests*
