@@ -60,16 +60,41 @@ class ASTCodeGen {
         return stackSpace
     }
 
+    fun transProgram(program: BlockAST) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        val statements: List<StatementAST> = program.statements
+        for (stat in statements) {
+            if (stat is FunctionDeclarationAST) {
+                instructions.addAll(transFunctionDeclaration(stat))
+            } else if (stat is StatementAST) {
+                instructions.addAll(transStat(stat, 4))
+            }
+        }
+        return instructions
+    }
+
+    fun transFunctionDeclaration(funcDec : FunctionDeclarationAST) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        val stackSpace = requiredStackSpace(funcDec)
+        sp-= stackSpace
+        instructions.addAll(mutableListOf(Label("f_" + funcDec.funcName),
+                                          PUSHlr(),
+                                          SUBspSpImm(stackSpace)))
+        return instructions
+    }
+
     // generates the assembly code for a BlockAST node and returns the list of instructions
     fun transBlock(block: BlockAST, resultReg: Int): List<Line> {
         val instructions = mutableListOf<Line>()
         var stackSpace = requiredStackSpace(block)
         sp -= stackSpace
+        instructions.add(SUBspSpImm(stackSpace))
         val statements: List<StatementAST> = block.statements
         for (stat in statements) {
             instructions.addAll(transStat(stat, resultReg))
         }
         sp += stackSpace
+        instructions.add(ADDspSpImm(stackSpace))
         return instructions
     }
 
