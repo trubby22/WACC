@@ -1,0 +1,4 @@
+Exit code:
+0
+Output:
+A simple character example is f

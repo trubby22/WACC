@@ -3,11 +3,12 @@ package ic.doc.group15
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class EmulationTests {
+class EmulationLocalTests {
 
     private val validFolder = "wacc_examples/valid"
 
@@ -185,24 +186,24 @@ class EmulationTests {
             .trim()
         val actualExitCode = Regex("(?<=The exit code is: )[0-9]+(?=\\.)")
             .find(actual)?.value!!
-        val actualAssembly = actual
-            .split("-- Uploaded file:")[1]
-            .split("---------------------------------------------------------------\n")[1]
-            .split("---------------------------------------------------------------")[0]
-            .trim()
+//        val actualAssembly = actual
+//            .split("-- Uploaded file:")[1]
+//            .split("---------------------------------------------------------------\n")[1]
+//            .split("---------------------------------------------------------------")[0]
+//            .trim()
         val expectedOutput = expected
             .split("-- Executing...\n" +
-            "===========================================================\n")[1]
+                    "===========================================================\n")[1]
             .split("===========================================================")[0]
             .trim()
         val expectedExitCode = Regex("(?<=The exit code is )[0-9]+(?=\\.)")
             .find(expected)?.value!!
-        val expectedAssemblyCluttered = expected
-            .split("contents are:\n" +
-                    "===========================================================\n")[1]
-            .split("===========================================================")[0]
-        val expectedAssembly = Regex("^[0-9]+\t", RegexOption.MULTILINE)
-            .replace(expectedAssemblyCluttered, "").trim()
+//        val expectedAssemblyCluttered = expected
+//            .split("contents are:\n" +
+//                    "===========================================================\n")[1]
+//            .split("===========================================================")[0]
+//        val expectedAssembly = Regex("^[0-9]+\t", RegexOption.MULTILINE)
+//            .replace(expectedAssemblyCluttered, "").trim()
 
         val success = expectedExitCode == actualExitCode && expectedOutput == actualOutput
 
@@ -221,6 +222,19 @@ class EmulationTests {
         if (!success) {
             println()
         }
+
+//        Code used to map expected output to .txt files
+
+//        val lst = path.split("/")
+//        val enclosingFolder = lst.subList(0, lst.size - 1).joinToString("/")
+//        val txtPath = path.substring(0, path.length - 4) + "txt"
+//
+//        Files.createDirectories(Paths.get("model_output/$enclosingFolder"))
+//
+//        File("model_output/$txtPath").writeText("Exit code:\n" +
+//                "$expectedExitCode\n" +
+//                "Output:\n" +
+//                expectedOutput)
 
 //        println("Path: $path")
 //

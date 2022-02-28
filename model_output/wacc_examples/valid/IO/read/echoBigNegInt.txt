@@ -1,0 +1,5 @@
+Exit code:
+0
+Output:
+enter an integer to echo
+1

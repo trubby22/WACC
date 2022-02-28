@@ -1,0 +1,12 @@
+Exit code:
+0
+Output:
+0x22150
+0x22150
+true
+10
+10
+true
+a
+a
+true

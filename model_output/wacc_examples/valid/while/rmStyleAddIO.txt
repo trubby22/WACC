@@ -1,0 +1,6 @@
+Exit code:
+0
+Output:
+Enter the first number: Enter the second number: Initial value of x: 0
+
+final value of x: 0

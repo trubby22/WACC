@@ -1,0 +1,5 @@
+Exit code:
+0
+Output:
+Change n
+Should print "Change n" once before.

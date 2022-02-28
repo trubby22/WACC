@@ -8,7 +8,7 @@ build-job:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
   script:
-    - mvn clean
+    - make clean
     - mvn compile
 
 syntactic-test-job:
@@ -38,5 +38,5 @@ emulation-test-job:
     - when: manual
   script:
     - mvn package -DskipTests
-    - mvn test -Dtest=ic.doc.group15.EmulationTests*
+    - mvn test -Dtest=ic.doc.group15.EmulationCITests*
     - make asm

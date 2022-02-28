@@ -1,0 +1,6 @@
+Exit code:
+0
+Output:
+initial value of x: 3
+(+)(+)(+)(+)(+)(+)(+)
+final value of x: 10
