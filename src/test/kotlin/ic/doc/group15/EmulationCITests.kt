@@ -164,7 +164,7 @@ class EmulationCITests {
 
         val expectedOutput = expectedLst.subList(3, expectedLst.size)
             .joinToString("\n").trim()
-        val expectedExitCode = expectedLst[2].trim()
+        val expectedExitCode = expectedLst[1].trim()
 
         val success = expectedExitCode == actualExitCode && expectedOutput == actualOutput
 
@@ -187,17 +187,14 @@ class EmulationCITests {
         if (!success) {
             println("Expected exit code: $expectedExitCode")
             println("Actual exit code: $actualExitCode")
+
+            println("Expected output:")
+            println(expectedOutput)
+            println("Actual output:")
+            println(actualOutput)
         }
 
 //        println("Path: $path")
-//
-//        println("Expected exit code: $expectedExitCode")
-//        println("Actual exit code: $actualExitCode")
-//
-//        println("Expected output:")
-//        println(expectedOutput)
-//        println("Actual output:")
-//        println(actualOutput)
 
         return success
     }
