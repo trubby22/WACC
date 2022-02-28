@@ -167,6 +167,11 @@ class EmulationTests {
             .trim()
         val actualExitCode = Regex("(?<=The exit code is: )[0-9]+(?=\\.)")
             .find(actual)?.value!!
+        val actualAssembly = actual
+            .split("-- Uploaded file:")[1]
+            .split("---------------------------------------------------------------\n")[1]
+            .split("---------------------------------------------------------------")[0]
+            .trim()
         val expectedOutput = expected
             .split("-- Executing...\n" +
             "===========================================================\n")[1]
@@ -174,6 +179,12 @@ class EmulationTests {
             .trim()
         val expectedExitCode = Regex("(?<=The exit code is )[0-9]+(?=\\.)")
             .find(expected)?.value!!
+        val expectedAssemblyCluttered = expected
+            .split("contents are:\n" +
+                    "===========================================================\n")[1]
+            .split("===========================================================")[0]
+        val expectedAssembly = Regex("^[0-9]+\t", RegexOption.MULTILINE)
+            .replace(expectedAssemblyCluttered, "").trim()
 
         val success = expectedExitCode == actualExitCode && expectedOutput == actualOutput
 
@@ -193,6 +204,8 @@ class EmulationTests {
             println()
         }
 
+//        println("Path: $path")
+//
 //        println("Expected exit code: $expectedExitCode")
 //        println("Actual exit code: $actualExitCode")
 //
@@ -200,6 +213,11 @@ class EmulationTests {
 //        println(expectedOutput)
 //        println("Actual output:")
 //        println(actualOutput)
+//
+//        println("Expected assembly:")
+//        println(expectedAssembly)
+//        println("Actual assembly:")
+//        println(actualAssembly)
 
         return success
     }

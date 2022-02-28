@@ -8,9 +8,6 @@ build-job:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
   script:
-    - which apk
-    - which apt-get
-    - apk update && apk upgrade && apk add -y ruby
     - mvn clean
     - mvn compile
 
@@ -22,6 +19,7 @@ syntactic-test-job:
   script:
     - mvn package -DskipTests
     - mvn test -Dtest=ic.doc.group15.SyntacticTests*
+    - make asm
 
 semantic-test-job:
   stage: test
@@ -31,6 +29,7 @@ semantic-test-job:
   script:
     - mvn package -DskipTests
     - mvn test -Dtest=ic.doc.group15.SemanticTests*
+    - make asm
 
 emulation-test-job:
   stage: test
@@ -39,5 +38,5 @@ emulation-test-job:
     - when: manual
   script:
     - mvn package -DskipTests
-    - chmod +x wacc_examples/refCompile wacc_examples/refEmulate
     - mvn test -Dtest=ic.doc.group15.EmulationTests*
+    - make asm
