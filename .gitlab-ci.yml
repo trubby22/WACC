@@ -10,7 +10,7 @@ build-job:
   artifacts:
     untracked: true
   script:
-    - mvn clean
+    - make clean
     - mvn package -DskipTests
 
 syntactic-test-job:

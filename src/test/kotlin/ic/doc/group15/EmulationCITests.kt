@@ -184,6 +184,11 @@ class EmulationCITests {
             println()
         }
 
+        if (!success) {
+            println("Expected exit code: $expectedExitCode")
+            println("Actual exit code: $actualExitCode")
+        }
+
 //        println("Path: $path")
 //
 //        println("Expected exit code: $expectedExitCode")
