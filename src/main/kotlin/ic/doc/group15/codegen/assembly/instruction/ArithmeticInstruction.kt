@@ -1,7 +1,6 @@
 package ic.doc.group15.codegen.assembly.instruction
 
 import ic.doc.group15.codegen.assembly.Instruction
-import ic.doc.group15.codegen.assembly.operand.ConditionCode
 import ic.doc.group15.codegen.assembly.operand.Operand
 import ic.doc.group15.codegen.assembly.operand.Register
 
@@ -31,17 +30,15 @@ abstract class FlexibleIntArithmetic protected constructor(
  * the base register and operand, and stores the result in the
  * destination register.
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
 class Add(
-    cond: ConditionCode? = null,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("add${cond?.toString() ?: ""}", dest, base, op)
+) : FlexibleIntArithmetic("add", dest, base, op)
 
 /**
  * ADDS is an add-without-carry instruction that adds the values in
@@ -49,34 +46,30 @@ class Add(
  * destination register. Since the S suffix is specified, the condition flags
  * N,Z,C,V are updated on the result of the operation.
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
 class AddCond(
-    cond: ConditionCode? = null,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("add${cond?.toString() ?: ""}s", dest, base, op)
+) : FlexibleIntArithmetic("adds", dest, base, op)
 
 /**
  * SUB is a subtract-without-carry instruction that subtracts the value of
  * operand from the value in the base register, and stores the result in
  * the destination register.
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register
  * @param base The source register/register holding the first operand
  * @param op A flexible second operand
  */
 class Sub(
-    cond: ConditionCode? = null,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("sub${cond?.toString() ?: ""}", dest, base, op)
+) : FlexibleIntArithmetic("sub", dest, base, op)
 
 class RSB(
     dest: Register,
@@ -97,17 +90,15 @@ class RSB(
  * to return from an exception if there is no return state on the stack. The
  * value of #imm depends on the exception to return from.
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register
  * @param base The source register/register holding the first operand
  * @param op A flexible second operand
  */
 class SubCond(
-    cond: ConditionCode? = null,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("sub${cond?.toString() ?: ""}s", dest, base, op)
+) : FlexibleIntArithmetic("subs", dest, base, op)
 
 abstract class RegisterIntArithmetic protected constructor(
     instr: String,
@@ -125,17 +116,15 @@ abstract class RegisterIntArithmetic protected constructor(
  * ARMv6; PC cannot be used for any register; and SP can be used but this is
  * deprecated in ARMv6T2 and above.
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register
  * @param reg_n The source register/register holding the first operand
  * @param reg_m The source register/register holding the second operand
  */
 class Mult(
-    cond: ConditionCode? = null,
     dest: Register,
     reg_n: Register,
     reg_m: Register
-) : RegisterIntArithmetic("mul${cond?.toString() ?: ""}", dest, reg_n, reg_m)
+) : RegisterIntArithmetic("mul", dest, reg_n, reg_m)
 
 /**
  * MULS is a multiply instruction that multiplies the value of
@@ -148,17 +137,15 @@ class Mult(
  * ARMv6; PC cannot be used for any register; and SP can be used but this is
  * deprecated in ARMv6T2 and above.
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register
  * @param reg_n The source register/register holding the first operand
  * @param reg_m The source register/register holding the second operand
  */
 class MultCond(
-    cond: ConditionCode? = null,
     dest: Register,
     reg_n: Register,
     reg_m: Register
-) : RegisterIntArithmetic("mul${cond?.toString() ?: ""}s", dest, reg_n, reg_m)
+) : RegisterIntArithmetic("muls", dest, reg_n, reg_m)
 
 abstract class LongArithmetic protected constructor(
     instr: String,
@@ -178,19 +165,17 @@ abstract class LongArithmetic protected constructor(
  * Note: Low destination register must be different from high destination register;
  * PC cannot be used for any register
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest_lo The low destination register
  * @param dest_hi The high destination register
  * @param reg_n The source register/register holding the first operand
  * @param reg_m The source register/register holding the second operand
  */
 class LongMult(
-    cond: ConditionCode? = null,
     dest_lo: Register,
     dest_hi: Register,
     reg_n: Register,
     reg_m: Register
-) : LongArithmetic("smull${cond?.toString() ?: ""}", dest_lo, dest_hi, reg_n, reg_m)
+) : LongArithmetic("smull", dest_lo, dest_hi, reg_n, reg_m)
 
 /**
  * SMULLS is a signed-long multiply instruction that multiplies the value of
@@ -203,16 +188,14 @@ class LongMult(
  * Note: Low destination register must be different from high destination register;
  * PC cannot be used for any register
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest_lo The low destination register
  * @param dest_hi The high destination register
  * @param reg_n The source register/register holding the first operand
  * @param reg_m The source register/register holding the second operand
  */
 class LongMultCond(
-    cond: ConditionCode? = null,
     dest_lo: Register,
     dest_hi: Register,
     reg_n: Register,
     reg_m: Register
-) : LongArithmetic("smull${cond?.toString() ?: ""}s", dest_lo, dest_hi, reg_n, reg_m)
+) : LongArithmetic("smulls", dest_lo, dest_hi, reg_n, reg_m)

@@ -1,7 +1,6 @@
 package ic.doc.group15.codegen.assembly.instruction
 
 import ic.doc.group15.codegen.assembly.Instruction
-import ic.doc.group15.codegen.assembly.operand.ConditionCode
 import ic.doc.group15.codegen.assembly.operand.Register
 import ic.doc.group15.codegen.assembly.operand.Operand
 
@@ -21,9 +20,7 @@ abstract class CompareInstruction protected constructor(
  * result in any register. It is similar to a call to the SUBS instruction except
  * that the result is discarded.
  *
- * @param cond Optional condition code, which only allows execution of instruction if true
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
-class Compare(cond: ConditionCode? = null, base: Register, op: Operand) :
-    CompareInstruction("cmp${cond?.toString() ?: ""}", base, op)
+class Compare(base: Register, op: Operand) : CompareInstruction("cmp", base, op)
