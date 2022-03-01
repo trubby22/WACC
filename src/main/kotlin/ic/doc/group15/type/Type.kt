@@ -31,7 +31,6 @@ interface HeapAllocatedType : Type
 // we assign the stackPos to be Int.MIN_VALUE until stackPos is actually assigned
 open class Variable(
     val type: Type,
-    var stackPos: Int = Int.MIN_VALUE
 ) : Identifier {
     companion object {
         val ANY_VAR = Variable(Type.ANY)

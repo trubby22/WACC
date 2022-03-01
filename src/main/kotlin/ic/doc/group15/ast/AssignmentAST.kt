@@ -65,3 +65,4 @@ class CallAST(
     val funcIdent: FunctionType,
     val actuals: MutableList<ExpressionAST>
 ) : AssignRhsAST(symbolTable, funcIdent.returnType)
+
