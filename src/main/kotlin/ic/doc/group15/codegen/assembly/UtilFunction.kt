@@ -1,6 +1,11 @@
 package ic.doc.group15.codegen.assembly
 
 import ic.doc.group15.codegen.assembly.ArmFunction.* // ktlint-disable no-unused-imports
+import ic.doc.group15.codegen.assembly.ArmFunction.Companion.SCANF
+import ic.doc.group15.codegen.assembly.instruction.*
+import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
+import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
+import ic.doc.group15.codegen.assembly.operand.Register.*
 import java.util.*
 
 const val NULL = "\u0000"
@@ -8,16 +13,14 @@ const val NULL = "\u0000"
 enum class UtilFunction {
 
     P_READ_INT {
-        override fun assembly(): List<Instruction> {
-            return listOf(
-                PUSHlr(),
-                MOVreg(1, 0),
-                LDRimmString(0, generateStringData("%d")),
-                ADD(0, 0, 5),
-                BL(SCANF.label()),
-                POPpc()
-            )
-        }
+        override val assembly = listOf(
+            Push(LR),
+            Move(R1, R0),
+            LoadWord(R0, generateStringData("%d")),
+            Add(R0, R0, ImmediateOperand(4)),
+            BranchLink(SCANF.labelName),
+            Pop(PC)
+        )
     }
     ;
 
@@ -26,17 +29,17 @@ enum class UtilFunction {
     val dataBlocks: MutableList<Data> = LinkedList()
     val labelBlock: BranchLabel
 
+    abstract val assembly: List<Instruction>
+
     protected val stringLabel: UniqueLabel = UniqueLabel(labelName + "_msg_")
 
     init {
-        labelBlock = BranchLabel(name.lowercase(), assembly())
+        labelBlock = BranchLabel(name.lowercase(), assembly)
     }
 
-    protected abstract fun assembly(): List<Instruction>
-
-    protected fun generateStringData(str: String): String {
+    protected fun generateStringData(str: String): DataLabelOperand {
         val label = stringLabel.generate()
         dataBlocks.add(StringData(label, str))
-        return label
+        return DataLabelOperand(label)
     }
 }

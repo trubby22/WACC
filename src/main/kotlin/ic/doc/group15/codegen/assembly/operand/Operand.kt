@@ -1,9 +1,34 @@
-package ic.doc.group15.instructions
+package ic.doc.group15.codegen.assembly.operand
+
+import ic.doc.group15.codegen.assembly.Assembly
 
 /**
  * Operand2 adopted in ARM1176JZF-S. Register controlled shift is not implemented.
  */
-abstract class Operand2: Translatable()
+
+interface Operand : Assembly
+
+open class LabelOperand(val labelName: String) : Operand {
+    override fun toString(): String {
+        return labelName
+    }
+}
+
+class DataLabelOperand(val labelName: String) : AddressOperand
+
+class RegisterList(vararg regs: Register) : Operand {
+
+    val registers: List<Register>
+
+    init {
+        regs.sort()
+        registers = regs.toList()
+    }
+
+    override fun toString(): String {
+        return registers.joinToString(separator = ",", prefix = "{", postfix = "}")
+    }
+}
 
 /**
  * This form uses an integer constant as the operand. Note that the sign value
@@ -16,26 +41,14 @@ abstract class Operand2: Translatable()
  * @param value
  * @exception IllegalArgumentException
  */
-class ImmOp(val value: Int): Operand2() {
-  init {
-    // TODO(Check if value is valid by performing rotation checks)
-  }
+class ImmediateOperand(val value: Int) : Operand {
+    init {
+        // TODO(Check if value is valid by performing rotation checks)
+    }
 
-  override fun translate(): String {
-    return "#$value"
-  }
-}
-
-/**
- * This form uses the base register as the operand.
- * Format: <base>
- *
- * @param base The base register
- */
-class RegOp(val base: Register): Operand2() {
-  override fun translate(): String {
-    return "$base"
-  }
+    override fun toString(): String {
+        return "#$value"
+    }
 }
 
 /**
@@ -53,16 +66,18 @@ class RegOp(val base: Register): Operand2() {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class RegLSLImmOp(val base: Register, val bits: Int): Operand2() {
-  init {
-    if (!IntRange(1, 31).contains(bits)) {
-      throw IllegalArgumentException("Operand2 can only support logical shift left between 1 and 31 bits! The bit count passed in is $bits instead")
+class LogicalShiftLeft(val base: Register, val bits: Int) : Operand {
+    init {
+        if (!IntRange(1, 31).contains(bits)) {
+            throw IllegalArgumentException(
+                "Logical shift left must be between 1 and 31 bits. Actual: $bits"
+            )
+        }
     }
-  }
 
-  override fun translate(): String {
-    return "[$base LSL #$bits]"
-  }
+    override fun toString(): String {
+        return "[$base LSL #$bits]"
+    }
 }
 
 /**
@@ -80,16 +95,18 @@ class RegLSLImmOp(val base: Register, val bits: Int): Operand2() {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class RegLSRImmOp(val base: Register, val bits: Int): Operand2() {
-  init {
-    if (!IntRange(1, 32).contains(bits)) {
-      throw IllegalArgumentException("Operand2 can only support logical shift right between 1 and 32 bits! The bit count passed in is $bits instead")
+class LogicalShiftRight(val base: Register, val bits: Int) : Operand {
+    init {
+        if (!IntRange(1, 32).contains(bits)) {
+            throw IllegalArgumentException(
+                "Logical shift right must be between 1 and 32 bits. Actual: $bits"
+            )
+        }
     }
-  }
 
-  override fun translate(): String {
-    return "[$base LSR #$bits]"
-  }
+    override fun toString(): String {
+        return "[$base LSR #$bits]"
+    }
 }
 
 /**
@@ -107,16 +124,18 @@ class RegLSRImmOp(val base: Register, val bits: Int): Operand2() {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class RegASRImmOp(val base: Register, val bits: Int): Operand2() {
-  init {
-    if (!IntRange(1, 32).contains(bits)) {
-      throw IllegalArgumentException("Operand2 can only support arithmetic shift right between 1 and 32 bits! The bit count passed in is $bits instead")
+class ArithmeticShiftRight(val base: Register, val bits: Int) : Operand {
+    init {
+        if (!IntRange(1, 32).contains(bits)) {
+            throw IllegalArgumentException(
+                "Arithmetic shift right must between 1 and 32 bits. Actual: $bits"
+            )
+        }
     }
-  }
 
-  override fun translate(): String {
-    return "[$base ASR #$bits]"
-  }
+    override fun toString(): String {
+        return "[$base ASR #$bits]"
+    }
 }
 
 /**
@@ -134,14 +153,16 @@ class RegASRImmOp(val base: Register, val bits: Int): Operand2() {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class RegRORImmOp(val base: Register, val bits: Int): Operand2() {
-  init {
-    if (!IntRange(1, 31).contains(bits)) {
-      throw IllegalArgumentException("Operand2 can only support logical shift left between 1 and 31 bits! The bit count passed in is $bits instead")
+class RotateRight(val base: Register, val bits: Int) : Operand {
+    init {
+        if (!IntRange(1, 31).contains(bits)) {
+            throw IllegalArgumentException(
+                "Logical shift left between 1 and 31 bits. Actual: $bits"
+            )
+        }
     }
-  }
 
-  override fun translate(): String {
-    return "[$base ROR #$bits]"
-  }
+    override fun toString(): String {
+        return "[$base ROR #$bits]"
+    }
 }

@@ -3,6 +3,9 @@ package ic.doc.group15.codegen
 import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.codegen.assembly.UtilFunction.P_READ_INT
+import ic.doc.group15.codegen.assembly.instruction.LoadWord
+import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
+import ic.doc.group15.codegen.assembly.operand.RegisterOffset
 import ic.doc.group15.instructions.ImmOp
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Identifier
@@ -227,10 +230,10 @@ class AssemblyGenerator {
 
         when (unOpExpr.operator) {
             UnaryOp.BANG -> {
-                instructions.add(EOR(resultReg, resultReg, ImmOp(1)))
+                instructions.add(EOR(resultReg, resultReg, ImmediateOperand(1)))
             }
             UnaryOp.MINUS -> {
-                instructions.add(RSB(resultReg, resultReg, ImmOp(0)))
+                instructions.add(RSB(resultReg, resultReg, ImmediateOperand(0)))
                 instructions.add(BL("p_throw_overflow_error"))
 //                Add msg to front: "OverflowError: the result is too small/large to store in a 4-byte signed-integer.\n\0"
 //                Add msg to front: "%.*s\0"
@@ -238,7 +241,7 @@ class AssemblyGenerator {
 //                p_throw_overflow_error, p_throw_runtime_error, p_print_string
             }
             UnaryOp.LEN -> {
-                instructions.add(LDR(resultReg, resultReg))
+                instructions.add(LoadWord(resultReg, RegisterOffset(resultReg, false, null)))
             }
             UnaryOp.ORD -> {
 //                No actions needed since int ~ char
