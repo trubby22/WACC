@@ -43,3 +43,9 @@ class ANDS(val dest: Register, val base: Register, val op: Operand2): LogicalIns
     return "ands $dest, $base, $op"
   }
 }
+
+class EOR(val dest: Register, val base: Register, val op: Operand2): LogicalInstruction() {
+    override fun translate(): String {
+        return "eor $dest, $base, $op"
+    }
+}

@@ -52,6 +52,12 @@ class SUB(val dest: Register, val base: Register, val op: Operand2): ArithmeticI
   }
 }
 
+class RSB(val reg1: Int, val reg2: Int, val operand2: Operand2): ArithmeticInstruction() {
+    override fun translate(): String {
+        return "rsb $reg1, $reg2, $operand2"
+    }
+}
+
 /**
  * SUB is a subtract-without-carry instruction that subtracts the value of
  * operand from the value in the base register, and stores the result in

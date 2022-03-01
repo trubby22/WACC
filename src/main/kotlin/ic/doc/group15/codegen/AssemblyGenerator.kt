@@ -3,6 +3,7 @@ package ic.doc.group15.codegen
 import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.codegen.assembly.UtilFunction.P_READ_INT
+import ic.doc.group15.instructions.ImmOp
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Identifier
 import ic.doc.group15.type.Variable
@@ -120,6 +121,11 @@ class AssemblyGenerator {
         return instructions
     }
 
+    fun transStat(node: SequenceStatementAST, resultReg: Int): List<Line> {
+        return transStat(node.stat1, resultReg + 1) + transStat(node.stat2,
+            resultReg + 2)
+    }
+
     // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
     fun transBlock(ifBlock: IfBlockAST, resultReg: Int): List<Line> {
         val instructions = mutableListOf<Line>()
@@ -205,13 +211,43 @@ class AssemblyGenerator {
                     // complete remaining operators...
                 }
             }
-//          .CharType -> {
+//            CharType -> {
 //
-//          }
+//            }
 //          .StringType -> {
 //
 //          }
         }
+        return instructions
+    }
+
+    fun transUnOp(unOpExpr: UnaryOpExprAST, resultReg: Int): List<Line> {
+        val instructions = mutableListOf<Line>()
+        instructions.addAll(transExp(unOpExpr.expr, resultReg))
+
+        when (unOpExpr.operator) {
+            UnaryOp.BANG -> {
+                instructions.add(EOR(resultReg, resultReg, ImmOp(1)))
+            }
+            UnaryOp.MINUS -> {
+                instructions.add(RSB(resultReg, resultReg, ImmOp(0)))
+                instructions.add(BL("p_throw_overflow_error"))
+//                Add msg to front: "OverflowError: the result is too small/large to store in a 4-byte signed-integer.\n\0"
+//                Add msg to front: "%.*s\0"
+//                Add to back definitions of the following:
+//                p_throw_overflow_error, p_throw_runtime_error, p_print_string
+            }
+            UnaryOp.LEN -> {
+                instructions.add(LDR(resultReg, resultReg))
+            }
+            UnaryOp.ORD -> {
+//                No actions needed since int ~ char
+            }
+            UnaryOp.CHR -> {
+//                No actions needed since int ~ char
+            }
+        }
+
         return instructions
     }
 
