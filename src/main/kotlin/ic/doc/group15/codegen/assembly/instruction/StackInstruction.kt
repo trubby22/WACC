@@ -1,6 +1,7 @@
 package ic.doc.group15.codegen.assembly.instruction
 
 import ic.doc.group15.codegen.assembly.Instruction
+import ic.doc.group15.codegen.assembly.operand.ConditionCode
 import ic.doc.group15.codegen.assembly.operand.Register
 import ic.doc.group15.codegen.assembly.operand.RegisterList
 
@@ -18,9 +19,10 @@ abstract class StackInstruction protected constructor(
  * preferred mnemonic. Registers are stored on the stack in numerical order,
  * with the lowest numbered register at the lowest address.
  *
+ * @param cond Optional condition code, which only allows execution of instruction if true
  * @param regs The registers to push
  */
-class Push(vararg regs: Register) : StackInstruction("PUSH", regs)
+class Push(cond: ConditionCode? = null, vararg regs: Register) : StackInstruction("PUSH${cond?.toString() ?: ""}", regs)
 
 /**
  * POP is a stack-related instruction that pops registers off a full
@@ -33,6 +35,7 @@ class Push(vararg regs: Register) : StackInstruction("PUSH", regs)
  * where the LR was pushed onto the stack at the start of the subroutine.
  * The register list cannot contain SP.
  *
+ * @param cond Optional condition code, which only allows execution of instruction if true
  * @param regs The registers to pop to
  */
-class Pop(vararg regs: Register) : StackInstruction("POP", regs)
+class Pop(cond: ConditionCode? = null, vararg regs: Register) : StackInstruction("POP${cond?.toString() ?: ""}", regs)

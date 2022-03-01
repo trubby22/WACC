@@ -1,6 +1,7 @@
 package ic.doc.group15.codegen.assembly.instruction
 
 import ic.doc.group15.codegen.assembly.Instruction
+import ic.doc.group15.codegen.assembly.operand.ConditionCode
 import ic.doc.group15.codegen.assembly.operand.Operand
 import ic.doc.group15.codegen.assembly.operand.Register
 
@@ -34,15 +35,17 @@ abstract class LogicalInstruction(
  * If PC is selected as the destination register, execution branches to the
  * address corresponding to the result.
  *
+ * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register.
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
 class And(
+    cond: ConditionCode? = null,
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("and", dest, base, op)
+) : LogicalInstruction("and${cond?.toString() ?: ""}", dest, base, op)
 
 /**
  * AND is a logical-and instruction that performs bitwise AND operations on
@@ -56,19 +59,21 @@ class And(
  * If PC is selected as the destination register, execution branches to the
  * address corresponding to the result.
  *
+ * @param cond Optional condition code, which only allows execution of instruction if true
  * @param dest The destination register.
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
-
 class AndCond(
+    cond: ConditionCode? = null,
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("ands", dest, base, op)
+) : LogicalInstruction("and${cond?.toString() ?: ""}s", dest, base, op)
 
 class EOR(
+    cond: ConditionCode? = null,
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("eor", dest, base, op)
+) : LogicalInstruction("eor${cond?.toString() ?: ""}", dest, base, op)
