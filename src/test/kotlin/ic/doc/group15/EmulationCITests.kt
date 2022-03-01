@@ -1,10 +1,14 @@
 package ic.doc.group15
 
+import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.io.File
+import java.nio.charset.StandardCharsets
 
 class EmulationCITests {
   private val validFolderPath = "wacc_examples/valid"
@@ -27,7 +31,7 @@ class EmulationCITests {
       val filePath = "$arrayFolderPath/$fileName.wacc"
       val resultPath = "$arrayResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
@@ -48,7 +52,7 @@ class EmulationCITests {
         val filePath = "$exitFolderPath/$fileName.wacc"
         val resultPath = "$exitResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
 
@@ -63,7 +67,7 @@ class EmulationCITests {
         val filePath = "$skipFolderPath/$fileName.wacc"
         val resultPath = "$skipResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
   }
@@ -91,7 +95,7 @@ class EmulationCITests {
       val filePath = "$expressionsFolderPath/$fileName.wacc"
       val resultPath = "$expressionsResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
@@ -121,7 +125,7 @@ class EmulationCITests {
         val filePath = "$nestedFunctionsFolderPath/$fileName.wacc"
         val resultPath = "$nestedFunctionsResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
 
@@ -145,7 +149,7 @@ class EmulationCITests {
         val filePath = "$simpleFunctionsFolderPath/$fileName.wacc"
         val resultPath = "$simpleFunctionsResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
   }
@@ -162,7 +166,7 @@ class EmulationCITests {
       val filePath = "$ifFolderPath/$fileName.wacc"
       val resultPath = "$ifResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
@@ -180,7 +184,7 @@ class EmulationCITests {
       val filePath = "$ioFolderPath/$fileName.wacc"
       val resultPath = "$ioResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
 
     @Nested
@@ -200,7 +204,7 @@ class EmulationCITests {
         val filePath = "$printFolderPath/$fileName.wacc"
         val resultPath = "$printResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
 
@@ -220,7 +224,7 @@ class EmulationCITests {
         val filePath = "$readFolderPath/$fileName.wacc"
         val resultPath = "$readResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
   }
@@ -243,7 +247,7 @@ class EmulationCITests {
       val filePath = "$pairsFolderPath/$fileName.wacc"
       val resultPath = "$pairsResultFolderPah/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
@@ -267,7 +271,7 @@ class EmulationCITests {
         val filePath = "$arrayOutOfBoundsFolderPath/$fileName.wacc"
         val resultPath = "$arrayOutOfBoundsResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
 
@@ -284,7 +288,7 @@ class EmulationCITests {
         val filePath = "$divideByZeroFolderPath/$fileName.wacc"
         val resultPath = "$divideByZeroResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
 
@@ -306,7 +310,7 @@ class EmulationCITests {
         val filePath = "$integerOverflowFolderPath/$fileName.wacc"
         val resultPath = "$integerOverflowResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
 
@@ -323,7 +327,7 @@ class EmulationCITests {
         val filePath = "$nullDereferenceFolderPath/$fileName.wacc"
         val resultPath = "$nullDereferenceResultFolderPath/$fileName.txt"
 
-        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+        assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
   }
@@ -346,7 +350,7 @@ class EmulationCITests {
       val filePath = "$scopeFolderPath/$fileName.wacc"
       val resultPath = "$scopeResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
@@ -368,7 +372,7 @@ class EmulationCITests {
       val filePath = "$sequenceFolderPath/$fileName.wacc"
       val resultPath = "$sequenceResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
@@ -391,7 +395,7 @@ class EmulationCITests {
       val filePath = "$variablesFolderPath/$fileName.wacc"
       val resultPath = "$variablesResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
@@ -412,23 +416,77 @@ class EmulationCITests {
       val filePath = "$whileFolderPath/$fileName.wacc"
       val resultPath = "$whileResultFolderPath/$fileName.txt"
 
-      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
     }
   }
 
-  private fun compileAndExecute(path: String): Pair<Int, List<String>> {
-    TODO()
+  // TODO: compile internally by generating AST, generating code and saving it into a temporary location
+  /**
+   * Compile a WACC program into assembly code compatible with ARM1176JZF-S processor,
+   * assemble and link it using the gcc cross-compiler with the arm-linux-gnueabi-gcc
+   * package, and execute the machine code using the QEMU-ARM emulator targetting
+   * the ARM1176JZF-S processor.
+   */
+  private fun compileAndExecute(
+    fileName: String,
+    path: String
+  ): Pair<Int, List<String>> {
+    val compilation = ProcessBuilder(
+      "/bin/bash",
+      "-c",
+      "java - jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar $path < $path"
+    ).start()
+
+    try {
+      val compilationExitStatus = compilation.waitFor()
+      assertEquals(compilationExitStatus, 0)
+    } catch (e: InterruptedException) {
+      e.printStackTrace()
+    }
+
+    val emulation = ProcessBuilder(
+      "/bin/bash", "-c",
+      "arm-linux-gnueabi-gcc -o $fileName " +
+          "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $fileName.s; " +
+          "qemu-arm -L /usr/arm-linux-gnueabi $fileName; " +
+          "echo $? 2>&1"
+    ).start()
+
+    var emulationExitStatus = -1
+    try {
+      emulationExitStatus = emulation.waitFor()
+    } catch (e: InterruptedException) {
+      e.printStackTrace()
+    }
+
+    val actualList = IOUtils.toString(
+      emulation.inputStream,
+      StandardCharsets.UTF_8.name()
+    ).split("\n").map(String::trim)
+
+    assertEquals(emulationExitStatus, 0)
+
+    val actualOutput =
+      actualList.subList(0, actualList.size - 1).map(String::trim)
+    val actualExitCode = actualList[actualList.size - 1].trim().toInt()
+
+    return Pair(actualExitCode, actualOutput)
   }
 
   private fun getExpectedResult(path: String): Pair<Int, List<String>> {
-    TODO()
+    val expectedList = File(path).readLines()
+    val expectedOutput = expectedList.subList(3, expectedList.size).map(String::trim)
+    val expectedExitCode = expectedList[1].trim().toInt()
+
+    return Pair(expectedExitCode, expectedOutput)
   }
 
   private fun exitCodeAndOutputMatches(
+    fileName: String,
     filePath: String,
     resultPath: String
   ): Boolean {
-    val (actualExitCode, actualOutput) = compileAndExecute(filePath)
+    val (actualExitCode, actualOutput) = compileAndExecute(fileName, filePath)
     val (expectedExitCode, expectedOutput) = getExpectedResult(resultPath)
 
     val exitCodeMatches = (expectedExitCode == actualExitCode)
