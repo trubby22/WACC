@@ -670,12 +670,16 @@ class Visitor(
         val i = parseInt(ctx.POSITIVE_INTEGER().text)
         assert(i in 0..INT_MAX)
 
+        log("Visiting int_liter with value: $i")
+
         return IntLiteralAST(i)
     }
 
     override fun visitInt_liter_negative(ctx: WaccParser.Int_liter_negativeContext): ASTNode {
         val i = parseInt(ctx.text)
         assert(i in INT_MIN..0)
+
+        log("Visiting int_liter with value: $i")
 
         return IntLiteralAST(i)
     }
