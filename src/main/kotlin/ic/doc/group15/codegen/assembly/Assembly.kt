@@ -1,5 +1,6 @@
 package ic.doc.group15.codegen.assembly
 
+import ic.doc.group15.codegen.assembly.operand.Operand
 import java.util.*
 
 const val ASM_TAB_SIZE = 8
@@ -38,4 +39,16 @@ abstract class Label<L : Line> protected constructor(val name: String) : Assembl
     }
 }
 
-abstract class Instruction : Line()
+class BranchLabel : Label<Instruction> {
+    constructor(name: String, lines: List<Instruction>) : super(name, lines)
+    constructor(name: String) : super(name)
+}
+
+abstract class Instruction protected constructor(
+    val instr: String,
+    private vararg val params: Operand
+) : Line() {
+    override fun toString(): String {
+        return "$instr " + params.joinToString(separator = ", ")
+    }
+}

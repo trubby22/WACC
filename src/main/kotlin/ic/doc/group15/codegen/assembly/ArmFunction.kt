@@ -1,9 +1,10 @@
 package ic.doc.group15.codegen.assembly
 
-enum class ArmFunction {
+import ic.doc.group15.codegen.assembly.operand.LabelOperand
 
-    SCANF,
-    ;
+class ArmFunction private constructor(labelName: String) : LabelOperand(labelName) {
 
-    fun label() = name.lowercase()
+    companion object {
+        val SCANF = ArmFunction("scanf")
+    }
 }

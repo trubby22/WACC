@@ -1,9 +1,9 @@
-package ic.doc.group15.instructions
+package ic.doc.group15.codegen.assembly.operand
 
 /**
  * Registers present in ARM1176JZF-S.
  */
-enum class Register {
+enum class Register : Operand {
     /**
      * By convention, R0 is a general purpose register. It is used to
      * pass the first argument to a subroutine, and to pass the result
@@ -12,9 +12,7 @@ enum class Register {
      * Note: a subroutine that requires more than
      * four inputs uses the stack for the additional inputs.
      */
-    RO {
-        override fun toString(): String { return "r0" }
-    },
+    R0,
 
     /**
      * By convention, R1 is a general purpose register. It is used to
@@ -23,9 +21,7 @@ enum class Register {
      * Note: a subroutine that requires more than
      * four inputs uses the stack for the additional inputs.
      */
-    R1 {
-        override fun toString(): String { return "r1" }
-    },
+    R1,
 
     /**
      * By convention, R2 is a general purpose register. It is used to
@@ -34,9 +30,7 @@ enum class Register {
      * Note: a subroutine that requires more than
      * four inputs uses the stack for the additional inputs.
      */
-    R2 {
-        override fun toString(): String { return "r2" }
-    },
+    R2,
 
     /**
      * By convention, R3 is a general purpose register. It is used to
@@ -45,72 +39,52 @@ enum class Register {
      * Note: a subroutine that requires more than
      * four inputs uses the stack for the additional inputs.
      */
-    R3 {
-        override fun toString(): String { return "r3" }
-    },
+    R3,
 
     /**
      * By convention, R4 is a general purpose register.
      */
-    R4 {
-        override fun toString(): String { return "r4" }
-    },
+    R4,
 
     /**
      * By convention, R5 is a general purpose register.
      */
-    R5 {
-        override fun toString(): String { return "r5" }
-   },
+    R5,
 
     /**
      * By convention, R6 is a general purpose register.
      */
-    R6 {
-        override fun toString(): String { return "r6" }
-       },
+    R6,
 
     /**
      * By convention, R7 holds the syscall number.
      */
-    R7 {
-        override fun toString(): String { return "r7" }
-       },
+    R7,
 
     /**
      * By convention, R8 is a general purpose register.
      */
-    R8 {
-        override fun toString(): String { return "r8" }
-    },
+    R8,
 
     /**
      * By convention, R9 is a general purpose register.
      */
-    R9 {
-        override fun toString(): String { return "r9" }
-       },
+    R9,
 
     /**
      * By convention, R10 is a general purpose register.
      */
-    R10 {
-        override fun toString(): String { return "r10" }
-    },
+    R10,
 
     /**
      * By convention, FP (or R11) is the frame pointer.
      */
-    FP {
-        override fun toString(): String { return "fp" }
-       },
+    FP,
 
     /**
      * By convention, IP (or R12) is the intra procedural call register.
      */
-    IP {
-        override fun toString(): String { return "ip" }
-       },
+    IP,
 
     /**
      * By convention, SP (or R13) is the stack pointer.
@@ -121,16 +95,12 @@ enum class Register {
      * in any way that is not possible in the corresponding Thumb
      * instruction, is deprecated.
      */
-    SP {
-        override fun toString(): String { return "sp" }
-       },
+    SP,
 
     /**
      * By convention, LR (or R14) is the link register.
      */
-    LR {
-        override fun toString(): String { return "lr" }
-       },
+    LR,
 
     /**
      * By convention, PC (or R15) is the program counter.
@@ -141,9 +111,7 @@ enum class Register {
      * The address of the currently executing instruction is
      * typically PC–8 for ARM.
      */
-    PC {
-        override fun toString(): String { return "pc" }
-       },
+    PC,
 
     /**
      * By convention, CPSR (or R16) is the current program status register.
@@ -155,7 +123,10 @@ enum class Register {
      * - The endianness state
      * - The execution state bits for the IT block
      */
-    CPSR {
-        override fun toString(): String { return "cpsr" }
+    CPSR,
+    ;
+
+    override fun toString(): String {
+        return name.lowercase()
     }
 }

@@ -1,9 +1,16 @@
-package ic.doc.group15.instructions
+package ic.doc.group15.codegen.assembly.instruction
+
+import ic.doc.group15.codegen.assembly.Instruction
+import ic.doc.group15.codegen.assembly.operand.Register
+import ic.doc.group15.codegen.assembly.operand.RegisterList
 
 /**
  * Stack operations present in ARM1176JZF-S, partly implemented.
  */
-abstract class StackInstruction: Instruction()
+abstract class StackInstruction protected constructor(
+    instr: String,
+    val registers: Array<out Register>
+) : Instruction(instr, RegisterList(*registers))
 
 /**
  * PUSH is a stack-related instruction that pushes registers onto a full
@@ -11,13 +18,9 @@ abstract class StackInstruction: Instruction()
  * preferred mnemonic. Registers are stored on the stack in numerical order,
  * with the lowest numbered register at the lowest address.
  *
- * @param regList A non-empty list of registers
+ * @param regs The registers to push
  */
-class PUSH(val regList: List<Register>): StackInstruction() {
-  override fun translate(): String {
-    return "push ${regList.sorted().joinToString(separator = ",", prefix = "{", postfix = "}")}"
-  }
-}
+class Push(vararg regs: Register) : StackInstruction("PUSH", regs)
 
 /**
  * POP is a stack-related instruction that pops registers off a full
@@ -30,10 +33,6 @@ class PUSH(val regList: List<Register>): StackInstruction() {
  * where the LR was pushed onto the stack at the start of the subroutine.
  * The register list cannot contain SP.
  *
- * @param regList A non-empty list of registers
+ * @param regs The registers to pop to
  */
-class POP(val regList: List<Register>): StackInstruction() {
-  override fun translate(): String {
-    return "pop ${regList.sorted().joinToString(separator = ",", prefix = "{", postfix = "}")}"
-  }
-}
+class Pop(vararg regs: Register) : StackInstruction("POP", regs)

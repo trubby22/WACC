@@ -1,6 +1,28 @@
-package ic.doc.group15.instructions
+package ic.doc.group15.codegen.assembly.instruction
 
-abstract class LogicalInstruction: Instruction()
+import ic.doc.group15.codegen.assembly.Instruction
+import ic.doc.group15.codegen.assembly.operand.Operand
+import ic.doc.group15.codegen.assembly.operand.Register
+
+/**
+ * Logical operations present in ARM1176JZF-S, partly implemented.
+ */
+// abstract class LogicalInstruction(
+//    instr: String,
+//    vararg operands: Operand<*>
+// ) : Instruction(instr, *operands) {
+//
+//    constructor(
+//        instr: String,
+//        operands: List<Operand<*>>
+//    ) : this(instr, *operands.toTypedArray())
+// }
+abstract class LogicalInstruction(
+    instr: String,
+    val dest: Register,
+    val base: Register,
+    val op: Operand
+) : Instruction(instr, dest, base, op)
 
 /**
  * AND is a logical-and instruction that performs bitwise AND operations on
@@ -16,11 +38,11 @@ abstract class LogicalInstruction: Instruction()
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
-class AND(val dest: Register, val base: Register, val op: Operand2): LogicalInstruction() {
-  override fun translate(): String {
-    return "and $dest, $base, $op"
-  }
-}
+class And(
+    dest: Register,
+    base: Register,
+    op: Operand
+) : LogicalInstruction("and", dest, base, op)
 
 /**
  * AND is a logical-and instruction that performs bitwise AND operations on
@@ -38,8 +60,8 @@ class AND(val dest: Register, val base: Register, val op: Operand2): LogicalInst
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
-class ANDS(val dest: Register, val base: Register, val op: Operand2): LogicalInstruction() {
-  override fun translate(): String {
-    return "ands $dest, $base, $op"
-  }
-}
+class AndCond(
+    dest: Register,
+    base: Register,
+    op: Operand
+) : LogicalInstruction("ands", dest, base, op)

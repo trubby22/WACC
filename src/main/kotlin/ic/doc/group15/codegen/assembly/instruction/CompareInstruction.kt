@@ -1,9 +1,17 @@
-package ic.doc.group15.instructions
+package ic.doc.group15.codegen.assembly.instruction
+
+import ic.doc.group15.codegen.assembly.Instruction
+import ic.doc.group15.codegen.assembly.operand.Register
+import ic.doc.group15.codegen.assembly.operand.Operand
 
 /**
  * Comparison operations present in ARM1176JZF-S, partly implemented.
  */
-abstract class CompareInstruction: Instruction()
+abstract class CompareInstruction protected constructor(
+    instr: String,
+    val base: Register,
+    val op: Operand
+) : Instruction(instr, base, op)
 
 /**
  * CMP is a compare instruction that compares the value in the register with the
@@ -15,8 +23,4 @@ abstract class CompareInstruction: Instruction()
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
-class CMP(val base: Register, val op: Operand2): CompareInstruction() {
-  override fun translate(): String {
-    return "cmp $base, $op"
-  }
-}
+class Compare(base: Register, op: Operand) : CompareInstruction("cmp", base, op)

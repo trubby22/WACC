@@ -183,6 +183,9 @@ class Visitor(
             errors.addError(CondTypeError(ctx.expr().start, condExpr.type))
         }
 
+        val ifBlock = IfBlockAST(scopeAST, symbolTable, condExpr)
+
+        scopeAST = ifBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting then block")
         val thenStat = visit(ctx.stat(0)) as StatementAST
@@ -194,7 +197,11 @@ class Visitor(
 //            )
 //        }
         symbolTable = symbolTable.parentScope()!!
+        scopeAST = scopeAST.parent!!
 
+        val elseBlock = ElseBlockAST(ifBlock, symbolTable)
+
+        scopeAST = elseBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting else block")
         val elseStat = visit(ctx.stat(1)) as StatementAST
@@ -206,8 +213,11 @@ class Visitor(
 //            )
 //        }
         symbolTable = symbolTable.parentScope()!!
+        scopeAST = scopeAST.parent!!
 
-        return addToScope(IfBlockAST(scopeAST, symbolTable, condExpr, thenStat, elseStat))
+        ifBlock.elseBlock = elseBlock
+
+        return addToScope(ifBlock)
     }
 
     override fun visitWhileStat(ctx: WhileStatContext): ASTNode {

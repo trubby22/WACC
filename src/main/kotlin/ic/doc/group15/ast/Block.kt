@@ -29,9 +29,11 @@ class FunctionDeclarationAST(
 class IfBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val condExpr: ExpressionAST,
-    val elseStat: ElseBlockAST?
-) : BlockAST(parent, symbolTable)
+    val condExpr: ExpressionAST
+) : BlockAST(parent, symbolTable) {
+
+    var elseBlock: ElseBlockAST? = null
+}
 
 class ElseBlockAST(
     parent: IfBlockAST,
