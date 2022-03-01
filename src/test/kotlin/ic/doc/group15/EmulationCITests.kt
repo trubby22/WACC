@@ -1,203 +1,439 @@
 package ic.doc.group15
 
-import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertEquals
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class EmulationCITests {
+  private val validFolderPath = "wacc_examples/valid"
+  private val validModelOutputFolderPath = "model_output/$validFolderPath"
 
-    private val validFolder = "wacc_examples/valid"
+  @Disabled
+  @Nested
+  inner class ArrayValidFiles {
+    private val arrayFolderPath = "$validFolderPath/array"
+    private val arrayResultFolderPath = "$validModelOutputFolderPath/array"
 
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(
+      strings = [
+        "array", "arrayBasic", "arrayEmpty", "arrayLength", "arrayLookup", "arrayNested",
+        "arrayPrint", "arraySimple", "modifyString", "printRef"
+      ]
+    )
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$arrayFolderPath/$fileName.wacc"
+      val resultPath = "$arrayResultFolderPath/$fileName.txt"
 
-//    @Test
-//    fun arrayEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/array")
-//    }
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
 
-    @Test
-    fun basicSkipEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/basic/skip")
+  @Nested
+  inner class BasicValidFiles {
+    private val basicFolderPath = "$validFolderPath/basic"
+    private val basicResultFolderPath = "$validModelOutputFolderPath/basic"
+
+    @Disabled
+    @Nested
+    inner class ExitValidFiles {
+      private val exitFolderPath = "$basicFolderPath/exit"
+      private val exitResultFolderPath = "$basicResultFolderPath/exit"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(strings = ["exit-1", "exitBasic", "exitBasic2", "exitWrap"])
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$exitFolderPath/$fileName.wacc"
+        val resultPath = "$exitResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
     }
 
-//    The test below should be used in the place of the one above once we get
-//    all programs under basic/ to work
+    @Nested
+    inner class SkipValidFiles {
+      private val skipFolderPath = "$basicFolderPath/skip"
+      private val skipResultFolderPath = "$basicResultFolderPath/skip"
 
-//    @Test
-//    fun basicEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/basic")
-//    }
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(strings = ["comment", "commentInLine", "skip"])
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$skipFolderPath/$fileName.wacc"
+        val resultPath = "$skipResultFolderPath/$fileName.txt"
 
-//    @Test
-//    fun expressionsEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/expressions")
-//    }
-//
-//    @Test
-//    fun functionEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/function")
-//    }
-//
-//    @Test
-//    fun ifEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/if")
-//    }
-//
-//    @Test
-//    fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/IO")
-//    }
-//
-//    @Test
-//    fun pairsEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/pairs")
-//    }
-//
-//    @Test
-//    fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/runtimeErr")
-//    }
-//
-//    @Test
-//    fun scopeEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/scope")
-//    }
-//
-//    @Test
-//    fun sequenceEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/sequence")
-//    }
-//
-//    @Test
-//    fun variablesEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/variables")
-//    }
-//
-//    @Test
-//    fun whileEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/while")
-//    }
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+  }
 
-    private fun checkAssemblyFolder(path: String) {
-        val res = Files.walk(Paths.get(path))
-            .filter(Files::isRegularFile)
-            .filter { path -> path.toString().endsWith(".wacc") }
-            .filter { path -> !path.toString().endsWith("IOLoop.wacc") } //
-                // IOLoop.wacc gives ugly output - need to test by hand
-            .map {
-                checkAssembly(
-                    it.toString())
-            }
-            .reduce { a, b -> a && b }
-            .orElse(false)
-        if (!res) {
-            throw Error()
-        }
+  @Disabled
+  @Nested
+  inner class ExpressionValidFiles {
+    private val expressionsFolderPath = "$validFolderPath/expressions"
+    private val expressionsResultFolderPath =
+      "$validModelOutputFolderPath/expressions"
+
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(
+      strings = [
+        "andExpr", "andOverOrExpr", "boolCalc", "boolExpr1", "charComparisonExpr", "divExpr",
+        "equalsExpr", "equalsOverAnd", "equalsOverBool", "equalsOverOr", "greaterEqExpr", "greaterExpr", "intCalc",
+        "intExpr1", "lessCharExpr", "lessEqExpr", "lessExpr", "longExpr", "longExpr2", "longExpr3", "longSplitExpr",
+        "longSplitExpr2", "minusExpr", "minusMinusExpr", "minusNoWhitespaceExpr", "minusPlusExpr", "modExpr",
+        "multExpr", "multNoWhitespaceExpr", "negBothDiv", "negBothMod", "negDividendDiv", "negDividendMod",
+        "negDivisorDiv", "negDivisorMod", "negExpr", "notequalsExpr", "notExpr", "ordAndchrExpr", "orExpr",
+        "plusExpr", "plusMinusExpr", "plusNoWhitespaceExpr", "plusPlusExpr", "sequentialCount", "stringEqualsExpr"
+      ]
+    )
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$expressionsFolderPath/$fileName.wacc"
+      val resultPath = "$expressionsResultFolderPath/$fileName.txt"
+
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
+
+  @Disabled
+  @Nested
+  inner class FunctionValidFiles {
+    private val functionsFolderPath = "$validFolderPath/function"
+    private val functionsResultFolderPath =
+      "$validModelOutputFolderPath/function"
+
+    @Nested
+    inner class NestedFunctionValidFiles {
+      private val nestedFunctionsFolderPath =
+        "$functionsFolderPath/nested_functions"
+      private val nestedFunctionsResultFolderPath =
+        "$functionsResultFolderPath/nested_functions"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(
+        strings = [
+          "fibonacciFullRec", "fibonacciRecursive", "fixedPointRealArithmetic",
+          "functionConditionalReturn", "mutualRecursion", "printInputTriangle", "printTriangle",
+          "simpleRecursion"
+        ]
+      )
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$nestedFunctionsFolderPath/$fileName.wacc"
+        val resultPath = "$nestedFunctionsResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
     }
 
-    private fun checkAssembly(path: String): Boolean {
+    @Nested
+    inner class SimpleFunctionValidFiles {
+      private val simpleFunctionsFolderPath =
+        "$functionsFolderPath/simple_functions"
+      private val simpleFunctionsResultFolderPath =
+        "$functionsResultFolderPath/simple_functions"
 
-//        Compile and emulate a wacc program and check against model solution
-//        coming from refCompile -x (and stored under model_output/ for speed)
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(
+        strings = [
+          "asciiTable", "functionDeclaration", "functionDoubleReturn", "functionIfReturns",
+          "functionManyArguments", "functionMultiReturns", "functionReturnPair", "functionSimple",
+          "functionSimpleLoop", "functionUpdateParameter", "incFunction", "negFunction", "sameArgName",
+          "sameArgName2", "sameNameAsVar"
+        ]
+      )
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$simpleFunctionsFolderPath/$fileName.wacc"
+        val resultPath = "$simpleFunctionsResultFolderPath/$fileName.txt"
 
-//        println("Testing $path")
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+  }
 
-        val compile =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "java -jar " +
-                        "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
-                        "$path < $path"
-            ).start()
+  @Disabled
+  @Nested
+  inner class IfValidFiles {
+    private val ifFolderPath = "$validFolderPath/if"
+    private val ifResultFolderPath = "$validModelOutputFolderPath/if"
 
-        try {
-            val exitCode = compile.waitFor()
-            assertEquals(0, exitCode)
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(strings = ["if1", "if2", "if3", "if4", "if5", "if6", "ifBasic", "ifFalse", "ifTrue", "whitespace"])
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$ifFolderPath/$fileName.wacc"
+      val resultPath = "$ifResultFolderPath/$fileName.txt"
 
-//        println("Compile completed")
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
 
-        val filename = path.split("/").last()
-        val executable = filename.substring(0, filename.length - 4)
-        val asmFilename = executable + "s"
+  @Disabled
+  @Nested
+  inner class IOValidFiles {
+    private val ioFolderPath = "$validFolderPath/IO"
+    private val ioResultFolderPath = "$validModelOutputFolderPath/IO"
 
-        val emulateLocal = "arm-linux-gnueabi-gcc -o $executable " +
-                "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $asmFilename; " +
-                "qemu-arm -L /usr/arm-linux-gnueabi $executable; " +
-                "echo $?"
+    // Note: IOLoop is left out until a separate function is written to
+    // handle interactive input using "echo input | refCompile/command"
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(strings = ["IOSequence"])
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$ioFolderPath/$fileName.wacc"
+      val resultPath = "$ioResultFolderPath/$fileName.txt"
 
-        val emulate =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "$emulateLocal 2>&1"
-            ).start()
-
-        var exitCode1 = -1
-
-        try {
-            exitCode1 = emulate.waitFor()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-
-//        println("Emulate completed")
-
-        val actual = IOUtils.toString(
-            emulate.inputStream,
-            StandardCharsets.UTF_8.name()
-        ).trim()
-
-//        println("actual:")
-//        println(actual)
-
-        assertEquals(0, exitCode1)
-
-        val txtPath = path.substring(0, path.length - 4) + "txt"
-        val expectedLst = File("model_output/$txtPath").readLines()
-        val actualLst = actual.split("\n")
-
-        val actualOutput = actualLst.subList(0, actualLst.size - 1)
-            .joinToString("\n").trim()
-        val actualExitCode = actualLst[actualLst.size - 1].trim()
-
-        val expectedOutput = expectedLst.subList(3, expectedLst.size)
-            .joinToString("\n").trim()
-        val expectedExitCode = expectedLst[1].trim()
-
-        val success = expectedExitCode == actualExitCode && expectedOutput == actualOutput
-
-        if (!success) {
-            print(path)
-        }
-
-        if (expectedExitCode != actualExitCode) {
-            print(" (exit code mismatch)")
-        }
-
-        if (expectedOutput != actualOutput) {
-            print(" (output mismatch)")
-        }
-
-        if (!success) {
-            println()
-        }
-
-//        if (!success) {
-//            println("Expected exit code: $expectedExitCode")
-//            println("Actual exit code: $actualExitCode")
-//
-//            println("Expected output:")
-//            println(expectedOutput)
-//            println("Actual output:")
-//            println(actualOutput)
-//        }
-
-        return success
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
     }
 
+    @Nested
+    inner class PrintValidFiles {
+      private val printFolderPath = "$ioFolderPath/print"
+      private val printResultFolderPath = "$ioResultFolderPath/print"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(
+        strings = [
+          "hashInProgram", "multipleStringsAssignment", "print", "print-backspace",
+          "print-carridge-return", "printBool", "printChar", "printCharArray", "printCharAsString", "printEscChar",
+          "printInt", "println"
+        ]
+      )
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$printFolderPath/$fileName.wacc"
+        val resultPath = "$printResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+
+    @Nested
+    inner class ReadValidFiles {
+      private val readFolderPath = "$ioFolderPath/read"
+      private val readResultFolderPath = "$ioResultFolderPath/read"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(
+        strings = [
+          "echoBigInt", "echoBigNegInt", "echoChar", "echoInt", "echoNegInt", "echoPuncChar",
+          "read"
+        ]
+      )
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$readFolderPath/$fileName.wacc"
+        val resultPath = "$readResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+  }
+
+  @Disabled
+  @Nested
+  inner class PairValidFiles {
+    private val pairsFolderPath = "$validFolderPath/pairs"
+    private val pairsResultFolderPah = "$validModelOutputFolderPath/pairs"
+
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(
+      strings = [
+        "checkRefPair", "createPair", "createPair02", "createPair03", "createRefPair", "free",
+        "linkedList", "nestedPair", "null", "printNull", "printNullPair", "printPair", "printPairOfNulls", "readPair",
+        "writeFst", "writeSnd"
+      ]
+    )
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$pairsFolderPath/$fileName.wacc"
+      val resultPath = "$pairsResultFolderPah/$fileName.txt"
+
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
+
+  @Disabled
+  @Nested
+  inner class RuntimeErrorValidFiles {
+    private val runtimeErrorFolderPath = "$validFolderPath/runtimeErr"
+    private val runtimeErrorResultFolderPath =
+      "$validModelOutputFolderPath/runtimeErr"
+
+    @Nested
+    inner class ArrayOutOfBoundsValidFiles {
+      private val arrayOutOfBoundsFolderPath =
+        "$runtimeErrorFolderPath/arrayOutOfBounds"
+      private val arrayOutOfBoundsResultFolderPath =
+        "$runtimeErrorResultFolderPath/arrayOutOfBounds"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(strings = ["arrayNegBounds", "arrayOutOfBounds", "arrayOutOfBoundsWrite"])
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$arrayOutOfBoundsFolderPath/$fileName.wacc"
+        val resultPath = "$arrayOutOfBoundsResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+
+    @Nested
+    inner class DivideByZeroValidFiles {
+      private val divideByZeroFolderPath =
+        "$runtimeErrorFolderPath/divideByZero"
+      private val divideByZeroResultFolderPath =
+        "$runtimeErrorResultFolderPath/divideByZero"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(strings = ["divideByZero", "divZero", "modByZero"])
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$divideByZeroFolderPath/$fileName.wacc"
+        val resultPath = "$divideByZeroResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+
+    @Nested
+    inner class IntegerOverflowValidFiles {
+      private val integerOverflowFolderPath =
+        "$runtimeErrorFolderPath/integerOverflow"
+      private val integerOverflowResultFolderPath =
+        "$runtimeErrorResultFolderPath/integerOverflow"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(
+        strings = [
+          "intJustOverflow", "intmultOverflow", "intnegateOverflow", "intnegateOverflow2",
+          "intnegateOverflow3", "intnegateOverflow4", "intUnderflow", "intWayOverflow"
+        ]
+      )
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$integerOverflowFolderPath/$fileName.wacc"
+        val resultPath = "$integerOverflowResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+
+    @Nested
+    inner class NullDereferenceValidFiles {
+      private val nullDereferenceFolderPath =
+        "$runtimeErrorFolderPath/nullDereference"
+      private val nullDereferenceResultFolderPath =
+        "$runtimeErrorResultFolderPath/nullDereference"
+
+      @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+      @ValueSource(strings = ["freeNull", "readNull1", "readNull2", "setNull1", "setNull2", "useNull1", "useNull2"])
+      fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+        val filePath = "$nullDereferenceFolderPath/$fileName.wacc"
+        val resultPath = "$nullDereferenceResultFolderPath/$fileName.txt"
+
+        assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+      }
+    }
+  }
+
+  @Disabled
+  @Nested
+  inner class ScopeValidFiles {
+    private val scopeFolderPath = "$validFolderPath/scope"
+    private val scopeResultFolderPath = "$validModelOutputFolderPath/scope"
+
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(
+      strings = [
+        "ifNested1", "ifNested2", "indentationNotImportant", "intsAndKeywords", "printAllTypes",
+        "scope", "scopeBasic", "scopeIfRedefine", "scopeRedefine", "scopeSimpleRedefine", "scopeVars",
+        "scopeWhileNested", "scopeWhileRedefine"
+      ]
+    )
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$scopeFolderPath/$fileName.wacc"
+      val resultPath = "$scopeResultFolderPath/$fileName.txt"
+
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
+
+  @Disabled
+  @Nested
+  inner class SequenceValidFiles {
+    private val sequenceFolderPath = "$validFolderPath/sequence"
+    private val sequenceResultFolderPath =
+      "$validModelOutputFolderPath/sequence"
+
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(
+      strings = [
+        "basicSeq", "basicSeq2", "boolAssignment", "charAssignment", "exitSimple",
+        "intAssignment", "intLeadingZeros", "stringAssignment"
+      ]
+    )
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$sequenceFolderPath/$fileName.wacc"
+      val resultPath = "$sequenceResultFolderPath/$fileName.txt"
+
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
+
+  @Disabled
+  @Nested
+  inner class VariableValidFiles {
+    private val variablesFolderPath = "$validFolderPath/variables"
+    private val variablesResultFolderPath =
+      "$validModelOutputFolderPath/variables"
+
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(
+      strings = [
+        "_VarNames", "boolDeclaration", "boolDeclaration2", "capCharDeclaration",
+        "charDeclaration", "charDeclaration2", "emptyStringDeclaration", "intDeclaration", "longVarNames",
+        "manyVariables", "negIntDeclaration", "puncCharDeclaration", "stringDeclaration", "zeroIntDeclaration"
+      ]
+    )
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$variablesFolderPath/$fileName.wacc"
+      val resultPath = "$variablesResultFolderPath/$fileName.txt"
+
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
+
+  @Disabled
+  @Nested
+  inner class WhileValidFiles {
+    private val whileFolderPath = "$validFolderPath/while"
+    private val whileResultFolderPath = "$validModelOutputFolderPath/while"
+
+    @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+    @ValueSource(
+      strings = [
+        "fibonacciFullIt", "fibonacciIterative", "loopCharCondition", "loopIntCondition", "max",
+        "min", "rmStyleAdd", "rmStyleAddIO", "whileBasic", "whileBoolFlip", "whileCount", "whileFalse"
+      ]
+    )
+    fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+      val filePath = "$whileFolderPath/$fileName.wacc"
+      val resultPath = "$whileResultFolderPath/$fileName.txt"
+
+      assertTrue(exitCodeAndOutputMatches(filePath, resultPath))
+    }
+  }
+
+  private fun compileAndExecute(path: String): Pair<Int, List<String>> {
+    TODO()
+  }
+
+  private fun getExpectedResult(path: String): Pair<Int, List<String>> {
+    TODO()
+  }
+
+  private fun exitCodeAndOutputMatches(
+    filePath: String,
+    resultPath: String
+  ): Boolean {
+    val (actualExitCode, actualOutput) = compileAndExecute(filePath)
+    val (expectedExitCode, expectedOutput) = getExpectedResult(resultPath)
+
+    val exitCodeMatches = (expectedExitCode == actualExitCode)
+    val outputMatches = (expectedOutput == actualOutput)
+
+    return exitCodeMatches && outputMatches
+  }
 }
