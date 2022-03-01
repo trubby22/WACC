@@ -149,10 +149,7 @@ class Visitor(
         )
         parentScope.add(funcName, func.funcIdent)
         log("|| Visiting $funcName function body")
-        if (ctx.stat() != null) {
-            visit(ctx.stat())
-        }
-        visit(ctx.valid_return_stat())
+        func.body = visit(ctx.valid_return_stat()) as StatementAST
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -353,33 +350,70 @@ class Visitor(
         return addToScope(returnStat)
     }
 
-    override fun visitBaseReturnStat(ctx: WaccParser.BaseReturnStatContext):
-        ASTNode? {
-        if (ctx.stat() != null) {
-            visit(ctx.stat())
+    override fun visitSequenceRecursiveReturn1(ctx: WaccParser.SequenceRecursiveReturn1Context): ASTNode {
+        return if (ctx.valid_return_stat() != null) {
+            SequenceStatementAST(scopeAST, symbolTable,
+                visit(ctx.return_stat()) as StatementAST,
+                visit(ctx.valid_return_stat()) as StatementAST)
+        } else {
+            visit(ctx.return_stat())
         }
-        visit(ctx.return_stat())
-
-        return null
     }
 
-    override fun visitSingleRecursiveReturnStat(
-        ctx: WaccParser
-        .SingleRecursiveReturnStatContext
-    ): ASTNode? {
-        visit(ctx.valid_return_stat())
-
-        return null
+    override fun visitSequenceRecursiveReturn2(ctx: WaccParser.SequenceRecursiveReturn2Context): ASTNode {
+        return SequenceStatementAST(scopeAST, symbolTable,
+            visit(ctx.stat()) as StatementAST,
+            visit(ctx.valid_return_stat()) as StatementAST)
     }
 
-    override fun visitDoubleRecursiveReturnStat(
-        ctx: WaccParser
-        .DoubleRecursiveReturnStatContext
-    ): ASTNode? {
-        visit(ctx.valid_return_stat(0))
-        visit(ctx.valid_return_stat(1))
+    override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext): ASTNode {
+        symbolTable = symbolTable.subScope()
+        val node = visit(ctx.valid_return_stat())
+        symbolTable = symbolTable.parentScope()!!
 
-        return null
+        return node
+    }
+
+    override fun visitIfReturn(ctx: WaccParser.IfReturnContext): ASTNode {
+        log("Visiting if statement")
+
+        log("Visiting if statement condition expression")
+        val condExpr = visit(ctx.expr()) as ExpressionAST
+
+        if (condExpr.type != BasicType.BoolType) {
+            throw TypeError(
+                "line: ${ctx.expr().getStart().line} column: ${
+                    ctx.expr().getStart().charPositionInLine
+                } type of conditional expression should be " +
+                        "bool and is ${condExpr.type}"
+            )
+        }
+
+        symbolTable = symbolTable.subScope()
+        log("|| Visiting then block")
+        val thenStat = visit(ctx.valid_return_stat(0))
+        if (thenStat !is StatementAST) {
+            throw DeclarationError(
+                "line: ${ctx.valid_return_stat(0).getStart().line} column: ${
+                    ctx.valid_return_stat(0).getStart().charPositionInLine
+                } invalid then statement in if block"
+            )
+        }
+        symbolTable = symbolTable.parentScope()!!
+
+        symbolTable = symbolTable.subScope()
+        log("|| Visiting else block")
+        val elseStat = visit(ctx.valid_return_stat(1))
+        if (elseStat !is StatementAST) {
+            throw DeclarationError(
+                "line: ${ctx.valid_return_stat(1).getStart().line} column: ${
+                    ctx.valid_return_stat(1).getStart().charPositionInLine
+                } invalid else statement in if block"
+            )
+        }
+        symbolTable = symbolTable.parentScope()!!
+
+        return addToScope(IfBlockAST(scopeAST, symbolTable, condExpr, thenStat, elseStat))
     }
 
     override fun visitFreeStat(ctx: WaccParser.FreeStatContext): ASTNode {
@@ -399,6 +433,12 @@ class Visitor(
         log("Visiting skip statement")
 
         return addToScope(SkipStatementAST(scopeAST))
+    }
+
+    override fun visitSequenceStat(ctx: WaccParser.SequenceStatContext): ASTNode {
+        return SequenceStatementAST(scopeAST, symbolTable,
+            visit(ctx.stat(0)) as StatementAST,
+            visit(ctx.stat(1)) as StatementAST)
     }
 
     override fun visitReadStat(ctx: WaccParser.ReadStatContext): ASTNode {
@@ -630,12 +670,16 @@ class Visitor(
         val i = parseInt(ctx.POSITIVE_INTEGER().text)
         assert(i in 0..INT_MAX)
 
+        log("Visiting int_liter with value: $i")
+
         return IntLiteralAST(i)
     }
 
     override fun visitInt_liter_negative(ctx: WaccParser.Int_liter_negativeContext): ASTNode {
         val i = parseInt(ctx.text)
         assert(i in INT_MIN..0)
+
+        log("Visiting int_liter with value: $i")
 
         return IntLiteralAST(i)
     }
