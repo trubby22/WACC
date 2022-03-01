@@ -3,11 +3,12 @@ package ic.doc.group15
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class EmulationTests {
+class EmulationLocalTests {
 
     private val validFolder = "wacc_examples/valid"
 
@@ -119,17 +120,24 @@ class EmulationTests {
 //        println("Compile completed")
 
         val filename = path.split("/").last()
-        val asmFilename = filename.substring(0, filename.length - 4) + "s"
+        val executable = filename.substring(0, filename.length - 4)
+        val asmFilename = executable + "s"
+
+        val emulateOnline = "./wacc_examples/refEmulate $asmFilename"
+        val emulateLocal = "arm-linux-gnueabi-gcc -o $executable " +
+                "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $asmFilename; " +
+                "qemu-arm -L /usr/arm-linux-gnueabi $executable"
 
         val emulate =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "echo '' | ./wacc_examples/refEmulate $asmFilename"
+                "echo '' | $emulateOnline 2>&1"
             ).start()
 
+        var exitCode1 = -1
+
         try {
-            val exitCode = emulate.waitFor()
-            assertEquals(0, exitCode)
+            exitCode1 = emulate.waitFor()
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -141,25 +149,36 @@ class EmulationTests {
             StandardCharsets.UTF_8.name()
         ).trim()
 
+//        println("actual:")
+//        println(actual)
+
+        assertEquals(0, exitCode1)
+
         val modelSolution =
             ProcessBuilder(
                 "/bin/bash", "-c",
-                "echo '' | ./wacc_examples/refCompile -ax $path"
+                "echo '' | ./wacc_examples/refCompile -ax $path 2>&1"
             ).start()
 
+        var exitCode2 = -1
+
         try {
-            val exitCode = modelSolution.waitFor()
-            assertEquals(0, exitCode)
+            exitCode2 = modelSolution.waitFor()
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
-
-//        println("ModelSolution completed")
 
         val expected = IOUtils.toString(
             modelSolution.inputStream,
             StandardCharsets.UTF_8.name()
         ).trim()
+
+//        println("expected:")
+//        println(expected)
+
+        assertEquals(0, exitCode2)
+
+//        println("ModelSolution completed")
 
         val actualOutput = actual
             .split("-- Emulation Output:\n")[1]
@@ -167,13 +186,24 @@ class EmulationTests {
             .trim()
         val actualExitCode = Regex("(?<=The exit code is: )[0-9]+(?=\\.)")
             .find(actual)?.value!!
+//        val actualAssembly = actual
+//            .split("-- Uploaded file:")[1]
+//            .split("---------------------------------------------------------------\n")[1]
+//            .split("---------------------------------------------------------------")[0]
+//            .trim()
         val expectedOutput = expected
             .split("-- Executing...\n" +
-            "===========================================================\n")[1]
+                    "===========================================================\n")[1]
             .split("===========================================================")[0]
             .trim()
         val expectedExitCode = Regex("(?<=The exit code is )[0-9]+(?=\\.)")
             .find(expected)?.value!!
+//        val expectedAssemblyCluttered = expected
+//            .split("contents are:\n" +
+//                    "===========================================================\n")[1]
+//            .split("===========================================================")[0]
+//        val expectedAssembly = Regex("^[0-9]+\t", RegexOption.MULTILINE)
+//            .replace(expectedAssemblyCluttered, "").trim()
 
         val success = expectedExitCode == actualExitCode && expectedOutput == actualOutput
 
@@ -193,6 +223,21 @@ class EmulationTests {
             println()
         }
 
+//        Code used to map expected output to .txt files
+
+//        val lst = path.split("/")
+//        val enclosingFolder = lst.subList(0, lst.size - 1).joinToString("/")
+//        val txtPath = path.substring(0, path.length - 4) + "txt"
+//
+//        Files.createDirectories(Paths.get("model_output/$enclosingFolder"))
+//
+//        File("model_output/$txtPath").writeText("Exit code:\n" +
+//                "$expectedExitCode\n" +
+//                "Output:\n" +
+//                expectedOutput)
+
+//        println("Path: $path")
+//
 //        println("Expected exit code: $expectedExitCode")
 //        println("Actual exit code: $actualExitCode")
 //
@@ -200,6 +245,11 @@ class EmulationTests {
 //        println(expectedOutput)
 //        println("Actual output:")
 //        println(actualOutput)
+//
+//        println("Expected assembly:")
+//        println(expectedAssembly)
+//        println("Actual assembly:")
+//        println(actualAssembly)
 
         return success
     }

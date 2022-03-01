@@ -42,9 +42,8 @@ fun main(args: Array<String>) {
             "\n" +
             ".global main\n" +
             "main:\n" +
-            "       PUSH {lr}\n" +
-            "       LDR r0, =0\n" +
-            "       POP {pc}\n" +
-            "       .ltorg\n"
-    )
+            "\tPUSH {lr}\n" +
+            "\tLDR r0, =0\n" +
+            "\tPOP {pc}\n" +
+            "\t.ltorg\n")
 }

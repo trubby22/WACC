@@ -1,0 +1,6 @@
+Exit code:
+0
+Output:
+2
+4
+2

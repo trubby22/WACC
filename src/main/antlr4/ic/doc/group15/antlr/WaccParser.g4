@@ -8,7 +8,6 @@ options {
 program: BEGIN (func)* stat END EOF;
 
 func: type ident OPEN_PAREN (param (COMMA param)*)? CLOSE_PAREN IS
-          (stat END_STAT)?
           valid_return_stat
       END;
 
@@ -32,10 +31,10 @@ stat: SKIP_STAT                                 #skipStat
 return_stat: (RETURN | EXIT) expr;
 
 // Needed for identifying return statements inside blocks
-valid_return_stat: (stat END_STAT)? return_stat              #baseReturnStat
-| WHILE expr DO valid_return_stat DONE                       #singleRecursiveReturnStat
-| IF expr THEN valid_return_stat ELSE valid_return_stat FI   #doubleRecursiveReturnStat
-| BEGIN valid_return_stat END                                #singleRecursiveReturnStat
+valid_return_stat: return_stat (END_STAT valid_return_stat)? #sequenceRecursiveReturn1
+| stat END_STAT valid_return_stat                            #sequenceRecursiveReturn2
+| IF expr THEN valid_return_stat ELSE valid_return_stat FI   #ifReturn
+| BEGIN valid_return_stat END                                #beginEndReturn
 ;
 
 assign_lhs: ident                               #identAssignLhs

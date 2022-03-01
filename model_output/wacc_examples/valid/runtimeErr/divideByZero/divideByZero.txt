@@ -1,0 +1,4 @@
+Exit code:
+255
+Output:
+DivideByZeroError: divide or modulo by zero

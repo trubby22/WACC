@@ -25,7 +25,7 @@ gen/
 test.wacc
 
 # test output
-*.txt
+*.s
 
 # others
 *.iml

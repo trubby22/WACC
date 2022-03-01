@@ -1,0 +1,10 @@
+Exit code:
+0
+Output:
+a is 42
+b is true
+c is u
+d is hello
+e is 0x22150
+f is 0x22160
+answer is g

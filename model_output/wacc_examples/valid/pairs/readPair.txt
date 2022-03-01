@@ -1,0 +1,5 @@
+Exit code:
+0
+Output:
+Please enter the first element (char): Please enter the second element (int): The first element was \
+The second element was 0
