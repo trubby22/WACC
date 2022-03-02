@@ -56,6 +56,21 @@ class ImmediateOperand(val value: Int) : Operand {
 }
 
 /**
+ * This form uses an integer constant as the operand, and is only used for
+ * the pseudo-instruction "LDR reg =imm" and not any other instructions. It
+ * allows any immediate value to be loaded into a register, bypassing the
+ * limitations of the MOV instruction.
+ * Format: =<value>
+ *
+ * @param value
+ */
+class PseudoImmediateOperand(val value: Int) : Operand {
+    override fun toString(): String {
+        return "=$value"
+    }
+}
+
+/**
  * This form performs a logical shift left of specified bits on the value stored
  * in the base register with an immediate constant. The bit count must be a
  * five-bit integer in range [1, 31].
