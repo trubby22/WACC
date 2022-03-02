@@ -65,7 +65,6 @@ class AssemblyGenerator {
         return instructions
     }
 
-    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
     fun transBlock(block: BlockAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         var stackSpace = requiredStackSpace(block)
@@ -149,13 +148,29 @@ class AssemblyGenerator {
             is SkipStatementAST -> {}
             is VariableDeclarationAST -> instructions.addAll(transVariableDeclaration(stat, resultReg))
             is AssignToIdentAST -> instructions.addAll(transAssignToIdent(stat, resultReg))
+            is AssignToArrayElemAST -> {
+//                TODO
+            }
+            is AssignToPairElemAST -> {
+//                TODO
+            }
             is ReadStatementAST -> instructions.addAll(transReadStatement(stat, resultReg))
-            // is FreeStatementAST ->
-            // is PrintStatementAST ->
-            // is PrintlnStatementAST ->
+            is FreeStatementAST -> {
+//                TODO
+            }
+            is PrintStatementAST -> {
+//                TODO
+            }
+            is PrintlnStatementAST -> {
+//                TODO
+            }
             is IfBlockAST -> instructions.addAll(transIfBlock(stat, resultReg))
-            // is WhileBlockAST ->
-            // is BeginEndBlockAST ->
+            is WhileBlockAST -> {
+//                TODO
+            }
+            is BeginEndBlockAST -> {
+//                TODO
+            }
             is SequenceStatementAST -> instructions.addAll(transSequenceStatement(stat, resultReg))
         }
         return instructions
@@ -177,6 +192,110 @@ class AssemblyGenerator {
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
         instructions.add(StoreWord(SP, ImmediateOffset(resultReg, state.getStackPos((node.lhs as VariableIdentifierAST).varName) - sp))) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
         return instructions
+    }
+
+    fun transAssignToArrayElem(node: AssignToArrayElemAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transAssignToPairElem(node: AssignToPairElemAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transArrayLiteral(node: ArrayLiteralAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transPairElem(node: PairElemAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        when (node) {
+            is FstPairElemAST -> {
+//                TODO
+            }
+            is SndPairElemAST -> {
+//                TODO
+            }
+        }
+        return emptyList()
+    }
+
+    fun transFstPairElem(node: FstPairElemAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transSndPairElem(node: SndPairElemAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transElseBlock(node: ElseBlockAST, resultReg:
+    Register): List<Line> {
+//        TODO?
+        return emptyList()
+    }
+
+    fun transWhileBlock(node: WhileBlockAST, resultReg:
+    Register): List<Line> {
+//        TODO?
+        return emptyList()
+    }
+
+    fun transBeginEndBlock(node: BeginEndBlockAST, resultReg:
+    Register): List<Line> {
+//        TODO?
+        return emptyList()
+    }
+
+    fun transArrayElem(node: ArrayElemAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transParameter(node: ParameterAST, resultReg:
+    Register): List<Line> {
+//        TODO?
+        return emptyList()
+    }
+
+    fun transFreeStatement(node: FreeStatementAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transReturnStatement(node: ReturnStatementAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transExitStatement(node: ExitStatementAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transPrintStatement(node: PrintStatementAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
+    }
+
+    fun transPrintlnStatment(node: PrintlnStatementAST, resultReg:
+    Register): List<Line> {
+//        TODO
+        return emptyList()
     }
 
     // generates the assembly code for an ReadStatementAST node and returns the list of instructions
@@ -222,6 +341,12 @@ class AssemblyGenerator {
         when (node) {
             is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
             is NewPairAST -> instructions.addAll(transNewPair(node, resultReg))
+            is ArrayLiteralAST -> {
+//                TODO
+            }
+            is PairElemAST -> {
+//                TODO
+            }
             // complete remaining types...
         }
         return instructions
@@ -272,6 +397,9 @@ class AssemblyGenerator {
                 data.put(label, StringData(label, expr.stringValue))
                 instructions.add(LoadWord(resultReg, LabelOperand(label)))
             }
+            is NullPairLiteralAST -> {
+//                TODO
+            }
             is VariableIdentifierAST -> {
                 when (expr.type) {
                     IntType -> instructions.add(LoadWord(SP, ImmediateOffset(resultReg,state.getStackPos(expr.varName) - sp)))
@@ -280,7 +408,11 @@ class AssemblyGenerator {
                     StringType -> instructions.add(LoadWord(SP, ImmediateOffset(resultReg,state.getStackPos(expr.varName) - sp)))
                 }
             }
+            is ArrayElemAST -> {
+//                TODO
+            }
             is BinaryOpExprAST -> instructions.addAll(transBinOp(expr, resultReg))
+            is UnaryOpExprAST -> instructions.addAll(transUnOp(expr, resultReg))
         }
         return instructions
     }
