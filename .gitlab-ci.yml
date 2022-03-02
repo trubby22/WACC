@@ -42,3 +42,12 @@ emulation-test-job:
     - build-job
   script:
     - mvn surefire:test -Dtest=ic.doc.group15.EmulationCITests*
+
+experimental-test-job:
+  stage: test
+  rules:
+    - when: manual
+  dependencies:
+    - build-job
+  script:
+    - mvn surefire:test -Dtest=ic.doc.group15.EmulationLocalTests*
