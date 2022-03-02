@@ -102,7 +102,7 @@ class AssemblyGenerator {
             Sub(SP, SP, ImmediateOperand(stackSpace))
         ))
         instructions.addAll(transBlock((funcDec) as BlockAST, 4))
-        instructions.add(MOVreg(0, 4))
+        instructions.add(Move(R0, R4))
         instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
         instructions.add(Pop(PC))
         instructions.add(Pop(PC))
@@ -140,7 +140,7 @@ class AssemblyGenerator {
         }
         instructions.add(BranchLink("p_" + call.funcName))
         instructions.add(Add(SP, SP, ImmediateOperand(spDec)))
-        instructions.add(MOVreg(resultReg, 0))
+        instructions.add(Move(resultReg, R0))
     }
 
     // generates the assembly code for a BlockAST node and returns the list of instructions
@@ -191,7 +191,7 @@ class AssemblyGenerator {
             IntType -> {
                 defineUtilFuncs(P_READ_INT)
                 instructions.addAll(transExp(node.target as ExpressionAST, resultReg))
-                instructions.add(MOVreg(0, resultReg))
+                instructions.add(Move(R0, resultReg))
                 instructions.add(BranchLink(P_READ_INT.labelName))
             }
             // complete remaining types...
@@ -238,7 +238,7 @@ class AssemblyGenerator {
         when(node.target.type) {
             IntType -> {
                 instructions.addAll(transExp(node.target as ExpressionAST, resultReg))
-                instructions.add(MOVreg(0, resultReg))
+                instructions.add(Move(R0, resultReg))
                 instructions.add(BranchLink(P_READ_INT.labelName))
             }
             // complete remaining types...
@@ -270,10 +270,10 @@ class AssemblyGenerator {
                 instructions.add(LoadWord(resultReg, ImmediateOperand(expr.intValue)))
             }
             is BoolLiteralAST -> {
-                instructions.add(MOVimmBool(resultReg, expr.boolValue))
+                instructions.add(Move(resultReg, ImmediateOperand(expr.boolValue)))
             }
             is CharLiteralAST -> {
-                instructions.add(MOVimmChar(resultReg, expr.charValue))
+                instructions.add(Move(resultReg, ImmediateOperand(expr.charValue)))
             }
             is StringLiteralAST -> {
                 val label : String = stringLabel.generate()
@@ -310,10 +310,18 @@ class AssemblyGenerator {
             }
             BoolType -> {
                 instructions.addAll(transExp(expr.expr1, resultReg))
-                instructions.addAll(transExp(expr.expr2, resultReg + 1))
+                instructions.addAll(transExp(expr.expr2, resultReg.nextReg()))
                 when (expr.operator) {
-                    BinaryOp.EQUALS -> instructions.addAll(mutableListOf(Compare(resultReg, resultReg.nextReg()), MOVEQ(resultReg, true), MOVNE(resultReg, false)))
-                    BinaryOp.NOT_EQUALS -> instructions.addAll(mutableListOf(Compare(resultReg, resultReg.nextReg()), MOVNE(resultReg, true), MOVEQ(resultReg, false)))
+                    BinaryOp.EQUALS -> instructions.addAll(mutableListOf(
+                        Compare(resultReg, resultReg.nextReg()),
+                        Move(EQ, resultReg, ImmediateOperand(true)),
+                        Move(NE, resultReg, ImmediateOperand(false)))
+                    )
+                    BinaryOp.NOT_EQUALS -> instructions.addAll(mutableListOf(
+                        Compare(resultReg, resultReg.nextReg()),
+                        Move(NE, resultReg, ImmediateOperand(true)),
+                        Move(EQ, resultReg, ImmediateOperand(false)))
+                    )
                     // complete remaining operators...
                 }
             }

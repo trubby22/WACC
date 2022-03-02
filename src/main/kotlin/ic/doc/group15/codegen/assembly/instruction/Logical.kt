@@ -1,36 +1,19 @@
 package ic.doc.group15.codegen.assembly.instruction
 
-import ic.doc.group15.codegen.assembly.Instruction
 import ic.doc.group15.codegen.assembly.operand.Operand
 import ic.doc.group15.codegen.assembly.operand.Register
 
 /**
  * Logical operations present in ARM1176JZF-S, partly implemented.
  */
-// abstract class LogicalInstruction(
-//    instr: String,
-//    vararg operands: Operand<*>
-// ) : Instruction(instr, *operands) {
-//
-//    constructor(
-//        instr: String,
-//        operands: List<Operand<*>>
-//    ) : this(instr, *operands.toTypedArray())
-// }
 abstract class LogicalInstruction protected constructor(
     instr: String,
     conditionCode: ConditionCode?,
-    val updateFlags: Boolean,
+    updateFlags: Boolean,
     val dest: Register,
     val base: Register,
     val op: Operand
-) : Instruction(instr, conditionCode, dest, base, op) {
-
-    override fun toString(): String {
-        return "$instr${conditionCode ?: ""}${if (updateFlags) "s" else ""} " + params
-            .joinToString(separator = ", ")
-    }
-}
+) : UpdateFlagsInstruction(instr, conditionCode, updateFlags, dest, base, op)
 
 /**
  * AND is a logical-and instruction that performs bitwise AND operations on

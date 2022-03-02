@@ -46,6 +46,10 @@ class ImmediateOperand(val value: Int) : Operand {
         // TODO(Check if value is valid by performing rotation checks)
     }
 
+    constructor(value: Boolean) : this(if (value) 1 else 0)
+
+    constructor(value: Char) : this(value.code.toByte().toInt())
+
     override fun toString(): String {
         return "#$value"
     }

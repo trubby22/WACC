@@ -42,6 +42,7 @@ abstract class Label<L : Line> protected constructor(val name: String) : Assembl
 
 class BranchLabel : Label<Instruction> {
     constructor(name: String, lines: List<Instruction>) : super(name, lines)
+    constructor(name: String, vararg lines: Instruction) : super(name, *lines)
     constructor(name: String) : super(name)
 }
 

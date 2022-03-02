@@ -7,7 +7,7 @@ import ic.doc.group15.codegen.assembly.operand.Register
 /**
  * Arithmetic operations present in ARM1176JZF-S, partly implemented.
  */
-abstract class ArithmeticInstruction protected constructor(
+abstract class UpdateFlagsInstruction protected constructor(
     instr: String,
     conditionCode: ConditionCode?,
     val updateFlags: Boolean = false,
@@ -34,7 +34,7 @@ abstract class FlexibleIntArithmetic protected constructor(
     val dest: Register,
     val base: Register,
     val op: Operand
-) : ArithmeticInstruction(instr, conditionCode, updateFlags, dest, base, op)
+) : UpdateFlagsInstruction(instr, conditionCode, updateFlags, dest, base, op)
 
 /**
  * ADD is an add-without-carry instruction that adds the values in
@@ -138,7 +138,7 @@ abstract class RegisterIntArithmetic protected constructor(
     val dest: Register,
     val reg_n: Register,
     val reg_m: Register,
-) : ArithmeticInstruction(instr, conditionCode, updateFlags, dest, reg_n, reg_m)
+) : UpdateFlagsInstruction(instr, conditionCode, updateFlags, dest, reg_n, reg_m)
 
 /**
  * MUL is a multiply instruction that multiplies the value of
@@ -196,7 +196,7 @@ abstract class LongArithmetic protected constructor(
     val dest_hi: Register,
     val reg_n: Register,
     val reg_m: Register
-) : ArithmeticInstruction(instr, conditionCode, updateFlags, dest_lo, dest_hi, reg_n, reg_m)
+) : UpdateFlagsInstruction(instr, conditionCode, updateFlags, dest_lo, dest_hi, reg_n, reg_m)
 
 /**
  * SMULL is a signed-long multiply instruction that multiplies the value of
