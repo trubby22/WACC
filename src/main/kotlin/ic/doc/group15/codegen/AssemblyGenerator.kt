@@ -50,12 +50,7 @@ class AssemblyGenerator {
         val list: List<Identifier> = map.values as List<Identifier>
         for (i in list) {
             if (i is Variable) {
-                when (i.type) {
-                    IntType -> stackSpace += 4
-                    BoolType -> stackSpace += 1
-                    CharType -> stackSpace += 1
-                    StringType -> stackSpace += 4
-                }
+                stackSpace += i.type.sizeInBytes()
             }
         }
         return stackSpace
@@ -65,8 +60,24 @@ class AssemblyGenerator {
         val instructions = mutableListOf<Line>()
         val statements: List<StatementAST> = program.statements
         for (stat in statements) {
-            instructions.addAll(transStat(stat, 4))
+            instructions.addAll(transStat(stat, R4))
         }
+        return instructions
+    }
+
+    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
+    fun transBlock(block: BlockAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
+        var stackSpace = requiredStackSpace(block)
+        sp -= stackSpace
+        instructions.add(Sub(SP, SP, ImmediateOperand(stackSpace)))
+        val statements: List<StatementAST> = block.statements
+        for (stat in statements) {
+            instructions.addAll(transStat(stat, resultReg))
+        }
+        sp += stackSpace
+        instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
+        this.state.popStacks(block.symbolTable.getMap().keys.parallelStream().toList()) // read comments in the State class to understand why we do this
         return instructions
     }
 
@@ -87,12 +98,7 @@ class AssemblyGenerator {
         var pos = 0
         for (i in funcDec.formals) {
             state.setStackPos(i.varName, sp + pos)
-            when (i.type) {
-                IntType -> pos += 4
-                BoolType -> pos += 1
-                CharType -> pos += 1
-                StringType -> pos += 4
-            }
+            pos += i.type.sizeInBytes()
         }
         val stackSpace = requiredStackSpace(funcDec) - pos // the required stack space function will take into account the parameters as they are part of the symbol table for functions but we have already taken these into account
         sp-= stackSpace
@@ -125,17 +131,10 @@ class AssemblyGenerator {
         // the same amount back to the stack pointer
         var spDec = 0
         for (i in revParams) {
-            var decrement = 0
-            when(i.type) {
-                IntType -> decrement = 4
-                BoolType -> decrement = 1
-                CharType -> decrement = 1
-                StringType -> decrement = 4
-            }
-            sp -= decrement
-            spDec += decrement
+            sp -= i.type.sizeInBytes()
+            spDec += i.type.sizeInBytes()
             instructions.addAll(transExp(i, resultReg))
-            instructions.add(Sub(SP, SP, ImmediateOperand(-decrement)))
+            instructions.add(Sub(SP, SP, ImmediateOperand(-i.type.sizeInBytes())))
             instructions.add(StoreWord(SP, ZeroOffset(resultReg)))
         }
         instructions.add(BranchLink("p_" + call.funcName))
@@ -144,32 +143,28 @@ class AssemblyGenerator {
     }
 
     // generates the assembly code for a BlockAST node and returns the list of instructions
-    fun transStat(block: BlockAST, resultReg: Register): List<Line> {
+    fun transStat(stat: StatementAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
-        var stackSpace = requiredStackSpace(block)
-        sp -= stackSpace
-        instructions.add(Sub(SP, SP, ImmediateOperand(stackSpace)))
-        val statements: List<StatementAST> = block.statements
-        for (stat in statements) {
-            instructions.addAll(transStat(stat, resultReg))
+        when (stat) {
+            is SkipStatementAST -> {}
+            is VariableDeclarationAST -> instructions.addAll(transVariableDeclaration(stat, resultReg))
+            is AssignToIdentAST -> instructions.addAll(transAssignToIdent(stat, resultReg))
+            is ReadStatementAST -> instructions.addAll(transReadStatement(stat, resultReg))
+            // is FreeStatementAST ->
+            // is PrintStatementAST ->
+            // is PrintlnStatementAST ->
+            is IfBlockAST -> instructions.addAll(transIfBlock(stat, resultReg))
+            // is WhileBlockAST ->
+            // is BeginEndBlockAST ->
+            is SequenceStatementAST -> instructions.addAll(transSequenceStatement(stat, resultReg))
         }
-        sp += stackSpace
-        instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
-        state.popStacks(block.symbolTable.getMap().keys.parallelStream().toList()) // read comments in the State class to understand why we do this
         return instructions
     }
 
     // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transStat(node: VariableDeclarationAST, resultReg: Register): List<Line> {
+    fun transVariableDeclaration(node: VariableDeclarationAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
-        var spDecrement = 0
-        when (node.varIdent.type) {
-            IntType -> spDecrement = 4
-            BoolType -> spDecrement = 1
-            CharType -> spDecrement = 1
-            StringType -> spDecrement = 4
-        }
-        sp -= spDecrement
+        sp -= node.varIdent.type.sizeInBytes()
         state.setStackPos(node.varName, sp)
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
         instructions.add(StoreWord(SP, ImmediateOffset(resultReg, state.getStackPos(node.varName))))
@@ -177,58 +172,10 @@ class AssemblyGenerator {
     }
 
     // this function will generate the assembly code for an AssignToIdentAST node and return the list of instructions
-    fun transStat(node: AssignToIdentAST, resultReg: Register): List<Line> {
+    fun transAssignToIdent(node: AssignToIdentAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
         instructions.add(StoreWord(SP, ImmediateOffset(resultReg, state.getStackPos((node.lhs as VariableIdentifierAST).varName) - sp))) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
-        return instructions
-    }
-
-    // generates the assembly code for an ReadStatementAST node and returns the list of instructions
-    fun transStat(node : ReadStatementAST, resultReg: Register) : List<Line> {
-        val instructions = mutableListOf<Line>()
-        when(node.target.type) {
-            IntType -> {
-                defineUtilFuncs(P_READ_INT)
-                instructions.addAll(transExp(node.target as ExpressionAST, resultReg))
-                instructions.add(Move(R0, resultReg))
-                instructions.add(BranchLink(P_READ_INT.labelName))
-            }
-            // complete remaining types...
-        }
-        return instructions
-    }
-
-    fun transStat(node: SequenceStatementAST, resultReg: Int): List<Line> {
-        return transStat(node.stat1, resultReg + 1) + transStat(node.stat2,
-            resultReg + 2)
-    }
-
-    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transBlock(block: BlockAST, resultReg: Int): List<Line> {
-        val instructions = mutableListOf<Line>()
-        var stackSpace = requiredStackSpace(block)
-        sp -= stackSpace
-        instructions.add(Sub(SP, SP, ImmediateOperand(stackSpace)))
-        val statements: List<StatementAST> = block.statements
-        for (stat in statements) {
-            instructions.addAll(transStat(stat, resultReg))
-        }
-        sp += stackSpace
-        instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
-        this.state.popStacks(block.symbolTable.getMap().keys.parallelStream().toList()) // read comments in the State class to understand why we do this
-        return instructions
-    }
-
-    //endregion
-
-    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
-    fun transAssignRhs(node: AssignRhsAST, resultReg: Register): List<Line> {
-        val instructions = mutableListOf<Line>()
-        when (node) {
-            is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
-            // complete remaining types...
-        }
         return instructions
     }
 
@@ -237,6 +184,7 @@ class AssemblyGenerator {
         val instructions = mutableListOf<Line>()
         when(node.target.type) {
             IntType -> {
+                defineUtilFuncs(P_READ_INT)
                 instructions.addAll(transExp(node.target as ExpressionAST, resultReg))
                 instructions.add(Move(R0, resultReg))
                 instructions.add(BranchLink(P_READ_INT.labelName))
@@ -253,12 +201,56 @@ class AssemblyGenerator {
         instructions.add(Compare(resultReg, ImmediateOperand(0)))
         val elseLabel = branchLabel.generate()
         instructions.add(Branch(EQ, elseLabel))
-        instructions.addAll(transStat(stat.condExpr, resultReg))
+        instructions.addAll(transBlock(stat, resultReg))
         val endLabel = branchLabel.generate()
         instructions.add(BranchLabel(endLabel))
         instructions.add(BranchLabel(elseLabel))
-        instructions.addAll(transStat(stat.elseBlock as ElseBlockAST, resultReg))
+        instructions.addAll(transBlock(stat.elseBlock as ElseBlockAST, resultReg))
         instructions.add(BranchLabel(endLabel))
+        return instructions
+    }
+
+    fun transSequenceStatement(node: SequenceStatementAST, resultReg: Register): List<Line> {
+        return transStat(node.stat1, resultReg) + transStat(node.stat2, resultReg)
+    }
+
+    //endregion
+
+    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
+    fun transAssignRhs(node: AssignRhsAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
+        when (node) {
+            is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
+            is NewPairAST -> instructions.addAll(transNewPair(node, resultReg))
+            // complete remaining types...
+        }
+        return instructions
+    }
+
+    // generates assembly code for a NewPairAST node and returns the list of instructions
+    fun transNewPair(node : NewPairAST, resultReg: Register) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        instructions.add(LoadWord(R0, ImmediateOperand(8))) // sets up malloc arg to alloc 8 bytes for the pair
+        instructions.add(BranchLink("malloc")) // jump to malloc
+        instructions.add(Move(resultReg, R0)) // malloc left alloced address in R0, so here we put this address in resultReg
+        instructions.addAll(transExp(node.fstExpr, resultReg.nextReg())) // evaluates the first item of the pair and leaves the result in resultReg + 1
+        instructions.add(LoadWord(R0, ImmediateOperand(node.fstExpr.type.sizeInBytes()))) // sets up malloc arg to allocate sufficient bytes for the type of pair.fst
+        instructions.add(BranchLink("malloc")) // jumps to malloc
+        if (node.fstExpr.type.sizeInBytes() == 4) {
+            instructions.add(StoreWord(resultReg.nextReg(), ZeroOffset(R0))) // stores the value of the first item of the pair in the address received from malloc
+        } else if (node.fstExpr.type.sizeInBytes() == 1) {
+            instructions.add(StoreByte(resultReg.nextReg(), ZeroOffset(R0))) // same as above but for single byte size types
+        }
+        instructions.add(StoreWord(R0, ZeroOffset(resultReg))) // stores the address of the pair.fst item into the actual pairs memory
+        instructions.addAll(transExp(node.sndExpr, resultReg.nextReg())) // evaluates the second item of the pair and leaves the result in resultReg + 1
+        instructions.add(LoadWord(R0, ImmediateOperand(node.sndExpr.type.sizeInBytes()))) // sets up malloc arg to allocate sufficient bytes for the type of pair.snd
+        instructions.add(BranchLink("malloc")) // jumps to malloc
+        if (node.sndExpr.type.sizeInBytes() == 4) {
+            instructions.add(StoreWord(resultReg.nextReg(), ZeroOffset(R0))) // stores the value of the second item of the pair in the address received from malloc
+        } else if (node.sndExpr.type.sizeInBytes() == 1) {
+            instructions.add(StoreByte(resultReg.nextReg(), ZeroOffset(R0))) // same as above but for single byte size types
+        }
+        instructions.add(StoreWord(resultReg.nextReg(), ImmediateOffset(resultReg,4))) // stores the address of the pair.snd item into the actual pairs memory
         return instructions
     }
 
@@ -352,7 +344,7 @@ class AssemblyGenerator {
 //                p_throw_overflow_error, p_throw_runtime_error, p_print_string
             }
             UnaryOp.LEN -> {
-                instructions.add(LoadWord(resultReg, RegisterOffset(resultReg, false, null)))
+                // instructions.add(LoadWord(resultReg, RegisterOffset(resultReg, false, null)))
             }
             UnaryOp.ORD -> {
 //                No actions needed since int ~ char

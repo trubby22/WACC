@@ -11,6 +11,17 @@ interface Identifier
 
 interface Type : Identifier {
 
+    fun sizeInBytes() : Int {
+        when (this) {
+            is PairType -> return 8
+            BasicType.IntType -> return 4
+            BasicType.BoolType -> return 1
+            BasicType.CharType -> return 1
+            BasicType.StringType -> return 4
+        }
+        return 90000
+    }
+
     fun compatible(type: Type): Boolean
 
     companion object {
