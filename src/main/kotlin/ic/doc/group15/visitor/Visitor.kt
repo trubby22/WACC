@@ -8,7 +8,6 @@ import ic.doc.group15.ast.* // ktlint-disable no-unused-imports
 import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.semantic.*
-import ic.doc.group15.semantics.Visitor
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.IntType
 import java.util.*
@@ -188,13 +187,6 @@ class Visitor(
         symbolTable = symbolTable.subScope()
         log("|| Visiting then block")
         val thenStat = visit(ctx.stat(0)) as StatementAST
-//        if (thenStat !is StatementAST) {
-//            throw DeclarationError(
-//                "line: ${ctx.stat(0).getStart().line} column: ${
-//                ctx.stat(0).getStart().charPositionInLine
-//                } invalid then statement in if block"
-//            )
-//        }
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -204,13 +196,6 @@ class Visitor(
         symbolTable = symbolTable.subScope()
         log("|| Visiting else block")
         val elseStat = visit(ctx.stat(1)) as StatementAST
-//        if (elseStat !is StatementAST) {
-//            throw DeclarationError(
-//                "line: ${ctx.stat(1).getStart().line} column: ${
-//                ctx.stat(1).getStart().charPositionInLine
-//                } invalid else statement in if block"
-//            )
-//        }
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -307,18 +292,22 @@ class Visitor(
 
     override fun visitSequenceRecursiveReturn1(ctx: WaccParser.SequenceRecursiveReturn1Context): ASTNode {
         return if (ctx.valid_return_stat() != null) {
-            SequenceStatementAST(scopeAST, symbolTable,
+            SequenceStatementAST(
+                scopeAST, symbolTable,
                 visit(ctx.return_stat()) as StatementAST,
-                visit(ctx.valid_return_stat()) as StatementAST)
+                visit(ctx.valid_return_stat()) as StatementAST
+            )
         } else {
             visit(ctx.return_stat())
         }
     }
 
     override fun visitSequenceRecursiveReturn2(ctx: WaccParser.SequenceRecursiveReturn2Context): ASTNode {
-        return SequenceStatementAST(scopeAST, symbolTable,
+        return SequenceStatementAST(
+            scopeAST, symbolTable,
             visit(ctx.stat()) as StatementAST,
-            visit(ctx.valid_return_stat()) as StatementAST)
+            visit(ctx.valid_return_stat()) as StatementAST
+        )
     }
 
     override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext): ASTNode {
@@ -339,31 +328,26 @@ class Visitor(
             errors.addError(CondTypeError(ctx.expr().start, condExpr.type))
         }
 
+        val ifBlock = IfBlockAST(scopeAST, symbolTable, condExpr)
+
+        scopeAST = ifBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting then block")
-        val thenStat = visit(ctx.valid_return_stat(0))
-//        if (thenStat !is StatementAST) {
-//            throw DeclarationError(
-//                "line: ${ctx.valid_return_stat(0).getStart().line} column: ${
-//                    ctx.valid_return_stat(0).getStart().charPositionInLine
-//                } invalid then statement in if block"
-//            )
-//        }
         symbolTable = symbolTable.parentScope()!!
+        scopeAST = scopeAST.parent!!
 
+        val elseBlock = ElseBlockAST(ifBlock, symbolTable)
+
+        scopeAST = elseBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting else block")
-        val elseStat = visit(ctx.valid_return_stat(1))
-//        if (elseStat !is StatementAST) {
-//            throw DeclarationError(
-//                "line: ${ctx.valid_return_stat(1).getStart().line} column: ${
-//                    ctx.valid_return_stat(1).getStart().charPositionInLine
-//                } invalid else statement in if block"
-//            )
-//        }
+        val elseStat = visit(ctx.valid_return_stat(1)) as StatementAST
         symbolTable = symbolTable.parentScope()!!
+        scopeAST = scopeAST.parent!!
 
-        return addToScope(IfBlockAST(scopeAST, symbolTable, condExpr, thenStat, elseStat))
+        ifBlock.elseBlock = elseBlock
+
+        return addToScope(ifBlock)
     }
 
     override fun visitFreeStat(ctx: FreeStatContext): ASTNode {
@@ -385,9 +369,11 @@ class Visitor(
     }
 
     override fun visitSequenceStat(ctx: WaccParser.SequenceStatContext): ASTNode {
-        return SequenceStatementAST(scopeAST, symbolTable,
+        return SequenceStatementAST(
+            scopeAST, symbolTable,
             visit(ctx.stat(0)) as StatementAST,
-            visit(ctx.stat(1)) as StatementAST)
+            visit(ctx.stat(1)) as StatementAST
+        )
     }
 
     override fun visitReadStat(ctx: ReadStatContext): ASTNode {
