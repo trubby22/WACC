@@ -3,11 +3,6 @@ package ic.doc.group15
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -15,246 +10,194 @@ import java.nio.file.Paths
 
 class EmulationLocalTests {
 
-    private val validFolder = "wacc_examples/valid"
-    private val validFolderPath = "wacc_examples/valid"
-    private val validModelOutputFolderPath = "model_output/$validFolderPath"
+  private val validFolder = "wacc_examples/valid"
 
-    @Nested
-    inner class BasicValidFiles {
-        private val basicFolderPath = "$validFolderPath/basic"
-        private val basicResultFolderPath = "$validModelOutputFolderPath/basic"
+  @Test
+  fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/advanced")
+  }
 
-        @Disabled
-        @Nested
-        inner class ExitValidFiles {
-            private val exitFolderPath = "$basicFolderPath/exit"
-            private val exitResultFolderPath = "$basicResultFolderPath/exit"
+  @Test
+  fun arrayEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/array")
+  }
 
-            @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
-            @ValueSource(strings = ["exit-1", "exitBasic", "exitBasic2", "exitWrap"])
-            fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
-                val filePath = "$exitFolderPath/$fileName.wacc"
-                val resultPath = "$exitResultFolderPath/$fileName.txt"
+  @Test
+  fun basicEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/basic")
+  }
 
-                assertTrue(exitCodeAndOutputMatches())
-            }
-        }
+  @Test
+  fun expressionsEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/expressions")
+  }
 
-        @Nested
-        inner class SkipValidFiles {
-            private val skipFolderPath = "$basicFolderPath/skip"
-            private val skipResultFolderPath = "$basicResultFolderPath/skip"
+  @Test
+  fun functionEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/function")
+  }
 
-            @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
-            @ValueSource(strings = ["comment", "commentInLine", "skip"])
-            fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
-                val filePath = "$skipFolderPath/$fileName.wacc"
-                val resultPath = "$skipResultFolderPath/$fileName.txt"
+  @Test
+  fun ifEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/if")
+  }
 
-                assertTrue(exitCodeAndOutputMatches())
-            }
-        }
+  @Test
+  fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/IO")
+  }
+
+  @Test
+  fun pairsEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/pairs")
+  }
+
+  @Test
+  fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/runtimeErr")
+  }
+
+  @Test
+  fun scopeEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/scope")
+  }
+
+  @Test
+  fun sequenceEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/sequence")
+  }
+
+  @Test
+  fun variablesEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/variables")
+  }
+
+  @Test
+  fun whileEmulationProducesRightExitCodesAndOutput() {
+    checkAssemblyFolder("$validFolder/while")
+  }
+
+  private fun checkAssemblyFolder(path: String) {
+    val res = Files.walk(Paths.get(path))
+      .filter(Files::isRegularFile)
+      .filter { path -> path.toString().endsWith(".wacc") }
+      .filter { path -> !path.toString().endsWith("IOLoop.wacc") }
+      .filter { path -> !path.toString().endsWith("ticTacToe.wacc") }
+      .filter { path -> !path.toString().endsWith("hashTable.wacc") }
+      .map {
+        checkAssembly(
+          it.toString())
+      }
+      .reduce { a, b -> a && b }
+      .orElse(false)
+    if (!res) {
+      throw Error()
     }
+  }
 
-    private fun exitCodeAndOutputMatches(): Boolean {
-        println("Hello world")
-//        System.err.println("Hello standard error!")
-        return false
-    }
-
-//    @Test
-//    fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/advanced")
-//    }
-//
-//    @Test
-//    fun arrayEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/array")
-//    }
-//
-//    @Test
-//    fun basicEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/basic")
-//    }
-//
-//    @Test
-//    fun expressionsEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/expressions")
-//    }
-//
-//    @Test
-//    fun functionEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/function")
-//    }
-//
-//    @Test
-//    fun ifEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/if")
-//    }
-//
-//    @Test
-//    fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/IO")
-//    }
-//
-//    @Test
-//    fun pairsEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/pairs")
-//    }
-//
-//    @Test
-//    fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/runtimeErr")
-//    }
-//
-//    @Test
-//    fun scopeEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/scope")
-//    }
-//
-//    @Test
-//    fun sequenceEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/sequence")
-//    }
-//
-//    @Test
-//    fun variablesEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/variables")
-//    }
-//
-//    @Test
-//    fun whileEmulationProducesRightExitCodesAndOutput() {
-//        checkAssemblyFolder("$validFolder/while")
-//    }
-//
-//    @Test
-//    fun playground() {
-//        val lst1 = listOf("a", "b", "c")
-//        val lst2 = listOf("a", "b", "c")
-//        assertTrue(lst1 == lst2)
-//    }
-
-    private fun checkAssemblyFolder(path: String) {
-        val res = Files.walk(Paths.get(path))
-            .filter(Files::isRegularFile)
-            .filter { path -> path.toString().endsWith(".wacc") }
-            .filter { path -> !path.toString().endsWith("IOLoop.wacc") }
-            .filter { path -> !path.toString().endsWith("ticTacToe.wacc") }
-            .filter { path -> !path.toString().endsWith("hashTable.wacc") }
-            .map {
-                checkAssembly(
-                    it.toString())
-            }
-            .reduce { a, b -> a && b }
-            .orElse(false)
-        if (!res) {
-            throw Error()
-        }
-    }
-
-    private fun checkAssembly(path: String): Boolean {
+  private fun checkAssembly(path: String): Boolean {
 
 //        Compile and emulate a wacc program and check against model solution
 //        coming from refCompile -x
 
 //        println("Testing $path")
 
-        val compile =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "java -jar " +
-                        "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
-                        "$path < $path"
-            ).start()
+    val compile =
+      ProcessBuilder(
+        "/bin/bash", "-c",
+        "java -jar " +
+            "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
+            "$path < $path"
+      ).start()
 
-        try {
-            val exitCode = compile.waitFor()
-            assertEquals(0, exitCode)
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+    try {
+      val exitCode = compile.waitFor()
+      assertEquals(0, exitCode)
+    } catch (e: InterruptedException) {
+      e.printStackTrace()
+    }
 
 //        println("Compile completed")
 
-        val filename = path.split("/").last()
-        val executable = filename.substring(0, filename.length - 4)
-        val asmFilename = executable + "s"
+    val filename = path.split("/").last()
+    val executable = filename.substring(0, filename.length - 4)
+    val asmFilename = executable + "s"
 
-        val emulateOnline = "./wacc_examples/refEmulate $asmFilename"
-        val emulateLocal = "arm-linux-gnueabi-gcc -o $executable " +
-                "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $asmFilename; " +
-                "qemu-arm -L /usr/arm-linux-gnueabi $executable"
+    val emulateOnline = "./wacc_examples/refEmulate $asmFilename"
+    val emulateLocal = "arm-linux-gnueabi-gcc -o $executable " +
+        "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $asmFilename; " +
+        "qemu-arm -L /usr/arm-linux-gnueabi $executable"
 
-        val emulate =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "echo '' | $emulateOnline 2>&1"
-            ).start()
+    val emulate =
+      ProcessBuilder(
+        "/bin/bash", "-c",
+        "echo '' | $emulateOnline 2>&1"
+      ).start()
 
-        var exitCode1 = -1
+    var exitCode1 = -1
 
-        try {
-            exitCode1 = emulate.waitFor()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+    try {
+      exitCode1 = emulate.waitFor()
+    } catch (e: InterruptedException) {
+      e.printStackTrace()
+    }
 
 //        println("Emulate completed")
 
-        val actual = IOUtils.toString(
-            emulate.inputStream,
-            StandardCharsets.UTF_8.name()
-        ).trim()
+    val actual = IOUtils.toString(
+      emulate.inputStream,
+      StandardCharsets.UTF_8.name()
+    ).trim()
 
 //        println("actual:")
 //        println(actual)
 
-        assertEquals(0, exitCode1)
+    assertEquals(0, exitCode1)
 
-        val modelSolution =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "echo '' | ./wacc_examples/refCompile -ax $path 2>&1"
-            ).start()
+    val modelSolution =
+      ProcessBuilder(
+        "/bin/bash", "-c",
+        "echo '' | ./wacc_examples/refCompile -ax $path 2>&1"
+      ).start()
 
-        var exitCode2 = -1
+    var exitCode2 = -1
 
-        try {
-            exitCode2 = modelSolution.waitFor()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+    try {
+      exitCode2 = modelSolution.waitFor()
+    } catch (e: InterruptedException) {
+      e.printStackTrace()
+    }
 
-        val expected = IOUtils.toString(
-            modelSolution.inputStream,
-            StandardCharsets.UTF_8.name()
-        ).trim()
+    val expected = IOUtils.toString(
+      modelSolution.inputStream,
+      StandardCharsets.UTF_8.name()
+    ).trim()
 
 //        println("expected:")
 //        println(expected)
 
-        assertEquals(0, exitCode2)
+    assertEquals(0, exitCode2)
 
 //        println("ModelSolution completed")
 
-        val actualOutput = actual
-            .split("-- Emulation Output:\n")[1]
-            .split("---------------------------------------------------------------")[0]
-            .trim()
-        val actualExitCode = Regex("(?<=The exit code is: )[0-9]+(?=\\.)")
-            .find(actual)?.value!!
+    val actualOutput = actual
+      .split("-- Emulation Output:\n")[1]
+      .split("---------------------------------------------------------------")[0]
+      .trim()
+    val actualExitCode = Regex("(?<=The exit code is: )[0-9]+(?=\\.)")
+      .find(actual)?.value!!
 //        val actualAssembly = actual
 //            .split("-- Uploaded file:")[1]
 //            .split("---------------------------------------------------------------\n")[1]
 //            .split("---------------------------------------------------------------")[0]
 //            .trim()
-        val expectedOutput = expected
-            .split("-- Executing...\n" +
-                    "===========================================================\n")[1]
-            .split("===========================================================")[0]
-            .trim()
-        val expectedExitCode = Regex("(?<=The exit code is )[0-9]+(?=\\.)")
-            .find(expected)?.value!!
+    val expectedOutput = expected
+      .split("-- Executing...\n" +
+          "===========================================================\n")[1]
+      .split("===========================================================")[0]
+      .trim()
+    val expectedExitCode = Regex("(?<=The exit code is )[0-9]+(?=\\.)")
+      .find(expected)?.value!!
 //        val expectedAssemblyCluttered = expected
 //            .split("contents are:\n" +
 //                    "===========================================================\n")[1]
@@ -262,23 +205,23 @@ class EmulationLocalTests {
 //        val expectedAssembly = Regex("^[0-9]+\t", RegexOption.MULTILINE)
 //            .replace(expectedAssemblyCluttered, "").trim()
 
-        val success = expectedExitCode == actualExitCode && expectedOutput == actualOutput
+    val success = expectedExitCode == actualExitCode && expectedOutput == actualOutput
 
-        if (!success) {
-            print(path)
-        }
+    if (!success) {
+      print(path)
+    }
 
-        if (expectedExitCode != actualExitCode) {
-            print(" (exit code mismatch)")
-        }
+    if (expectedExitCode != actualExitCode) {
+      print(" (exit code mismatch)")
+    }
 
-        if (expectedOutput != actualOutput) {
-            print(" (output mismatch)")
-        }
+    if (expectedOutput != actualOutput) {
+      print(" (output mismatch)")
+    }
 
-        if (!success) {
-            println()
-        }
+    if (!success) {
+      println()
+    }
 
 //        Code used to map expected output to .txt files
 
@@ -308,7 +251,7 @@ class EmulationLocalTests {
 //        println("Actual assembly:")
 //        println(actualAssembly)
 
-        return success
-    }
+    return success
+  }
 
 }
