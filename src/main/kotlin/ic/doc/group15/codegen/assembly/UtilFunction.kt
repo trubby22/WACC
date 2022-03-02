@@ -1,7 +1,7 @@
 package ic.doc.group15.codegen.assembly
 
 import ic.doc.group15.codegen.assembly.ArmFunction.Companion.SCANF
-import ic.doc.group15.codegen.assembly.instruction.*
+import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
 import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
 import ic.doc.group15.codegen.assembly.operand.Register.*
@@ -25,7 +25,7 @@ enum class UtilFunction {
 
     val labelName = name.lowercase()
 
-    val dataBlocks: MutableList<Data> = LinkedList()
+    val dataBlocks: MutableList<DataLabel> = LinkedList()
     val labelBlock: BranchLabel
 
     abstract val assembly: List<Instruction>

@@ -3,12 +3,7 @@ package ic.doc.group15
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
-import ic.doc.group15.ast.BlockAST
 import ic.doc.group15.codegen.AssemblyGenerator
-import ic.doc.group15.codegen.assembly.UtilFunction
-import ic.doc.group15.codegen.assembly.instruction.Add
-import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
-import ic.doc.group15.codegen.assembly.operand.Register
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.visitor.Visitor
@@ -35,14 +30,12 @@ fun main(args: Array<String>) {
     val ast = AST(st)
     val semanticErrors = SemanticErrorList()
     val visitor = Visitor(ast, st, semanticErrors, enableLogging = true)
-    val rootASTNode = visitor.visit(program) as BlockAST
+    visitor.visit(program)
 
     semanticErrors.checkErrors()
 
-    val assemblyGenerator = AssemblyGenerator()
-    val instructions = assemblyGenerator.transProgram(rootASTNode)
-    val instructionStrLst = instructions.map{ it.toString() }
-    val assemblyStr = instructionStrLst.joinToString("\n")
+    val assemblyGenerator = AssemblyGenerator(ast, st)
+    val assemblyStr = assemblyGenerator.generate()
 
     // Create assembly file
     val filename = args[0].split("/").last()

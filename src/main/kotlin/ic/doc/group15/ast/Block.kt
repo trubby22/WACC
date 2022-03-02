@@ -32,7 +32,7 @@ class IfBlockAST(
     val condExpr: ExpressionAST
 ) : BlockAST(parent, symbolTable) {
 
-    var elseBlock: ElseBlockAST? = null
+    lateinit var elseBlock: ElseBlockAST
 }
 
 class ElseBlockAST(

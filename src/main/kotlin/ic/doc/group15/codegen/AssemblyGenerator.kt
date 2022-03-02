@@ -1,5 +1,6 @@
 package ic.doc.group15.codegen
 
+import ic.doc.group15.SymbolTable
 import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.codegen.assembly.UtilFunction.P_READ_INT
@@ -9,24 +10,22 @@ import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.FunctionType
-import ic.doc.group15.type.Identifier
-import ic.doc.group15.type.Variable
 
 const val START_VAL = 0
 
-class AssemblyGenerator {
+class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
-    val state: State = State()
+    private val state : State = State()
 
-    var sp: Int = START_VAL - 1
+    private var sp: Int = START_VAL - 1
 
     /**
-     * Represents the ".data" section of the assembly code.
+     * Represents the ".dataLabel" section of the assembly code.
      *
-     * Contains info for raw data in memory, such as string literals.
+     * Contains info for raw dataLabel in memory, such as string literals.
      */
-    private val data: MutableMap<String, Data> = mutableMapOf()
-    private val utilData: MutableMap<String, Data> = mutableMapOf()
+    private val data: MutableMap<String, DataLabel> = mutableMapOf()
+    private val utilData: MutableMap<String, DataLabel> = mutableMapOf()
 
     /**
      * Represents the ".text" section of the assembly code.
@@ -38,6 +37,23 @@ class AssemblyGenerator {
 
     private val stringLabelGenerator = UniqueStringLabelGenerator()
     private val branchLabelGenerator = UniqueBranchLabelGenerator()
+
+    fun generate(): String {
+        var asm = ""
+        if (data.isNotEmpty() || utilData.isNotEmpty()) {
+            asm += ".data\n\n"
+        }
+        asm += joinAsm(data.values) +
+               joinAsm(utilData.values) +
+               ".text\n\n.global main\n" +
+               joinAsm(text.values) +
+               joinAsm(utilText.values)
+        return asm
+    }
+
+    private fun joinAsm(asm: Collection<Assembly>): String {
+        return asm.joinToString(separator = "\n", postfix = if (asm.isNotEmpty()) "\n" else "")
+    }
 
     // when we enter a block, we will prematurely calculate how much stack space that block will need by summing the
     // size in bytes of each of the variables in its symbol table. then we will be able to decrement the stack pointer

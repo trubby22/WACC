@@ -368,7 +368,7 @@ class Visitor(
         return addToScope(SkipStatementAST(scopeAST))
     }
 
-    override fun visitSequenceStat(ctx: WaccParser.SequenceStatContext): ASTNode {
+    override fun visitSequenceStat(ctx: SequenceStatContext): ASTNode {
         return SequenceStatementAST(
             scopeAST, symbolTable,
             visit(ctx.stat(0)) as StatementAST,
