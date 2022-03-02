@@ -1,6 +1,5 @@
 package ic.doc.group15.codegen.assembly
 
-import ic.doc.group15.codegen.assembly.ArmFunction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.ArmFunction.Companion.SCANF
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
@@ -31,7 +30,7 @@ enum class UtilFunction {
 
     abstract val assembly: List<Instruction>
 
-    protected val stringLabel: UniqueLabel = UniqueLabel(labelName + "_msg_")
+    protected val stringLabel: UniqueLabelGenerator = UniqueLabelGenerator(labelName + "_msg_")
 
     init {
         labelBlock = BranchLabel(name.lowercase(), assembly)
