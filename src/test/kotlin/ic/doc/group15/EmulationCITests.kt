@@ -492,6 +492,20 @@ class EmulationCITests {
     val exitCodeMatches = (expectedExitCode == actualExitCode)
     val outputMatches = (expectedOutput == actualOutput)
 
+      println("Expected exit code: $expectedExitCode")
+      println("Actual exit code: $actualExitCode")
+
+      println("Expected output:")
+      println(expectedOutput.joinToString("\n"))
+
+      println("Actual output:")
+      println(actualOutput.joinToString("\n"))
+
+      println("Exit codes match: $exitCodeMatches")
+      println("Output matches: $outputMatches")
+      println("Output as string matches: ${expectedOutput.joinToString("\n") 
+              == actualOutput.joinToString("\n")}")
+
     return exitCodeMatches && outputMatches
   }
 }
