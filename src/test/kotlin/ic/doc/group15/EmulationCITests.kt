@@ -430,7 +430,7 @@ class EmulationCITests {
   private fun compileAndExecute(
     fileName: String,
     path: String
-  ): Pair<Int, List<String>> {
+  ): Pair<Int, String> {
     val compilation = ProcessBuilder(
       "/bin/bash",
       "-c",
@@ -467,15 +467,16 @@ class EmulationCITests {
     assertEquals(emulationExitStatus, 0)
 
     val actualOutput =
-      actualList.subList(0, actualList.size - 1).map(String::trim)
+      actualList.subList(0, actualList.size - 1).joinToString("\n").trim()
     val actualExitCode = actualList[actualList.size - 1].trim().toInt()
 
     return Pair(actualExitCode, actualOutput)
   }
 
-  private fun getExpectedResult(path: String): Pair<Int, List<String>> {
+  private fun getExpectedResult(path: String): Pair<Int, String> {
     val expectedList = File(path).readLines()
-    val expectedOutput = expectedList.subList(3, expectedList.size).map(String::trim)
+    val expectedOutput = expectedList.subList(3, expectedList.size)
+        .joinToString("\n").trim()
     val expectedExitCode = expectedList[1].trim().toInt()
 
     return Pair(expectedExitCode, expectedOutput)
@@ -492,19 +493,19 @@ class EmulationCITests {
     val exitCodeMatches = (expectedExitCode == actualExitCode)
     val outputMatches = (expectedOutput == actualOutput)
 
-      println("Expected exit code: $expectedExitCode")
-      println("Actual exit code: $actualExitCode")
+    println("Expected exit code: $expectedExitCode")
+    println("Actual exit code: $actualExitCode")
 
-      println("Expected output:")
-      println(expectedOutput.joinToString("\n"))
+    println("Expected output:")
+    println(expectedOutput)
 
-      println("Actual output:")
-      println(actualOutput.joinToString("\n"))
+    println("Actual output:")
+    println(actualOutput)
 
-      println("Exit codes match: $exitCodeMatches")
-      println("Output matches: $outputMatches")
-      println("Output as string matches: ${expectedOutput.joinToString("\n") 
-              == actualOutput.joinToString("\n")}")
+    println("Exit codes match: $exitCodeMatches")
+    println("Output matches: $outputMatches")
+    println("Output as string matches: ${expectedOutput 
+            == actualOutput}")
 
     return exitCodeMatches && outputMatches
   }
