@@ -33,9 +33,9 @@ class LoadWord(
 }
 
 /**
- * LDRB is a load register instruction that loads the particular value
- * of byte size (1 byte) at a particular address into the destination register.
- * This instruction is mainly used to load a character.
+ * LDRB is a load register instruction that loads the particular unsigned value
+ * of byte size (1 byte), zero-extended to 32 bits, at a particular address into
+ * the destination register. This instruction is mainly used to load a character.
  *
  * @param dest The destination register
  * @param addr The source address
