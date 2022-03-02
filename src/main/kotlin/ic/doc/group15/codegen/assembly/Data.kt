@@ -1,6 +1,6 @@
 package ic.doc.group15.codegen.assembly
 
-abstract class DataLine : Line()
+abstract class DataLine : Assembly
 
 abstract class Data protected constructor(
     labelName: String,
