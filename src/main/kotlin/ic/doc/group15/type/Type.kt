@@ -1,6 +1,8 @@
 package ic.doc.group15.type
 
+import ic.doc.group15.BYTE
 import ic.doc.group15.SymbolTable
+import ic.doc.group15.WORD
 
 const val INT_MAX = Int.MAX_VALUE
 const val INT_MIN = Int.MIN_VALUE
@@ -24,7 +26,10 @@ interface Type : Identifier {
     }
 }
 
-interface ReturnableType : Type
+interface ReturnableType : Type {
+
+    fun size(): Int
+}
 
 interface HeapAllocatedType : Type
 
@@ -39,8 +44,8 @@ open class Variable(
 
 class Param(type: Type) : Variable(type)
 
-enum class BasicType : ReturnableType {
-    IntType {
+enum class BasicType(private val size: Int) : ReturnableType {
+    IntType(WORD) {
         override fun compatible(type: Type): Boolean {
             return type == IntType
         }
@@ -49,7 +54,7 @@ enum class BasicType : ReturnableType {
             return "int"
         }
     },
-    BoolType {
+    BoolType(BYTE) {
         override fun compatible(type: Type): Boolean {
             return type == BoolType
         }
@@ -58,7 +63,7 @@ enum class BasicType : ReturnableType {
             return "bool"
         }
     },
-    CharType {
+    CharType(BYTE) {
         override fun compatible(type: Type): Boolean {
             return type == CharType
         }
@@ -67,7 +72,7 @@ enum class BasicType : ReturnableType {
             return "char"
         }
     },
-    StringType {
+    StringType(WORD) {
         override fun compatible(type: Type): Boolean {
             return type == StringType
         }
@@ -76,6 +81,9 @@ enum class BasicType : ReturnableType {
             return "string"
         }
     }
+    ;
+
+    override fun size(): Int = this.size
 }
 
 class ArrayType(elementType: Type, dimension: Int) : ReturnableType, HeapAllocatedType {
@@ -117,6 +125,8 @@ class ArrayType(elementType: Type, dimension: Int) : ReturnableType, HeapAllocat
         return elementType.compatible(type.elementType)
     }
 
+    override fun size(): Int = WORD
+
     override fun toString(): String {
         return elementType.toString() + "[]".repeat(dimension)
     }
@@ -141,6 +151,8 @@ class PairType(
         return (fstType.compatible(type.fstType) || type.fstType == Type.ANY) &&
             (sndType.compatible(type.sndType) || type.sndType == Type.ANY)
     }
+
+    override fun size(): Int = WORD
 
     override fun toString(): String {
         return "pair($fstType, $sndType)"

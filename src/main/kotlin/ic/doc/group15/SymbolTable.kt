@@ -7,7 +7,9 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
 
     private val map: MutableMap<String, Identifier> = HashMap()
 
-    fun getMap() : MutableMap<String, Identifier> {
+    private var stackSize: Int = 0
+
+    fun getMap(): MutableMap<String, Identifier> {
         return map
     }
 
@@ -34,12 +36,14 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
     fun isTopLevel(): Boolean = enclosingTable == null
 
     fun add(name: String, ident: Identifier) {
+        if (ident is Variable) {
+            assert(ident.type is ReturnableType)
+            stackSize += (ident.type as ReturnableType).size()
+        }
         map[name] = ident
     }
 
-    fun lookup(name: String): Identifier? {
-        return map[name]
-    }
+    fun lookup(name: String): Identifier? = map[name]
 
     fun lookupAll(name: String): Identifier? {
         var st: SymbolTable? = this
@@ -51,11 +55,9 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
         return null
     }
 
-    fun subScope(): SymbolTable {
-        return SymbolTable(this)
-    }
+    fun subScope(): SymbolTable = SymbolTable(this)
 
-    fun parentScope(): SymbolTable? {
-        return enclosingTable
-    }
+    fun parentScope(): SymbolTable? = enclosingTable
+
+    fun getStackSize(): Int = stackSize
 }
