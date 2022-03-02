@@ -504,8 +504,11 @@ class EmulationCITests {
 
     println("Exit codes match: $exitCodeMatches")
     println("Output matches: $outputMatches")
-    println("Output as string matches: ${expectedOutput 
+    println("Output as string matches: ${expectedOutput
             == actualOutput}")
+
+      assert(exitCodeMatches)
+      assert(outputMatches)
 
     return exitCodeMatches && outputMatches
   }
