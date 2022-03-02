@@ -1,7 +1,7 @@
 package ic.doc.group15.codegen
 
 import ic.doc.group15.ast.*
-import ic.doc.group15.codegen.assembly.* // ktlint-disable no-unused-imports
+import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.codegen.assembly.UtilFunction.P_READ_INT
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
@@ -10,12 +10,13 @@ import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Identifier
 import ic.doc.group15.type.Variable
+import java.util.*
 
 const val START_VAL = 0
 
 class AssemblyGenerator {
 
-    val state: State = State()
+    val state : State = State()
 
     var sp: Int = START_VAL - 1
 
@@ -55,8 +56,8 @@ class AssemblyGenerator {
         return stackSpace
     }
 
-    fun transProgram(program: BlockAST): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transProgram(program: BlockAST) : List<Line> {
+        val instructions = mutableListOf<Line>()
         val statements: List<StatementAST> = program.statements
         for (stat in statements) {
             instructions.addAll(transStat(stat, R4))
@@ -64,8 +65,8 @@ class AssemblyGenerator {
         return instructions
     }
 
-    fun transBlock(block: BlockAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transBlock(block: BlockAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         var stackSpace = requiredStackSpace(block)
         sp -= stackSpace
         instructions.add(Sub(SP, SP, ImmediateOperand(stackSpace)))
@@ -81,7 +82,7 @@ class AssemblyGenerator {
 
     //region statement
 
-    fun transFunctionDeclaration(funcDec: FunctionDeclarationAST): List<Assembly> {
+    fun transFunctionDeclaration(funcDec : FunctionDeclarationAST) : List<Line> {
 
         // i think im gonna have to push all registers to stack then pop
         // before and after a function call cus if you look at the reference compiler,
@@ -92,21 +93,19 @@ class AssemblyGenerator {
         // can be called while there are registers in use actually so maybe
         // i dont need to do that
 
-        val instructions = mutableListOf<Assembly>()
+        val instructions = mutableListOf<Line>()
         var pos = 0
         for (i in funcDec.formals) {
             state.setStackPos(i.varName, sp + pos)
             pos += i.type.sizeInBytes()
         }
         val stackSpace = requiredStackSpace(funcDec) - pos // the required stack space function will take into account the parameters as they are part of the symbol table for functions but we have already taken these into account
-        sp -= stackSpace
+        sp-= stackSpace
         // functions are missing labels for now as well as .ltorg at the end
-        instructions.addAll(
-            mutableListOf(
-                Push(LR),
-                Sub(SP, SP, ImmediateOperand(stackSpace))
-            )
-        )
+        instructions.addAll(mutableListOf(
+            Push(LR),
+            Sub(SP, SP, ImmediateOperand(stackSpace))
+        ))
         instructions.addAll(transBlock((funcDec) as BlockAST, R4))
         instructions.add(Move(R0, R4))
         instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
@@ -115,8 +114,8 @@ class AssemblyGenerator {
         return instructions
     }
 
-    fun transCall(call: CallAST, resultReg: Register) {
-        val instructions = mutableListOf<Assembly>()
+    fun transCall(call : CallAST, resultReg: Register) {
+        val instructions = mutableListOf<Line>()
         // parameters will be put onto the stack in reverse order e.g. f(a, b, c)
         // stack will look like so:
         // c
@@ -143,8 +142,8 @@ class AssemblyGenerator {
     }
 
     // generates the assembly code for a BlockAST node and returns the list of instructions
-    fun transStat(stat: StatementAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transStat(stat: StatementAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         when (stat) {
             is SkipStatementAST -> {}
             is VariableDeclarationAST -> instructions.addAll(transVariableDeclaration(stat, resultReg))
@@ -178,8 +177,8 @@ class AssemblyGenerator {
     }
 
     // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transVariableDeclaration(node: VariableDeclarationAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transVariableDeclaration(node: VariableDeclarationAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         sp -= node.varIdent.type.sizeInBytes()
         state.setStackPos(node.varName, sp)
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
@@ -188,41 +187,33 @@ class AssemblyGenerator {
     }
 
     // this function will generate the assembly code for an AssignToIdentAST node and return the list of instructions
-    fun transAssignToIdent(node: AssignToIdentAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transAssignToIdent(node: AssignToIdentAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
         instructions.add(StoreWord(SP, ImmediateOffset(resultReg, state.getStackPos((node.lhs as VariableIdentifierAST).varName) - sp))) // dk y but it assumed node.lhs was just an ASTNode so i had to cast it
         return instructions
     }
 
-    fun transAssignToArrayElem(
-        node: AssignToArrayElemAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transAssignToArrayElem(node: AssignToArrayElemAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transAssignToPairElem(
-        node: AssignToPairElemAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transAssignToPairElem(node: AssignToPairElemAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transArrayLiteral(
-        node: ArrayLiteralAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transArrayLiteral(node: ArrayLiteralAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transPairElem(
-        node: PairElemAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transPairElem(node: PairElemAST, resultReg:
+    Register): List<Line> {
 //        TODO
         when (node) {
             is FstPairElemAST -> {
@@ -235,106 +226,82 @@ class AssemblyGenerator {
         return emptyList()
     }
 
-    fun transFstPairElem(
-        node: FstPairElemAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transFstPairElem(node: FstPairElemAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transSndPairElem(
-        node: SndPairElemAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transSndPairElem(node: SndPairElemAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transElseBlock(
-        node: ElseBlockAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transElseBlock(node: ElseBlockAST, resultReg:
+    Register): List<Line> {
 //        TODO?
         return emptyList()
     }
 
-    fun transWhileBlock(
-        node: WhileBlockAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transWhileBlock(node: WhileBlockAST, resultReg:
+    Register): List<Line> {
 //        TODO?
         return emptyList()
     }
 
-    fun transBeginEndBlock(
-        node: BeginEndBlockAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transBeginEndBlock(node: BeginEndBlockAST, resultReg:
+    Register): List<Line> {
 //        TODO?
         return emptyList()
     }
 
-    fun transArrayElem(
-        node: ArrayElemAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transArrayElem(node: ArrayElemAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transParameter(
-        node: ParameterAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transParameter(node: ParameterAST, resultReg:
+    Register): List<Line> {
 //        TODO?
         return emptyList()
     }
 
-    fun transFreeStatement(
-        node: FreeStatementAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transFreeStatement(node: FreeStatementAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transReturnStatement(
-        node: ReturnStatementAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transReturnStatement(node: ReturnStatementAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transExitStatement(
-        node: ExitStatementAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transExitStatement(node: ExitStatementAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transPrintStatement(
-        node: PrintStatementAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transPrintStatement(node: PrintStatementAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
-    fun transPrintlnStatment(
-        node: PrintlnStatementAST,
-        resultReg: Register
-    ): List<Assembly> {
+    fun transPrintlnStatment(node: PrintlnStatementAST, resultReg:
+    Register): List<Line> {
 //        TODO
         return emptyList()
     }
 
     // generates the assembly code for an ReadStatementAST node and returns the list of instructions
-    fun transReadStatement(node: ReadStatementAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
-        when (node.target.type) {
+    fun transReadStatement(node : ReadStatementAST, resultReg: Register) : List<Line> {
+        val instructions = mutableListOf<Line>()
+        when(node.target.type) {
             IntType -> {
                 defineUtilFuncs(P_READ_INT)
                 instructions.addAll(transExp(node.target as ExpressionAST, resultReg))
@@ -347,8 +314,8 @@ class AssemblyGenerator {
     }
 
     // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transIfBlock(stat: IfBlockAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transIfBlock(stat: IfBlockAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(stat.condExpr, resultReg))
         instructions.add(Compare(resultReg, ImmediateOperand(0)))
         val elseLabel = branchLabel.generate()
@@ -362,15 +329,15 @@ class AssemblyGenerator {
         return instructions
     }
 
-    fun transSequenceStatement(node: SequenceStatementAST, resultReg: Register): List<Assembly> {
+    fun transSequenceStatement(node: SequenceStatementAST, resultReg: Register): List<Line> {
         return transStat(node.stat1, resultReg) + transStat(node.stat2, resultReg)
     }
 
     //endregion
 
     // generates the assembly code for an AssignRhsAST node and returns the list of instructions
-    fun transAssignRhs(node: AssignRhsAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transAssignRhs(node: AssignRhsAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         when (node) {
             is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
             is NewPairAST -> instructions.addAll(transNewPair(node, resultReg))
@@ -386,8 +353,8 @@ class AssemblyGenerator {
     }
 
     // generates assembly code for a NewPairAST node and returns the list of instructions
-    fun transNewPair(node: NewPairAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transNewPair(node : NewPairAST, resultReg: Register) : List<Line> {
+        val instructions = mutableListOf<Line>()
         instructions.add(LoadWord(R0, ImmediateOperand(8))) // sets up malloc arg to alloc 8 bytes for the pair
         instructions.add(BranchLink("malloc")) // jump to malloc
         instructions.add(Move(resultReg, R0)) // malloc left alloced address in R0, so here we put this address in resultReg
@@ -408,13 +375,13 @@ class AssemblyGenerator {
         } else if (node.sndExpr.type.sizeInBytes() == 1) {
             instructions.add(StoreByte(resultReg.nextReg(), ZeroOffset(R0))) // same as above but for single byte size types
         }
-        instructions.add(StoreWord(resultReg.nextReg(), ImmediateOffset(resultReg, 4))) // stores the address of the pair.snd item into the actual pairs memory
+        instructions.add(StoreWord(resultReg.nextReg(), ImmediateOffset(resultReg,4))) // stores the address of the pair.snd item into the actual pairs memory
         return instructions
     }
 
     // generates the assembly code for an ExpressionAST node and returns the list of instructions
-    fun transExp(expr: ExpressionAST, resultReg: Register): List<Assembly> {
-        val instructions: MutableList<Assembly> = mutableListOf()
+    fun transExp(expr: ExpressionAST, resultReg: Register): List<Line> {
+        val instructions: MutableList<Line> = mutableListOf()
         when (expr) {
             is IntLiteralAST -> {
                 instructions.add(LoadWord(resultReg, ImmediateOperand(expr.intValue)))
@@ -426,7 +393,7 @@ class AssemblyGenerator {
                 instructions.add(Move(resultReg, ImmediateOperand(expr.charValue)))
             }
             is StringLiteralAST -> {
-                val label: String = stringLabel.generate()
+                val label : String = stringLabel.generate()
                 data.put(label, StringData(label, expr.stringValue))
                 instructions.add(LoadWord(resultReg, LabelOperand(label)))
             }
@@ -435,10 +402,10 @@ class AssemblyGenerator {
             }
             is VariableIdentifierAST -> {
                 when (expr.type) {
-                    IntType -> instructions.add(LoadWord(SP, ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)))
-                    BoolType -> instructions.add(LoadByte(SP, ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)))
-                    CharType -> instructions.add(LoadByte(SP, ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)))
-                    StringType -> instructions.add(LoadWord(SP, ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)))
+                    IntType -> instructions.add(LoadWord(SP, ImmediateOffset(resultReg,state.getStackPos(expr.varName) - sp)))
+                    BoolType -> instructions.add(LoadByte(SP, ImmediateOffset(resultReg,state.getStackPos(expr.varName) - sp)))
+                    CharType -> instructions.add(LoadByte(SP, ImmediateOffset(resultReg,state.getStackPos(expr.varName) - sp)))
+                    StringType -> instructions.add(LoadWord(SP, ImmediateOffset(resultReg,state.getStackPos(expr.varName) - sp)))
                 }
             }
             is ArrayElemAST -> {
@@ -451,16 +418,16 @@ class AssemblyGenerator {
     }
 
     // generates the assembly code for a BinaryOpExprAST node and returns the list of instructions
-    fun transBinOp(expr: BinaryOpExprAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transBinOp(expr: BinaryOpExprAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(expr.expr1, resultReg))
         instructions.addAll(transExp(expr.expr2, resultReg.nextReg()))
         when (expr.type) {
             IntType -> {
                 when (expr.operator) {
                     BinaryOp.MULT -> instructions.add(Mult(updateFlags = true, resultReg, resultReg, resultReg.nextReg()))
-                    BinaryOp.DIV -> TODO() // create a function that performs division algorithm
-                    BinaryOp.MOD -> TODO() // create a function that performs modulo algorithm
+                    BinaryOp.DIV -> TODO() //create a function that performs division algorithm
+                    BinaryOp.MOD -> TODO() //create a function that performs modulo algorithm
                     BinaryOp.PLUS -> instructions.add(Add(updateFlags = true, resultReg, resultReg, resultReg.nextReg()))
                     BinaryOp.MINUS -> TODO()
                     BinaryOp.GT -> TODO()
@@ -477,19 +444,15 @@ class AssemblyGenerator {
                 instructions.addAll(transExp(expr.expr1, resultReg))
                 instructions.addAll(transExp(expr.expr2, resultReg.nextReg()))
                 when (expr.operator) {
-                    BinaryOp.EQUALS -> instructions.addAll(
-                        mutableListOf(
-                            Compare(resultReg, resultReg.nextReg()),
-                            Move(EQ, resultReg, ImmediateOperand(true)),
-                            Move(NE, resultReg, ImmediateOperand(false))
-                        )
+                    BinaryOp.EQUALS -> instructions.addAll(mutableListOf(
+                        Compare(resultReg, resultReg.nextReg()),
+                        Move(EQ, resultReg, ImmediateOperand(true)),
+                        Move(NE, resultReg, ImmediateOperand(false)))
                     )
-                    BinaryOp.NOT_EQUALS -> instructions.addAll(
-                        mutableListOf(
-                            Compare(resultReg, resultReg.nextReg()),
-                            Move(NE, resultReg, ImmediateOperand(true)),
-                            Move(EQ, resultReg, ImmediateOperand(false))
-                        )
+                    BinaryOp.NOT_EQUALS -> instructions.addAll(mutableListOf(
+                        Compare(resultReg, resultReg.nextReg()),
+                        Move(NE, resultReg, ImmediateOperand(true)),
+                        Move(EQ, resultReg, ImmediateOperand(false)))
                     )
                     BinaryOp.MULT -> TODO()
                     BinaryOp.DIV -> TODO()
@@ -514,8 +477,8 @@ class AssemblyGenerator {
         return instructions
     }
 
-    fun transUnOp(unOpExpr: UnaryOpExprAST, resultReg: Register): List<Assembly> {
-        val instructions = mutableListOf<Assembly>()
+    fun transUnOp(unOpExpr: UnaryOpExprAST, resultReg: Register): List<Line> {
+        val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(unOpExpr.expr, resultReg))
 
         when (unOpExpr.operator) {

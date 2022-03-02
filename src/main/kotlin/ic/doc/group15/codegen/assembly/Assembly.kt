@@ -9,7 +9,9 @@ val ASM_TAB = " ".repeat(ASM_TAB_SIZE)
 
 interface Assembly
 
-abstract class Label<L : Assembly> protected constructor(val name: String) : Assembly {
+abstract class Line : Assembly
+
+abstract class Label<L : Line> protected constructor(val name: String) : Assembly {
 
     private val lines: MutableList<L> = LinkedList()
 
@@ -48,7 +50,7 @@ abstract class Instruction protected constructor(
     val instr: String,
     val conditionCode: ConditionCode? = null,
     protected vararg val params: Operand
-) : Assembly {
+) : Line() {
     override fun toString(): String {
         return "$instr${conditionCode ?: ""} " + params.joinToString(separator = ", ")
     }
