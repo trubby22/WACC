@@ -3,7 +3,7 @@ default:
     - WACC
 
 build-job:
-  stage: test
+  stage: build
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
