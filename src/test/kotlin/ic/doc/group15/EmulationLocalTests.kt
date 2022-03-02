@@ -3,6 +3,11 @@ package ic.doc.group15
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -11,71 +16,123 @@ import java.nio.file.Paths
 class EmulationLocalTests {
 
     private val validFolder = "wacc_examples/valid"
+    private val validFolderPath = "wacc_examples/valid"
+    private val validModelOutputFolderPath = "model_output/$validFolderPath"
 
-    @Test
-    fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/advanced")
+    @Nested
+    inner class BasicValidFiles {
+        private val basicFolderPath = "$validFolderPath/basic"
+        private val basicResultFolderPath = "$validModelOutputFolderPath/basic"
+
+        @Disabled
+        @Nested
+        inner class ExitValidFiles {
+            private val exitFolderPath = "$basicFolderPath/exit"
+            private val exitResultFolderPath = "$basicResultFolderPath/exit"
+
+            @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+            @ValueSource(strings = ["exit-1", "exitBasic", "exitBasic2", "exitWrap"])
+            fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+                val filePath = "$exitFolderPath/$fileName.wacc"
+                val resultPath = "$exitResultFolderPath/$fileName.txt"
+
+                assertTrue(exitCodeAndOutputMatches())
+            }
+        }
+
+        @Nested
+        inner class SkipValidFiles {
+            private val skipFolderPath = "$basicFolderPath/skip"
+            private val skipResultFolderPath = "$basicResultFolderPath/skip"
+
+            @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
+            @ValueSource(strings = ["comment", "commentInLine", "skip"])
+            fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
+                val filePath = "$skipFolderPath/$fileName.wacc"
+                val resultPath = "$skipResultFolderPath/$fileName.txt"
+
+                assertTrue(exitCodeAndOutputMatches())
+            }
+        }
     }
 
-    @Test
-    fun arrayEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/array")
+    private fun exitCodeAndOutputMatches(): Boolean {
+        println("Hello world")
+//        System.err.println("Hello standard error!")
+        return false
     }
 
-    @Test
-    fun basicEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/basic")
-    }
-
-    @Test
-    fun expressionsEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/expressions")
-    }
-
-    @Test
-    fun functionEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/function")
-    }
-
-    @Test
-    fun ifEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/if")
-    }
-
-    @Test
-    fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/IO")
-    }
-
-    @Test
-    fun pairsEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/pairs")
-    }
-
-    @Test
-    fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/runtimeErr")
-    }
-
-    @Test
-    fun scopeEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/scope")
-    }
-
-    @Test
-    fun sequenceEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/sequence")
-    }
-
-    @Test
-    fun variablesEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/variables")
-    }
-
-    @Test
-    fun whileEmulationProducesRightExitCodesAndOutput() {
-        checkAssemblyFolder("$validFolder/while")
-    }
+//    @Test
+//    fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/advanced")
+//    }
+//
+//    @Test
+//    fun arrayEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/array")
+//    }
+//
+//    @Test
+//    fun basicEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/basic")
+//    }
+//
+//    @Test
+//    fun expressionsEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/expressions")
+//    }
+//
+//    @Test
+//    fun functionEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/function")
+//    }
+//
+//    @Test
+//    fun ifEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/if")
+//    }
+//
+//    @Test
+//    fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/IO")
+//    }
+//
+//    @Test
+//    fun pairsEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/pairs")
+//    }
+//
+//    @Test
+//    fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/runtimeErr")
+//    }
+//
+//    @Test
+//    fun scopeEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/scope")
+//    }
+//
+//    @Test
+//    fun sequenceEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/sequence")
+//    }
+//
+//    @Test
+//    fun variablesEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/variables")
+//    }
+//
+//    @Test
+//    fun whileEmulationProducesRightExitCodesAndOutput() {
+//        checkAssemblyFolder("$validFolder/while")
+//    }
+//
+//    @Test
+//    fun playground() {
+//        val lst1 = listOf("a", "b", "c")
+//        val lst2 = listOf("a", "b", "c")
+//        assertTrue(lst1 == lst2)
+//    }
 
     private fun checkAssemblyFolder(path: String) {
         val res = Files.walk(Paths.get(path))
