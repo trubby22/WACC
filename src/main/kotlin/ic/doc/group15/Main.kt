@@ -3,6 +3,12 @@ package ic.doc.group15
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
+import ic.doc.group15.ast.BlockAST
+import ic.doc.group15.codegen.AssemblyGenerator
+import ic.doc.group15.codegen.assembly.UtilFunction
+import ic.doc.group15.codegen.assembly.instruction.Add
+import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
+import ic.doc.group15.codegen.assembly.operand.Register
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.visitor.Visitor
@@ -29,21 +35,18 @@ fun main(args: Array<String>) {
     val ast = AST(st)
     val semanticErrors = SemanticErrorList()
     val visitor = Visitor(ast, st, semanticErrors, enableLogging = true)
-    visitor.visit(program)
+    val rootASTNode = visitor.visit(program) as BlockAST
 
     semanticErrors.checkErrors()
 
-    // Create a dummy assembly file
+    val assemblyGenerator = AssemblyGenerator()
+    val instructions = assemblyGenerator.transProgram(rootASTNode)
+    val instructionStrLst = instructions.map{ it.toString() }
+    val assemblyStr = instructionStrLst.joinToString("\n")
+
+    // Create assembly file
     val filename = args[0].split("/").last()
     val asmFilename = filename.substring(0, filename.length - 4) + "s"
 
-    File(asmFilename).writeText(
-        ".text\n" +
-            "\n" +
-            ".global main\n" +
-            "main:\n" +
-            "\tPUSH {lr}\n" +
-            "\tLDR r0, =0\n" +
-            "\tPOP {pc}\n" +
-            "\t.ltorg\n")
+    File(asmFilename).writeText(assemblyStr)
 }
