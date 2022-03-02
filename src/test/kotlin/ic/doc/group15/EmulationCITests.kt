@@ -480,7 +480,7 @@ class EmulationCITests {
 
     val actualOutput =
       actualList.subList(0, actualList.size - 1)
-    val actualExitCode = actualList[actualList.size - 1].toInt()
+    val actualExitCode = actualList[actualList.size - 1].trim().toInt()
 
     return Pair(actualExitCode, actualOutput)
   }
