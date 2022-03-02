@@ -52,8 +52,6 @@ class EmulationCITests {
         val filePath = "$exitFolderPath/$fileName.wacc"
         val resultPath = "$exitResultFolderPath/$fileName.txt"
 
-          println("About to call exitCodeAndOutputMatches for path: $filePath")
-
         assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
@@ -432,10 +430,7 @@ class EmulationCITests {
   private fun compileAndExecute(
     fileName: String,
     path: String
-  ): Pair<Int, String> {
-    println("Filename: $fileName")
-    println("Path: $path")
-
+  ): Pair<Int, List<String>> {
     val compilation = ProcessBuilder(
       "/bin/bash",
       "-c",
@@ -453,20 +448,18 @@ class EmulationCITests {
     val compilationOutput = IOUtils.toString(
       compilation.inputStream,
       StandardCharsets.UTF_8.name()
-    ).trim()
+    )
 
-    println("Compilation output:")
-    println(compilationOutput)
-
-    println("Compilation finished; exit status: $compilationExitStatus")
     assertEquals(0, compilationExitStatus)
+
+    val createExecutable = "arm-linux-gnueabi-gcc -o $fileName " +
+        "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $fileName.s"
+    val execute = "qemu-arm -L /usr/arm-linux-gnueabi $fileName"
+    val echoExitCode = "echo \$?"
 
     val emulation = ProcessBuilder(
       "/bin/bash", "-c",
-      "arm-linux-gnueabi-gcc -o $fileName " +
-          "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $fileName.s; " +
-          "qemu-arm -L /usr/arm-linux-gnueabi $fileName; " +
-          "echo $? 2>&1"
+      "$createExecutable; $execute; $echoExitCode 2>&1"
     ).start()
 
     var emulationExitStatus = -1
@@ -476,32 +469,25 @@ class EmulationCITests {
       e.printStackTrace()
     }
 
-    val actualList = IOUtils.toString(
+    val emulationOutput = IOUtils.toString(
       emulation.inputStream,
       StandardCharsets.UTF_8.name()
-    ).trim().split("\n").map(String::trim)
-
-    println("Emulation finished; exit status: $emulationExitStatus")
-    println("Emulation output:")
-    actualList.forEach{ println("List elem: '$it'") }
+    ).trim()
 
     assertEquals(0, emulationExitStatus)
 
-    println("Actual output:")
-    println(actualList.subList(0, actualList.size - 1).joinToString("\n").trim())
-    println("Actual exit code: ${actualList[actualList.size - 1].trim()}")
+    val actualList = emulationOutput.split("\n")
 
     val actualOutput =
-      actualList.subList(0, actualList.size - 1).joinToString("\n").trim()
-    val actualExitCode = actualList[actualList.size - 1].trim().toInt()
+      actualList.subList(0, actualList.size - 1)
+    val actualExitCode = actualList[actualList.size - 1].toInt()
 
     return Pair(actualExitCode, actualOutput)
   }
 
-  private fun getExpectedResult(path: String): Pair<Int, String> {
+  private fun getExpectedResult(path: String): Pair<Int, List<String>> {
     val expectedList = File(path).readLines()
     val expectedOutput = expectedList.subList(3, expectedList.size)
-        .joinToString("\n").trim()
     val expectedExitCode = expectedList[1].trim().toInt()
 
     return Pair(expectedExitCode, expectedOutput)
@@ -513,29 +499,10 @@ class EmulationCITests {
     resultPath: String
   ): Boolean {
     val (actualExitCode, actualOutput) = compileAndExecute(fileName, filePath)
-    println("Compiling and executing complete")
     val (expectedExitCode, expectedOutput) = getExpectedResult(resultPath)
-    println("Getting expected result complete")
 
     val exitCodeMatches = (expectedExitCode == actualExitCode)
     val outputMatches = (expectedOutput == actualOutput)
-
-    println("Expected exit code: $expectedExitCode")
-    println("Actual exit code: $actualExitCode")
-
-    println("Expected output:")
-    println(expectedOutput)
-
-    println("Actual output:")
-    println(actualOutput)
-
-    println("Exit codes match: $exitCodeMatches")
-    println("Output matches: $outputMatches")
-    println("Output as string matches: ${expectedOutput
-            == actualOutput}")
-
-      assertEquals(expectedExitCode, actualExitCode)
-      assertEquals(expectedOutput, actualOutput)
 
     return exitCodeMatches && outputMatches
   }
