@@ -21,12 +21,12 @@ test:
 	$(MVN) test
 
 asm:
-	rm *.s
+	rm *.s || true
 
 # clean up all of the compiled files
 clean-mvn:
 	$(MVN) clean
-	$(RM) $(ANTLR_DIR_1) $(ANTLR_DIR_2) $(GEN_DIR_1) $(GEN_DIR_2)
+	$(RM) $(ANTLR_DIR_1) $(ANTLR_DIR_2) $(GEN_DIR_1) $(GEN_DIR_2) || true
 
 clean: clean-mvn asm
 

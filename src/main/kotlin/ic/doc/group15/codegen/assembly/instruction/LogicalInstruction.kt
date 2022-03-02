@@ -17,12 +17,20 @@ import ic.doc.group15.codegen.assembly.operand.Register
 //        operands: List<Operand<*>>
 //    ) : this(instr, *operands.toTypedArray())
 // }
-abstract class LogicalInstruction(
+abstract class LogicalInstruction protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
+    val updateFlags: Boolean,
     val dest: Register,
     val base: Register,
     val op: Operand
-) : Instruction(instr, dest, base, op)
+) : Instruction(instr, conditionCode, dest, base, op) {
+
+    override fun toString(): String {
+        return "$instr${conditionCode ?: ""}${if (updateFlags) "s" else ""} " + params
+            .joinToString(separator = ", ")
+    }
+}
 
 /**
  * AND is a logical-and instruction that performs bitwise AND operations on
@@ -39,10 +47,14 @@ abstract class LogicalInstruction(
  * @param op A flexible second operand
  */
 class And(
+    conditionCode: ConditionCode?,
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("and", dest, base, op)
+) : LogicalInstruction("and", conditionCode, false, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}
 
 /**
  * AND is a logical-and instruction that performs bitwise AND operations on
@@ -60,8 +72,22 @@ class And(
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
-class AndCond(
+class AndUpdate(
+    conditionCode: ConditionCode?,
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("ands", dest, base, op)
+) : LogicalInstruction("ands", conditionCode, true, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}
+
+class Xor(
+    conditionCode: ConditionCode?,
+    dest: Register,
+    base: Register,
+    op: Operand
+) : LogicalInstruction("eor", conditionCode, false, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}

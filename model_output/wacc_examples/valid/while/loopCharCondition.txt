@@ -1,0 +1,5 @@
+Exit code:
+0
+Output:
+Change c
+Should print "Change c" once before.

@@ -1,0 +1,5 @@
+Exit code:
+0
+Output:
+flip b!
+end of loop

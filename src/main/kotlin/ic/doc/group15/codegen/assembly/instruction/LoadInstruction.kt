@@ -1,6 +1,6 @@
 package ic.doc.group15.codegen.assembly.instruction
 
-import ic.doc.group15.codegen.assembly.*
+import ic.doc.group15.codegen.assembly.* // ktlint-disable no-wildcard-imports
 import ic.doc.group15.codegen.assembly.operand.AddressOperand
 import ic.doc.group15.codegen.assembly.operand.Register
 
@@ -9,9 +9,10 @@ import ic.doc.group15.codegen.assembly.operand.Register
  */
 abstract class LoadInstruction protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
     val dest: Register,
     val addr: AddressOperand
-) : Instruction(instr, dest, addr)
+) : Instruction(instr, conditionCode, dest, addr)
 
 /**
  * LDR is a load register instruction that loads the particular value
@@ -20,7 +21,14 @@ abstract class LoadInstruction protected constructor(
  * @param dest The destination register
  * @param addr The source address
  */
-class LoadWord(dest: Register, addr: AddressOperand) : LoadInstruction("ldr", dest, addr)
+class LoadWord(
+    conditionCode: ConditionCode?,
+    dest: Register,
+    addr: AddressOperand
+) : LoadInstruction("ldr", conditionCode, dest, addr) {
+
+    constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
+}
 
 /**
  * LDRB is a load register instruction that loads the particular value
@@ -30,7 +38,14 @@ class LoadWord(dest: Register, addr: AddressOperand) : LoadInstruction("ldr", de
  * @param dest The destination register
  * @param addr The source address
  */
-class LoadByte(dest: Register, addr: AddressOperand) : LoadInstruction("ldrb", dest, addr)
+class LoadByte(
+    conditionCode: ConditionCode?,
+    dest: Register,
+    addr: AddressOperand
+) : LoadInstruction("ldrb", conditionCode, dest, addr) {
+
+    constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
+}
 
 ///**
 // * LDRSB is a load register instruction that loads the particular value

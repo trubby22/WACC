@@ -7,37 +7,38 @@ build-job:
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  artifacts:
+    untracked: true
   script:
-    - which apk
-    - which apt-get
-    - apk update && apk upgrade && apk add -y ruby
-    - mvn clean
-    - mvn compile
+    - make clean
+    - mvn package -DskipTests
 
 syntactic-test-job:
   stage: test
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  dependencies:
+    - build-job
   script:
-    - mvn package -DskipTests
-    - mvn test -Dtest=ic.doc.group15.SyntacticTests*
+    - mvn surefire:test -Dtest=ic.doc.group15.SyntacticTests*
 
 semantic-test-job:
   stage: test
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  dependencies:
+    - build-job
   script:
-    - mvn package -DskipTests
-    - mvn test -Dtest=ic.doc.group15.SemanticTests*
+    - mvn surefire:test -Dtest=ic.doc.group15.SemanticTests*
 
 emulation-test-job:
   stage: test
   rules:
     - if: '$CI_COMMIT_REF_NAME == "master"'
     - when: manual
+  dependencies:
+    - build-job
   script:
-    - mvn package -DskipTests
-    - chmod +x wacc_examples/refCompile wacc_examples/refEmulate
-    - mvn test -Dtest=ic.doc.group15.EmulationTests*
+    - mvn surefire:test -Dtest=ic.doc.group15.EmulationCITests*

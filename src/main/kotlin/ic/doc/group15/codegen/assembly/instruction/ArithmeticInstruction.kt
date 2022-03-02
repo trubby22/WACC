@@ -9,21 +9,32 @@ import ic.doc.group15.codegen.assembly.operand.Register
  */
 abstract class ArithmeticInstruction protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
+    val updateFlags: Boolean = false,
     vararg operands: Operand
-) : Instruction(instr, *operands) {
+) : Instruction(instr, conditionCode, *operands) {
 
     constructor(
         instr: String,
+        conditionCode: ConditionCode?,
+        updateFlags: Boolean = false,
         operands: List<Operand>
-    ) : this(instr, *operands.toTypedArray())
+    ) : this(instr, conditionCode, updateFlags, *operands.toTypedArray())
+
+    override fun toString(): String {
+        return "$instr${conditionCode ?: ""}${if (updateFlags) "s" else ""} " + params
+            .joinToString(separator = ", ")
+    }
 }
 
 abstract class FlexibleIntArithmetic protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
+    updateFlags: Boolean = false,
     val dest: Register,
     val base: Register,
     val op: Operand
-) : ArithmeticInstruction(instr, dest, base, op)
+) : ArithmeticInstruction(instr, conditionCode, updateFlags, dest, base, op)
 
 /**
  * ADD is an add-without-carry instruction that adds the values in
@@ -35,10 +46,14 @@ abstract class FlexibleIntArithmetic protected constructor(
  * @param op A flexible second operand
  */
 class Add(
+    conditionCode: ConditionCode?,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("add", dest, base, op)
+) : FlexibleIntArithmetic("ADD", conditionCode, false, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}
 
 /**
  * ADDS is an add-without-carry instruction that adds the values in
@@ -50,11 +65,15 @@ class Add(
  * @param base The base register/register holding the first operand
  * @param op A flexible second operand
  */
-class AddCond(
+class AddUpdate(
+    conditionCode: ConditionCode?,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("adds", dest, base, op)
+) : FlexibleIntArithmetic("ADDS", conditionCode, true, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}
 
 /**
  * SUB is a subtract-without-carry instruction that subtracts the value of
@@ -66,10 +85,24 @@ class AddCond(
  * @param op A flexible second operand
  */
 class Sub(
+    conditionCode: ConditionCode?,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("sub", dest, base, op)
+) : FlexibleIntArithmetic("SUB", conditionCode, false, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}
+
+class ReverseSub(
+    conditionCode: ConditionCode?,
+    dest: Register,
+    base: Register,
+    op: Operand
+) : FlexibleIntArithmetic("RSB", conditionCode, false, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}
 
 /**
  * SUBS is a subtract-without-carry instruction that subtracts the value of
@@ -88,18 +121,24 @@ class Sub(
  * @param base The source register/register holding the first operand
  * @param op A flexible second operand
  */
-class SubCond(
+class SubUpdate(
+    conditionCode: ConditionCode?,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("subs", dest, base, op)
+) : FlexibleIntArithmetic("SUBS", conditionCode, true, dest, base, op) {
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+}
 
 abstract class RegisterIntArithmetic protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
+    updateFlags: Boolean = false,
     val dest: Register,
     val reg_n: Register,
     val reg_m: Register,
-) : ArithmeticInstruction(instr, dest, reg_n, reg_m)
+) : ArithmeticInstruction(instr, conditionCode, updateFlags, dest, reg_n, reg_m)
 
 /**
  * MUL is a multiply instruction that multiplies the value of
@@ -115,10 +154,14 @@ abstract class RegisterIntArithmetic protected constructor(
  * @param reg_m The source register/register holding the second operand
  */
 class Mult(
+    conditionCode: ConditionCode?,
     dest: Register,
     reg_n: Register,
     reg_m: Register
-) : RegisterIntArithmetic("mul", dest, reg_n, reg_m)
+) : RegisterIntArithmetic("MUL", conditionCode, false, dest, reg_n, reg_m) {
+
+    constructor(dest: Register, reg_n: Register, reg_m: Register) : this(null, dest, reg_n, reg_m)
+}
 
 /**
  * MULS is a multiply instruction that multiplies the value of
@@ -135,19 +178,25 @@ class Mult(
  * @param reg_n The source register/register holding the first operand
  * @param reg_m The source register/register holding the second operand
  */
-class MultCond(
+class MultUpdate(
+    conditionCode: ConditionCode?,
     dest: Register,
     reg_n: Register,
     reg_m: Register
-) : RegisterIntArithmetic("muls", dest, reg_n, reg_m)
+) : RegisterIntArithmetic("MULS", conditionCode, true, dest, reg_n, reg_m) {
+
+    constructor(dest: Register, reg_n: Register, reg_m: Register) : this(null, dest, reg_n, reg_m)
+}
 
 abstract class LongArithmetic protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
+    updateFlags: Boolean = false,
     val dest_lo: Register,
     val dest_hi: Register,
     val reg_n: Register,
     val reg_m: Register
-) : ArithmeticInstruction(instr, dest_lo, dest_hi, reg_n, reg_m)
+) : ArithmeticInstruction(instr, conditionCode, updateFlags, dest_lo, dest_hi, reg_n, reg_m)
 
 /**
  * SMULL is a signed-long multiply instruction that multiplies the value of
@@ -165,11 +214,16 @@ abstract class LongArithmetic protected constructor(
  * @param reg_m The source register/register holding the second operand
  */
 class LongMult(
+    conditionCode: ConditionCode?,
     dest_lo: Register,
     dest_hi: Register,
     reg_n: Register,
     reg_m: Register
-) : LongArithmetic("smull", dest_lo, dest_hi, reg_n, reg_m)
+) : LongArithmetic("SMULL", conditionCode, false, dest_lo, dest_hi, reg_n, reg_m) {
+
+    constructor(dest_lo: Register, dest_hi: Register, reg_n: Register, reg_m: Register) :
+        this(null, dest_lo, dest_hi, reg_n, reg_m)
+}
 
 /**
  * SMULLS is a signed-long multiply instruction that multiplies the value of
@@ -187,9 +241,14 @@ class LongMult(
  * @param reg_n The source register/register holding the first operand
  * @param reg_m The source register/register holding the second operand
  */
-class LongMultCond(
+class LongMultUpdate(
+    conditionCode: ConditionCode?,
     dest_lo: Register,
     dest_hi: Register,
     reg_n: Register,
     reg_m: Register
-) : LongArithmetic("smulls", dest_lo, dest_hi, reg_n, reg_m)
+) : LongArithmetic("SMULLS", conditionCode, true, dest_lo, dest_hi, reg_n, reg_m) {
+
+    constructor(dest_lo: Register, dest_hi: Register, reg_n: Register, reg_m: Register) :
+        this(null, dest_lo, dest_hi, reg_n, reg_m)
+}

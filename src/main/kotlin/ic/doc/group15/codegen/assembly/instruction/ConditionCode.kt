@@ -1,9 +1,9 @@
-package ic.doc.group15.codegen.assembly.operand
+package ic.doc.group15.codegen.assembly.instruction
 
 /**
  * Condition codes present in ARM1176JZF-S, partly implemented.
  */
-enum class ConditionCode : Operand {
+enum class ConditionCode {
     /**
      * Equal.
      **/

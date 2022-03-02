@@ -6,9 +6,10 @@ import ic.doc.group15.codegen.assembly.operand.Register
 
 abstract class StoreInstruction protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
     val src: Register,
     val addr: AddressOperand
-) : Instruction(instr, src, addr)
+) : Instruction(instr, conditionCode, src, addr)
 
 /**
  * STR is a store register instruction that stores the particular value
@@ -18,7 +19,14 @@ abstract class StoreInstruction protected constructor(
  * @param src The source register
  * @param addr The destination address
  */
-class StoreWord(src: Register, addr: AddressOperand) : StoreInstruction("STR", src, addr)
+class StoreWord(
+    conditionCode: ConditionCode?,
+    src: Register,
+    addr: AddressOperand
+) : StoreInstruction("STR", conditionCode, src, addr) {
+
+    constructor(src: Register, addr: AddressOperand) : this(null, src, addr)
+}
 
 /**
  * STRB is a store register instruction that stores the particular value
@@ -28,4 +36,11 @@ class StoreWord(src: Register, addr: AddressOperand) : StoreInstruction("STR", s
  * @param src The source register
  * @param addr The destination address
  */
-class StoreByte(src: Register, addr: AddressOperand) : StoreInstruction("STRB", src, addr)
+class StoreByte(
+    conditionCode: ConditionCode?,
+    src: Register,
+    addr: AddressOperand
+) : StoreInstruction("STRB", conditionCode, src, addr) {
+
+    constructor(src: Register, addr: AddressOperand) : this(null, src, addr)
+}

@@ -9,8 +9,9 @@ import ic.doc.group15.codegen.assembly.operand.RegisterList
  */
 abstract class StackInstruction protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
     val registers: Array<out Register>
-) : Instruction(instr, RegisterList(*registers))
+) : Instruction(instr, conditionCode, RegisterList(*registers))
 
 /**
  * PUSH is a stack-related instruction that pushes registers onto a full
@@ -20,7 +21,13 @@ abstract class StackInstruction protected constructor(
  *
  * @param regs The registers to push
  */
-class Push(vararg regs: Register) : StackInstruction("PUSH", regs)
+class Push(
+    conditionCode: ConditionCode?,
+    vararg regs: Register
+) : StackInstruction("PUSH", conditionCode, regs) {
+
+    constructor(vararg regs: Register) : this(null, *regs)
+}
 
 /**
  * POP is a stack-related instruction that pops registers off a full
@@ -35,4 +42,10 @@ class Push(vararg regs: Register) : StackInstruction("PUSH", regs)
  *
  * @param regs The registers to pop to
  */
-class Pop(vararg regs: Register) : StackInstruction("POP", regs)
+class Pop(
+    conditionCode: ConditionCode?,
+    vararg regs: Register
+) : StackInstruction("POP", conditionCode, regs) {
+
+    constructor(vararg regs: Register) : this(null, *regs)
+}

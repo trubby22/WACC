@@ -1,0 +1,4 @@
+Exit code:
+0
+Output:
+Printing an array variable gives an address, such as 0x23158
