@@ -77,7 +77,7 @@ class AssemblyGenerator {
         }
         sp += stackSpace
         instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
-        this.state.popStacks(block.symbolTable.getMap().keys.parallelStream().toList()) // read comments in the State class to understand why we do this
+//        this.state.popStacks(block.symbolTable.getMap().keys.parallelStream().toList()) // read comments in the State class to understand why we do this
         return instructions
     }
 
@@ -107,7 +107,7 @@ class AssemblyGenerator {
             Push(Register.LR),
             Sub(SP, SP, ImmediateOperand(stackSpace))
         ))
-        instructions.addAll(transBlock((funcDec) as BlockAST, 4))
+//        instructions.addAll(transBlock((funcDec) as BlockAST, 4))
         instructions.add(Move(R0, R4))
         instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
         instructions.add(Pop(PC))
@@ -203,10 +203,10 @@ class AssemblyGenerator {
         instructions.add(Branch(EQ, elseLabel))
         instructions.addAll(transBlock(stat, resultReg))
         val endLabel = branchLabel.generate()
-        instructions.add(BranchLabel(endLabel))
-        instructions.add(BranchLabel(elseLabel))
+//        instructions.add(BranchLabel(endLabel))
+//        instructions.add(BranchLabel(elseLabel))
         instructions.addAll(transBlock(stat.elseBlock as ElseBlockAST, resultReg))
-        instructions.add(BranchLabel(endLabel))
+//        instructions.add(BranchLabel(endLabel))
         return instructions
     }
 
