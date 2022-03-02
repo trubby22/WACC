@@ -52,6 +52,8 @@ class EmulationCITests {
         val filePath = "$exitFolderPath/$fileName.wacc"
         val resultPath = "$exitResultFolderPath/$fileName.txt"
 
+          println("About to call exitCodeAndOutputMatches for path: $filePath")
+
         assertTrue(exitCodeAndOutputMatches(fileName, filePath, resultPath))
       }
     }
@@ -439,7 +441,8 @@ class EmulationCITests {
 
     try {
       val compilationExitStatus = compilation.waitFor()
-      assertEquals(compilationExitStatus, 0)
+      println("Compilation finished; exit status: $compilationExitStatus")
+      assertEquals(0, compilationExitStatus)
     } catch (e: InterruptedException) {
       e.printStackTrace()
     }
@@ -464,7 +467,11 @@ class EmulationCITests {
       StandardCharsets.UTF_8.name()
     ).split("\n").map(String::trim)
 
-    assertEquals(emulationExitStatus, 0)
+    println("Emulation finished; exit status: $emulationExitStatus")
+    println("Emulation output:")
+    println(actualList.joinToString("\n"))
+
+    assertEquals(0, emulationExitStatus)
 
     val actualOutput =
       actualList.subList(0, actualList.size - 1).joinToString("\n").trim()
@@ -488,7 +495,9 @@ class EmulationCITests {
     resultPath: String
   ): Boolean {
     val (actualExitCode, actualOutput) = compileAndExecute(fileName, filePath)
+    println("Compiling and executing complete")
     val (expectedExitCode, expectedOutput) = getExpectedResult(resultPath)
+    println("Getting expected result complete")
 
     val exitCodeMatches = (expectedExitCode == actualExitCode)
     val outputMatches = (expectedOutput == actualOutput)
@@ -507,8 +516,8 @@ class EmulationCITests {
     println("Output as string matches: ${expectedOutput
             == actualOutput}")
 
-      assert(exitCodeMatches)
-      assert(outputMatches)
+      assertEquals(expectedExitCode, actualExitCode)
+      assertEquals(expectedOutput, actualOutput)
 
     return exitCodeMatches && outputMatches
   }
