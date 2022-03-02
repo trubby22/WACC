@@ -483,7 +483,7 @@ class EmulationCITests {
 
     println("Emulation finished; exit status: $emulationExitStatus")
     println("Emulation output:")
-    println(actualList.joinToString("\n"))
+    actualList.forEach{ println("List elem: '$it'") }
 
     assertEquals(0, emulationExitStatus)
 
