@@ -128,7 +128,7 @@ class Visitor(
         )
         parentScope.add(funcName, func.funcIdent)
         log("|| Visiting $funcName function body")
-        func.body = visit(ctx.valid_return_stat()) as StatementAST
+        visit(ctx.valid_return_stat())
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
