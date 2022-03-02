@@ -8,9 +8,9 @@ import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
 import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.BasicType.*
+import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.Identifier
 import ic.doc.group15.type.Variable
-import java.util.*
 
 const val START_VAL = 0
 
@@ -44,25 +44,39 @@ class AssemblyGenerator {
     // by this amount in one go leaving enough space for the execution of the entire block. the below function takes
     // in a block and returns the amount of stack space it will require
     fun requiredStackSpace(node: BlockAST): Int {
-        var stackSpace = 0
-        val st = node.symbolTable
-        val map = st.getMap()
-        val list: List<Identifier> = map.values as List<Identifier>
-        for (i in list) {
-            if (i is Variable) {
-                stackSpace += i.type.sizeInBytes()
-            }
-        }
-        return stackSpace
+        return node.symbolTable.getStackSize()
     }
 
-    fun transProgram(program: BlockAST) : List<Line> {
-        val instructions = mutableListOf<Line>()
-        val statements: List<StatementAST> = program.statements
-        for (stat in statements) {
-            instructions.addAll(transStat(stat, R4))
-        }
-        return instructions
+    /**
+     * Per WACC language specification, a program matches the grammar "begin func* stat end".
+     * The AST representation decouples the statements from a SequenceAST to a mapping of lists of StatementAST
+     * in the symbol table to avoid stack overflow from recursing a huge block of statements.
+     *
+     * transProgram dissolves the program into a list of functions, pass the FunctionDeclarationAST
+     * into transFunction, and add the list of statements of the main program into a FunctionDeclarationAST,
+     * thereby processing it via transFunction as well.
+     */
+    fun transProgram(program: BlockAST) {
+        // Sanity check: program is well-defined after syntactic and semantic checks
+        assert(program is BeginEndBlockAST)
+
+        val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
+
+        // translate all function blocks into assembly
+        functionASTs.map { f -> f as FunctionDeclarationAST }
+            .forEach { f -> transFunctionDeclaration(f) }
+
+        // Translate main instructions into assembly
+        // We create a new FunctionDeclarationAST to store statements in the main function
+        // and let transFunction add the entries to the text attribute
+
+        // The symbol table contains the statements AND the FunctionDeclarationAST
+        // For future proofing, we might want to remove all FunctionDeclarationASTs when
+        // nested function definition is introduced in the extension task
+        val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
+        mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
+        mainAST.returnStat = ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0))
+        transFunctionDeclaration(mainAST)
     }
 
     fun transBlock(block: BlockAST, resultReg: Register): List<Line> {
@@ -82,7 +96,7 @@ class AssemblyGenerator {
 
     //region statement
 
-    fun transFunctionDeclaration(funcDec : FunctionDeclarationAST) : List<Line> {
+    fun transFunctionDeclaration(funcDec : FunctionDeclarationAST) : BranchLabel {
 
         // i think im gonna have to push all registers to stack then pop
         // before and after a function call cus if you look at the reference compiler,
@@ -142,8 +156,8 @@ class AssemblyGenerator {
     }
 
     // generates the assembly code for a BlockAST node and returns the list of instructions
-    fun transStat(stat: StatementAST, resultReg: Register): List<Line> {
-        val instructions = mutableListOf<Line>()
+    fun transStat(stat: StatementAST, resultReg: Register): List<Instruction> {
+        val instructions = mutableListOf<Instruction>()
         when (stat) {
             is SkipStatementAST -> {}
             is VariableDeclarationAST -> instructions.addAll(transVariableDeclaration(stat, resultReg))
