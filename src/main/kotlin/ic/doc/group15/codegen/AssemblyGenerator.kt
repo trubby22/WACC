@@ -222,8 +222,25 @@ class AssemblyGenerator {
 
     fun transArrayLiteral(node: ArrayLiteralAST, resultReg:
     Register): List<Line> {
-//        TODO
-        return emptyList()
+        val instructions = mutableListOf<Line>()
+        val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
+        instructions.add(LoadWord(R0, ImmediateOperand(size))) // set up to malloc those bytes
+        instructions.add(BranchLink("malloc")) // malloc those bytes
+        instructions.add(Move(resultReg, R0)) // malloc returns us address in R0, we put that in resultReg
+        var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
+        for (expr in node.elems) {
+            instructions.addAll(transExp(expr, resultReg.nextReg()))
+            if (expr.type.sizeInBytes() == 4) {
+                offset += 4
+                instructions.add(StoreWord(resultReg.nextReg(), ImmediateOffset(resultReg, offset)))
+            } else {
+                offset += 1
+                instructions.add(StoreByte(resultReg.nextReg(), ImmediateOffset(resultReg, offset)))
+            }
+        }
+        instructions.add(LoadWord(resultReg.nextReg(), ImmediateOperand(node.elems.size))) // storing the size in the first memory space of the array
+        instructions.add(StoreWord(resultReg.nextReg(), ZeroOffset(resultReg)))
+        return instructions
     }
 
     fun transPairElem(node: PairElemAST, resultReg:
@@ -355,9 +372,7 @@ class AssemblyGenerator {
         when (node) {
             is ExpressionAST -> instructions.addAll(transExp(node, resultReg))
             is NewPairAST -> instructions.addAll(transNewPair(node, resultReg))
-            is ArrayLiteralAST -> {
-//                TODO
-            }
+            is ArrayLiteralAST -> instructions.addAll(transArrayLiteral(node, resultReg))
             is PairElemAST -> {
 //                TODO
             }
