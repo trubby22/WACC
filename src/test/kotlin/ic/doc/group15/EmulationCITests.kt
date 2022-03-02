@@ -487,6 +487,10 @@ class EmulationCITests {
 
     assertEquals(0, emulationExitStatus)
 
+    println("Actual output:")
+    println(actualList.subList(0, actualList.size - 1).joinToString("\n").trim())
+    println("Actual exit code: ${actualList[actualList.size - 1].trim()}")
+
     val actualOutput =
       actualList.subList(0, actualList.size - 1).joinToString("\n").trim()
     val actualExitCode = actualList[actualList.size - 1].trim().toInt()
