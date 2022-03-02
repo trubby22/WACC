@@ -1,5 +1,6 @@
 package ic.doc.group15.codegen.assembly.instruction
 
+import ic.doc.group15.codegen.assembly.BranchLabel
 import ic.doc.group15.codegen.assembly.Instruction
 import ic.doc.group15.codegen.assembly.operand.LabelOperand
 
@@ -23,6 +24,9 @@ class Branch(
 ) : BranchInstruction("b", conditionCode, label) {
 
     constructor(label: String) : this(null, label)
+
+    constructor(conditionCode: ConditionCode?, label: BranchLabel) : this(conditionCode, label.name)
+    constructor(label: BranchLabel) : this(null, label)
 }
 
 /**
@@ -39,4 +43,7 @@ class BranchLink(
 ) : BranchInstruction("bl", conditionCode, label) {
 
     constructor(label: String) : this(null, label)
+
+    constructor(conditionCode: ConditionCode?, label: BranchLabel) : this(conditionCode, label.name)
+    constructor(label: BranchLabel) : this(null, label)
 }

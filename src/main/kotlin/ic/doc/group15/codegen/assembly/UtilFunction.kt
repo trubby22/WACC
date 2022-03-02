@@ -1,8 +1,7 @@
 package ic.doc.group15.codegen.assembly
 
-import ic.doc.group15.codegen.assembly.ArmFunction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.ArmFunction.Companion.SCANF
-import ic.doc.group15.codegen.assembly.instruction.*
+import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
 import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
 import ic.doc.group15.codegen.assembly.operand.Register.*
@@ -26,6 +25,7 @@ enum class UtilFunction {
         override val assembly = listOf(
             Push(LR),
             Compare(R1, ImmediateOperand(0)),
+//            TODO: Load correct label
 //            The corresponding message should be "DivideByZeroError: divide or modulo by zero\n\0"
             LoadWord(conditionCode = ConditionCode.EQ, R0, DataLabelOperand
                 ("TODO")),
@@ -45,6 +45,7 @@ enum class UtilFunction {
             Push(LR),
             LoadWord(R1, R0),
             Add(R2, R0, ImmediateOperand(4)),
+//            TODO: Load correct label
 //            Corresponding message in .data sector: "%.*s\0"
             LoadWord(R0, DataLabelOperand("TODO")),
             Add(R0, R0, ImmediateOperand(4)),
@@ -58,12 +59,12 @@ enum class UtilFunction {
 
     val labelName = name.lowercase()
 
-    val dataBlocks: MutableList<Data> = LinkedList()
+    val dataBlocks: MutableList<DataLabel> = LinkedList()
     val labelBlock: BranchLabel
 
     abstract val assembly: List<Instruction>
 
-    protected val stringLabel: UniqueLabel = UniqueLabel(labelName + "_msg_")
+    protected val stringLabel: UniqueLabelGenerator = UniqueLabelGenerator(labelName + "_msg_")
 
     init {
         labelBlock = BranchLabel(name.lowercase(), assembly)

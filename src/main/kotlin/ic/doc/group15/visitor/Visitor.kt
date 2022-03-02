@@ -128,7 +128,7 @@ class Visitor(
         )
         parentScope.add(funcName, func.funcIdent)
         log("|| Visiting $funcName function body")
-        func.body = visit(ctx.valid_return_stat()) as StatementAST
+        visit(ctx.valid_return_stat())
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -368,7 +368,7 @@ class Visitor(
         return addToScope(SkipStatementAST(scopeAST))
     }
 
-    override fun visitSequenceStat(ctx: WaccParser.SequenceStatContext): ASTNode {
+    override fun visitSequenceStat(ctx: SequenceStatContext): ASTNode {
         return SequenceStatementAST(
             scopeAST, symbolTable,
             visit(ctx.stat(0)) as StatementAST,

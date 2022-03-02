@@ -20,7 +20,6 @@ class FunctionDeclarationAST(
 ) : BlockAST(parent, symbolTable) {
 
     lateinit var funcIdent: FunctionType
-    lateinit var body: StatementAST
 
     val formals: MutableList<ParameterAST> = mutableListOf()
 
@@ -33,7 +32,7 @@ class IfBlockAST(
     val condExpr: ExpressionAST
 ) : BlockAST(parent, symbolTable) {
 
-    var elseBlock: ElseBlockAST? = null
+    lateinit var elseBlock: ElseBlockAST
 }
 
 class ElseBlockAST(
