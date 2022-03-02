@@ -42,3 +42,4 @@ emulation-test-job:
     - build-job
   script:
     - mvn surefire:test -Dtest=ic.doc.group15.EmulationCITests*
+
