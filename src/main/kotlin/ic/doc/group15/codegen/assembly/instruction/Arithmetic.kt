@@ -39,7 +39,8 @@ abstract class FlexibleIntArithmetic protected constructor(
 /**
  * ADD is an add-without-carry instruction that adds the values in
  * the base register and operand, and stores the result in the
- * destination register.
+ * destination register. If the S suffix is specified, the condition flags
+ * N,Z,C,V are updated on the result of the operation.
  *
  * @param dest The destination register
  * @param base The base register/register holding the first operand
@@ -47,67 +48,35 @@ abstract class FlexibleIntArithmetic protected constructor(
  */
 class Add(
     conditionCode: ConditionCode?,
+    updateFlags: Boolean,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("ADD", conditionCode, false, dest, base, op) {
+) : FlexibleIntArithmetic("ADD", conditionCode, updateFlags, dest, base, op) {
 
-    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
-}
+    constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(
+        conditionCode,
+        false,
+        dest,
+        base,
+        op
+    )
 
-/**
- * ADDS is an add-without-carry instruction that adds the values in
- * the base register and operand, and stores the result in the
- * destination register. Since the S suffix is specified, the condition flags
- * N,Z,C,V are updated on the result of the operation.
- *
- * @param dest The destination register
- * @param base The base register/register holding the first operand
- * @param op A flexible second operand
- */
-class AddUpdate(
-    conditionCode: ConditionCode?,
-    dest: Register,
-    base: Register,
-    op: Operand
-) : FlexibleIntArithmetic("ADDS", conditionCode, true, dest, base, op) {
+    constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(
+        null,
+        updateFlags,
+        dest,
+        base,
+        op
+    )
 
-    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+    constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
 }
 
 /**
  * SUB is a subtract-without-carry instruction that subtracts the value of
  * operand from the value in the base register, and stores the result in
- * the destination register.
- *
- * @param dest The destination register
- * @param base The source register/register holding the first operand
- * @param op A flexible second operand
- */
-class Sub(
-    conditionCode: ConditionCode?,
-    dest: Register,
-    base: Register,
-    op: Operand
-) : FlexibleIntArithmetic("SUB", conditionCode, false, dest, base, op) {
-
-    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
-}
-
-class ReverseSub(
-    conditionCode: ConditionCode?,
-    dest: Register,
-    base: Register,
-    op: Operand
-) : FlexibleIntArithmetic("RSB", conditionCode, false, dest, base, op) {
-
-    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
-}
-
-/**
- * SUBS is a subtract-without-carry instruction that subtracts the value of
- * operand from the value in the base register, and stores the result in
- * the destination register. Since the S suffix is specified, the condition flags
+ * the destination register. If the S suffix is specified, the condition flags
  * N,Z,C,V are updated on the result of the operation.
  *
  * Note: "SUBS pc, lr #imm" is a special case of the instruction - it performs
@@ -121,14 +90,58 @@ class ReverseSub(
  * @param base The source register/register holding the first operand
  * @param op A flexible second operand
  */
-class SubUpdate(
+class Sub(
     conditionCode: ConditionCode?,
+    updateFlags: Boolean,
     dest: Register,
     base: Register,
     op: Operand
-) : FlexibleIntArithmetic("SUBS", conditionCode, true, dest, base, op) {
+) : FlexibleIntArithmetic("SUB", conditionCode, updateFlags, dest, base, op) {
 
-    constructor(dest: Register, base: Register, op: Operand) : this(null, dest, base, op)
+    constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(
+        conditionCode,
+        false,
+        dest,
+        base,
+        op
+    )
+
+    constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(
+        null,
+        updateFlags,
+        dest,
+        base,
+        op
+    )
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
+}
+
+class ReverseSub(
+    conditionCode: ConditionCode?,
+    updateFlags: Boolean,
+    dest: Register,
+    base: Register,
+    op: Operand
+) : FlexibleIntArithmetic("RSB", conditionCode, updateFlags, dest, base, op) {
+
+    constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(
+        conditionCode,
+        false,
+        dest,
+        base,
+        op
+    )
+
+    constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(
+        null,
+        updateFlags,
+        dest,
+        base,
+        op
+    )
+
+    constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
 }
 
 abstract class RegisterIntArithmetic protected constructor(
@@ -144,6 +157,8 @@ abstract class RegisterIntArithmetic protected constructor(
  * MUL is a multiply instruction that multiplies the value of
  * register n with the value of register m, and stores the least
  * significant 32 bits of the result in the destination register.
+ * If the S suffix is specified, the instruction updates the N and Z flags
+ * according to the result.
  *
  * Note: Register n must be different from the destination register before
  * ARMv6; PC cannot be used for any register; and SP can be used but this is
@@ -155,37 +170,29 @@ abstract class RegisterIntArithmetic protected constructor(
  */
 class Mult(
     conditionCode: ConditionCode?,
+    updateFlags: Boolean,
     dest: Register,
     reg_n: Register,
     reg_m: Register
-) : RegisterIntArithmetic("MUL", conditionCode, false, dest, reg_n, reg_m) {
+) : RegisterIntArithmetic("MUL", conditionCode, updateFlags, dest, reg_n, reg_m) {
 
-    constructor(dest: Register, reg_n: Register, reg_m: Register) : this(null, dest, reg_n, reg_m)
-}
+    constructor(conditionCode: ConditionCode, dest: Register, reg_n: Register, reg_m: Register) : this(
+        conditionCode,
+        false,
+        dest,
+        reg_n,
+        reg_m
+    )
 
-/**
- * MULS is a multiply instruction that multiplies the value of
- * register n with the value of register m, and stores the least
- * significant 32 bits of the result in the destination register.
- * Since the S suffix is specified, the instruction updates the N and Z flags
- * according to the result.
- *
- * Note: Register n must be different from the destination register before
- * ARMv6; PC cannot be used for any register; and SP can be used but this is
- * deprecated in ARMv6T2 and above.
- *
- * @param dest The destination register
- * @param reg_n The source register/register holding the first operand
- * @param reg_m The source register/register holding the second operand
- */
-class MultUpdate(
-    conditionCode: ConditionCode?,
-    dest: Register,
-    reg_n: Register,
-    reg_m: Register
-) : RegisterIntArithmetic("MULS", conditionCode, true, dest, reg_n, reg_m) {
+    constructor(updateFlags: Boolean, dest: Register, reg_n: Register, reg_m: Register) : this(
+        null,
+        updateFlags,
+        dest,
+        reg_n,
+        reg_m
+    )
 
-    constructor(dest: Register, reg_n: Register, reg_m: Register) : this(null, dest, reg_n, reg_m)
+    constructor(dest: Register, reg_n: Register, reg_m: Register) : this(null, false, dest, reg_n, reg_m)
 }
 
 abstract class LongArithmetic protected constructor(
@@ -203,7 +210,8 @@ abstract class LongArithmetic protected constructor(
  * register n with the value of register m by treating both values as two's
  * complement signed integers, and stores the least significant 32 bits of the
  * result in low destination register, and the most significant 32 bits of the
- * result in high destination register.
+ * result in high destination register. If the S suffix is set, the
+ * instruction updates the N and Z flags according to the result.
  *
  * Note: Low destination register must be different from high destination register;
  * PC cannot be used for any register
@@ -215,40 +223,30 @@ abstract class LongArithmetic protected constructor(
  */
 class LongMult(
     conditionCode: ConditionCode?,
+    updateFlags: Boolean,
     dest_lo: Register,
     dest_hi: Register,
     reg_n: Register,
     reg_m: Register
-) : LongArithmetic("SMULL", conditionCode, false, dest_lo, dest_hi, reg_n, reg_m) {
+) : LongArithmetic("SMULL", conditionCode, updateFlags, dest_lo, dest_hi, reg_n, reg_m) {
+
+    constructor(
+        conditionCode: ConditionCode,
+        dest_lo: Register,
+        dest_hi: Register,
+        reg_n: Register,
+        reg_m: Register
+    ) : this(conditionCode, false, dest_lo, dest_hi, reg_n, reg_m)
+
+    constructor(updateFlags: Boolean, dest_lo: Register, dest_hi: Register, reg_n: Register, reg_m: Register) : this(
+        null,
+        updateFlags,
+        dest_lo,
+        dest_hi,
+        reg_n,
+        reg_m
+    )
 
     constructor(dest_lo: Register, dest_hi: Register, reg_n: Register, reg_m: Register) :
-        this(null, dest_lo, dest_hi, reg_n, reg_m)
-}
-
-/**
- * SMULLS is a signed-long multiply instruction that multiplies the value of
- * register n with the value of register m by treating both values as two's
- * complement signed integers, and stores the least significant 32 bits of the
- * result in low destination register, and the most significant 32 bits of the
- * result in high destination register. Since the S suffix is set, the
- * instruction updates the N and Z flags according to the result.
- *
- * Note: Low destination register must be different from high destination register;
- * PC cannot be used for any register
- *
- * @param dest_lo The low destination register
- * @param dest_hi The high destination register
- * @param reg_n The source register/register holding the first operand
- * @param reg_m The source register/register holding the second operand
- */
-class LongMultUpdate(
-    conditionCode: ConditionCode?,
-    dest_lo: Register,
-    dest_hi: Register,
-    reg_n: Register,
-    reg_m: Register
-) : LongArithmetic("SMULLS", conditionCode, true, dest_lo, dest_hi, reg_n, reg_m) {
-
-    constructor(dest_lo: Register, dest_hi: Register, reg_n: Register, reg_m: Register) :
-        this(null, dest_lo, dest_hi, reg_n, reg_m)
+            this(null, false, dest_lo, dest_hi, reg_n, reg_m)
 }
