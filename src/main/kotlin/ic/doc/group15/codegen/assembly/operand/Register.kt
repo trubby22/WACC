@@ -4,6 +4,7 @@ package ic.doc.group15.codegen.assembly.operand
  * Registers present in ARM1176JZF-S.
  */
 enum class Register : Operand {
+
     /**
      * By convention, R0 is a general purpose register. It is used to
      * pass the first argument to a subroutine, and to pass the result
@@ -128,5 +129,9 @@ enum class Register : Operand {
 
     override fun toString(): String {
         return name.lowercase()
+    }
+
+    fun nextReg() : Register {
+        return values()[this.ordinal + 1]
     }
 }
