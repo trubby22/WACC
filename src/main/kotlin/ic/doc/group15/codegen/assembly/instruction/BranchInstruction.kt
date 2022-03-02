@@ -8,15 +8,22 @@ import ic.doc.group15.codegen.assembly.operand.LabelOperand
  */
 abstract class BranchInstruction protected constructor(
     instr: String,
+    conditionCode: ConditionCode?,
     val labelName: String
-) : Instruction(instr, LabelOperand(labelName))
+) : Instruction(instr, conditionCode, LabelOperand(labelName))
 
 /**
  * B is a branch instruction. Similar to JMP in x86, B causes a branch to label.
  *
  * @param label The label to jump to
  */
-class Branch(label: String) : BranchInstruction("b", label)
+class Branch(
+    conditionCode: ConditionCode?,
+    label: String
+) : BranchInstruction("b", conditionCode, label) {
+
+    constructor(label: String) : this(null, label)
+}
 
 /**
  * BL is a branch with link instruction. It is similar to the branch instruction
@@ -26,4 +33,10 @@ class Branch(label: String) : BranchInstruction("b", label)
  *
  * @param label The label to jump to
  */
-class BranchLink(label: String) : BranchInstruction("bl", label)
+class BranchLink(
+    conditionCode: ConditionCode?,
+    label: String,
+) : BranchInstruction("bl", conditionCode, label) {
+
+    constructor(label: String) : this(null, label)
+}

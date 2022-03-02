@@ -1,5 +1,6 @@
 package ic.doc.group15.codegen.assembly
 
+import ic.doc.group15.codegen.assembly.instruction.ConditionCode
 import ic.doc.group15.codegen.assembly.operand.Operand
 import java.util.*
 
@@ -46,9 +47,10 @@ class BranchLabel : Label<Instruction> {
 
 abstract class Instruction protected constructor(
     val instr: String,
-    private vararg val params: Operand
+    val conditionCode: ConditionCode? = null,
+    protected vararg val params: Operand
 ) : Line() {
     override fun toString(): String {
-        return "$instr " + params.joinToString(separator = ", ")
+        return "$instr${conditionCode ?: ""} " + params.joinToString(separator = ", ")
     }
 }
