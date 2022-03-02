@@ -479,7 +479,7 @@ class EmulationCITests {
     val actualList = IOUtils.toString(
       emulation.inputStream,
       StandardCharsets.UTF_8.name()
-    ).split("\n").map(String::trim)
+    ).trim().split("\n").map(String::trim)
 
     println("Emulation finished; exit status: $emulationExitStatus")
     println("Emulation output:")
