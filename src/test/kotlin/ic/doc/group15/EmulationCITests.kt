@@ -433,19 +433,33 @@ class EmulationCITests {
     fileName: String,
     path: String
   ): Pair<Int, String> {
+    println("Filename: $fileName")
+    println("Path: $path")
+
     val compilation = ProcessBuilder(
       "/bin/bash",
       "-c",
-      "java - jar target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar $path < $path"
+      "./compile $path"
     ).start()
 
+    var compilationExitStatus = -1
+
     try {
-      val compilationExitStatus = compilation.waitFor()
-      println("Compilation finished; exit status: $compilationExitStatus")
-      assertEquals(0, compilationExitStatus)
+      compilationExitStatus = compilation.waitFor()
     } catch (e: InterruptedException) {
       e.printStackTrace()
     }
+
+    val compilationOutput = IOUtils.toString(
+      compilation.inputStream,
+      StandardCharsets.UTF_8.name()
+    ).trim()
+
+    println("Compilation output:")
+    println(compilationOutput)
+
+    println("Compilation finished; exit status: $compilationExitStatus")
+    assertEquals(0, compilationExitStatus)
 
     val emulation = ProcessBuilder(
       "/bin/bash", "-c",
