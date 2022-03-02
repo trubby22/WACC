@@ -32,7 +32,12 @@ enum class ConditionCode {
     /**
      * Signed less than or equal.
      **/
-    LE
+    LE,
+
+    /**
+     * Overflow.
+     **/
+    V,
     ;
 
     override fun toString(): String {

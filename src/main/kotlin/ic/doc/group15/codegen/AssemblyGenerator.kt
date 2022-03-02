@@ -2,7 +2,7 @@ package ic.doc.group15.codegen
 
 import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
-import ic.doc.group15.codegen.assembly.UtilFunction.P_READ_INT
+import ic.doc.group15.codegen.assembly.UtilFunction.*
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
 import ic.doc.group15.codegen.assembly.operand.*
@@ -422,57 +422,126 @@ class AssemblyGenerator {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(expr.expr1, resultReg))
         instructions.addAll(transExp(expr.expr2, resultReg.nextReg()))
-        when (expr.type) {
-            IntType -> {
+        when {
+            setOf(
+                BinaryOp.PLUS,
+                BinaryOp.MINUS,
+                BinaryOp.MULT,
+                BinaryOp.DIV,
+                BinaryOp.MOD
+            ).contains(expr.operator) -> {
+                val label1 : String = stringLabel.generate()
+                data[label1] = StringData(label1, "DivideByZeroError: divide " +
+                        "or modulo by zero\\n\\0")
+                val label2: String = stringLabel.generate()
+                data[label2] = StringData(label2, "%.*s\\0")
+                defineUtilFuncs(
+                    P_CHECK_DIVIDE_BY_ZERO,
+                    P_THROW_RUNTIME_ERROR,
+                    P_PRINT_STRING
+                )
                 when (expr.operator) {
-                    BinaryOp.MULT -> instructions.add(Mult(updateFlags = true, resultReg, resultReg, resultReg.nextReg()))
-                    BinaryOp.DIV -> TODO() //create a function that performs division algorithm
-                    BinaryOp.MOD -> TODO() //create a function that performs modulo algorithm
-                    BinaryOp.PLUS -> instructions.add(Add(updateFlags = true, resultReg, resultReg, resultReg.nextReg()))
-                    BinaryOp.MINUS -> TODO()
-                    BinaryOp.GT -> TODO()
-                    BinaryOp.GTE -> TODO()
-                    BinaryOp.LT -> TODO()
-                    BinaryOp.LTE -> TODO()
-                    BinaryOp.EQUALS -> TODO()
-                    BinaryOp.NOT_EQUALS -> TODO()
-                    BinaryOp.AND -> TODO()
-                    BinaryOp.OR -> TODO()
+                    BinaryOp.MULT -> {
+                        instructions.addAll(listOf(
+                            Mult(
+                                updateFlags = true,
+                                resultReg,
+                                resultReg,
+                                resultReg.nextReg()
+                            )
+//                TODO: use SMULL and check for overflow using schema below
+//                SMULL resultReg, resultReg.nextReg(), resultReg, resultReg.nextReg()
+//                CMP resultReg.next(), resultReg, ASR #31
+//                BLNE p_throw_overflow_error
+                        ))
+                    }
+                    BinaryOp.DIV -> {
+                        instructions.addAll(listOf(
+                            Move(R0, resultReg),
+                            Move(R1, resultReg.nextReg()),
+                            BranchLink("p_check_divide_by_zero"),
+                            BranchLink("__aeabi_idiv"),
+                            Move(resultReg, R0))
+                        )
+                    }
+                    BinaryOp.MOD -> {
+                        instructions.addAll(listOf(
+                            Move(R0, resultReg),
+                            Move(R1, resultReg.nextReg()),
+                            BranchLink("p_check_divide_by_zero"),
+                            BranchLink("__aeabi_idivmod"),
+                            Move(resultReg, R1)
+                        ))
+                    }
+                    BinaryOp.PLUS -> {
+                        instructions.addAll(listOf(
+                            Add(true, resultReg, resultReg, resultReg.nextReg()),
+                            BranchLink(V, "p_throw_overflow_error")
+                        ))
+                    }
+                    BinaryOp.MINUS -> {
+                        instructions.addAll(listOf(
+                            Sub(true, resultReg, resultReg, resultReg.nextReg()),
+                            BranchLink(V, "p_throw_overflow_error")
+                        ))
+                    }
                 }
             }
-            BoolType -> {
-                instructions.addAll(transExp(expr.expr1, resultReg))
-                instructions.addAll(transExp(expr.expr2, resultReg.nextReg()))
+            setOf(
+                BinaryOp.GTE,
+                BinaryOp.LT,
+                BinaryOp.LTE,
+                BinaryOp.EQUALS,
+                BinaryOp.NOT_EQUALS
+            ).contains(expr.operator) -> {
+                instructions.addAll(listOf(
+                    Compare(resultReg, resultReg.nextReg())
+                ))
                 when (expr.operator) {
-                    BinaryOp.EQUALS -> instructions.addAll(mutableListOf(
-                        Compare(resultReg, resultReg.nextReg()),
-                        Move(EQ, resultReg, ImmediateOperand(true)),
-                        Move(NE, resultReg, ImmediateOperand(false)))
-                    )
-                    BinaryOp.NOT_EQUALS -> instructions.addAll(mutableListOf(
-                        Compare(resultReg, resultReg.nextReg()),
-                        Move(NE, resultReg, ImmediateOperand(true)),
-                        Move(EQ, resultReg, ImmediateOperand(false)))
-                    )
-                    BinaryOp.MULT -> TODO()
-                    BinaryOp.DIV -> TODO()
-                    BinaryOp.MOD -> TODO()
-                    BinaryOp.PLUS -> TODO()
-                    BinaryOp.MINUS -> TODO()
-                    BinaryOp.GT -> TODO()
-                    BinaryOp.GTE -> TODO()
-                    BinaryOp.LT -> TODO()
-                    BinaryOp.LTE -> TODO()
-                    BinaryOp.AND -> TODO()
-                    BinaryOp.OR -> TODO()
+                    BinaryOp.GT -> {
+                        instructions.addAll(listOf(
+                            Move(GT, resultReg, ImmediateOperand(1)),
+                            Move(LE, resultReg, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.GTE -> {
+                        instructions.addAll(listOf(
+                            Move(GE, resultReg, ImmediateOperand(1)),
+                            Move(LT, resultReg, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.LT -> {
+                        instructions.addAll(listOf(
+                            Move(LT, resultReg, ImmediateOperand(1)),
+                            Move(GE, resultReg, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.LTE -> {
+                        instructions.addAll(listOf(
+                            Move(LE, resultReg, ImmediateOperand(1)),
+                            Move(GT, resultReg, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.EQUALS -> {
+                        instructions.addAll(listOf(
+                            Move(EQ, resultReg, ImmediateOperand(1)),
+                            Move(NE, resultReg, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.NOT_EQUALS -> {
+                        instructions.addAll(listOf(
+                            Move(NE, resultReg, ImmediateOperand(1)),
+                            Move(EQ, resultReg, ImmediateOperand(0))
+                        ))
+                    }
                 }
             }
-//            CharType -> {
-//
-//            }
-//          .StringType -> {
-//
-//          }
+            expr.operator == BinaryOp.AND -> {
+                instructions.add(And(resultReg, resultReg, resultReg.nextReg()))
+            }
+            expr.operator == BinaryOp.OR -> {
+                instructions.add(Or(resultReg, resultReg, resultReg.nextReg()))
+            }
         }
         return instructions
     }
@@ -486,15 +555,23 @@ class AssemblyGenerator {
                 instructions.add(Xor(resultReg, resultReg, ImmediateOperand(1)))
             }
             UnaryOp.MINUS -> {
-                instructions.add(ReverseSub(resultReg, resultReg, ImmediateOperand(0)))
-                instructions.add(BranchLink("p_throw_overflow_error"))
-//                Add msg to front: "OverflowError: the result is too small/large to store in a 4-byte signed-integer.\n\0"
-//                Add msg to front: "%.*s\0"
-//                Add to back definitions of the following:
-//                p_throw_overflow_error, p_throw_runtime_error, p_print_string
+                val label1 : String = stringLabel.generate()
+                data[label1] = StringData(label1, "DivideByZeroError: divide " +
+                        "or modulo by zero\\n\\0")
+                val label2: String = stringLabel.generate()
+                data[label2] = StringData(label2, "%.*s\\0")
+                defineUtilFuncs(
+                    P_CHECK_DIVIDE_BY_ZERO,
+                    P_THROW_RUNTIME_ERROR,
+                    P_PRINT_STRING
+                )
+                instructions.addAll(listOf(
+                    ReverseSub(resultReg, resultReg, ImmediateOperand(0)),
+                    BranchLink("p_throw_overflow_error")
+                ))
             }
             UnaryOp.LEN -> {
-                // instructions.add(LoadWord(resultReg, RegisterOffset(resultReg, false, null)))
+                 instructions.add(LoadWord(resultReg, resultReg))
             }
             UnaryOp.ORD -> {
 //                No actions needed since int ~ char

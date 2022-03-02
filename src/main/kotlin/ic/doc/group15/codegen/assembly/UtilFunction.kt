@@ -21,6 +21,38 @@ enum class UtilFunction {
             BranchLink(SCANF.labelName),
             Pop(PC)
         )
+    },
+    P_CHECK_DIVIDE_BY_ZERO {
+        override val assembly = listOf(
+            Push(LR),
+            Compare(R1, ImmediateOperand(0)),
+//            The corresponding message should be "DivideByZeroError: divide or modulo by zero\n\0"
+            LoadWord(conditionCode = ConditionCode.EQ, R0, DataLabelOperand
+                ("TODO")),
+            BranchLink(ConditionCode.EQ, "p_throw_runtime_error"),
+            Pop(PC)
+        )
+    },
+    P_THROW_RUNTIME_ERROR {
+        override val assembly= listOf(
+            BranchLink("p_print_string"),
+            Move(R0, ImmediateOperand(-1)),
+            BranchLink("exit")
+        )
+    },
+    P_PRINT_STRING {
+        override val assembly: List<Instruction> = listOf(
+            Push(LR),
+            LoadWord(R1, R0),
+            Add(R2, R0, ImmediateOperand(4)),
+//            Corresponding message in .data sector: "%.*s\0"
+            LoadWord(R0, DataLabelOperand("TODO")),
+            Add(R0, R0, ImmediateOperand(4)),
+            BranchLink("printf"),
+            Move(R0, ImmediateOperand(0)),
+            BranchLink("fflush"),
+            Pop(PC)
+        )
     }
     ;
 
