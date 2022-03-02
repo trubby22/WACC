@@ -104,10 +104,10 @@ class AssemblyGenerator {
         sp-= stackSpace
         // functions are missing labels for now as well as .ltorg at the end
         instructions.addAll(mutableListOf(
-            Push(Register.LR),
+            Push(LR),
             Sub(SP, SP, ImmediateOperand(stackSpace))
         ))
-        instructions.addAll(transBlock((funcDec) as BlockAST, 4))
+        instructions.addAll(transBlock((funcDec) as BlockAST, R4))
         instructions.add(Move(R0, R4))
         instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
         instructions.add(Pop(PC))
@@ -122,7 +122,7 @@ class AssemblyGenerator {
         // c
         // b
         // a
-        val revParams = call.actuals.reverse() as MutableList<ExpressionAST>
+        val revParams = call.actuals.toMutableList().reversed()
         // below we decrement the stack pointer by the amount needed to
         // store the type of that parameter then put that parameter on
         // the stack at that position. we also keep track of spDec (the
@@ -293,11 +293,19 @@ class AssemblyGenerator {
         when (expr.type) {
             IntType -> {
                 when (expr.operator) {
-                    BinaryOp.MULT -> instructions.add(MultUpdate(resultReg, resultReg, resultReg.nextReg()))
-                    // BinaryOp.DIV -> dont rly know whats going on with this one ¯\_(ツ)_/¯
-                    // BinaryOp.MOD -> same here, seems like the reference compiler just has a spazm
-                    BinaryOp.PLUS -> instructions.add(AddUpdate(resultReg, resultReg, resultReg.nextReg()))
-                    // complete remaining operators...
+                    BinaryOp.MULT -> instructions.add(Mult(updateFlags = true, resultReg, resultReg, resultReg.nextReg()))
+                    BinaryOp.DIV -> TODO() //create a function that performs division algorithm
+                    BinaryOp.MOD -> TODO() //create a function that performs modulo algorithm
+                    BinaryOp.PLUS -> instructions.add(Add(updateFlags = true, resultReg, resultReg, resultReg.nextReg()))
+                    BinaryOp.MINUS -> TODO()
+                    BinaryOp.GT -> TODO()
+                    BinaryOp.GTE -> TODO()
+                    BinaryOp.LT -> TODO()
+                    BinaryOp.LTE -> TODO()
+                    BinaryOp.EQUALS -> TODO()
+                    BinaryOp.NOT_EQUALS -> TODO()
+                    BinaryOp.AND -> TODO()
+                    BinaryOp.OR -> TODO()
                 }
             }
             BoolType -> {
@@ -314,7 +322,17 @@ class AssemblyGenerator {
                         Move(NE, resultReg, ImmediateOperand(true)),
                         Move(EQ, resultReg, ImmediateOperand(false)))
                     )
-                    // complete remaining operators...
+                    BinaryOp.MULT -> TODO()
+                    BinaryOp.DIV -> TODO()
+                    BinaryOp.MOD -> TODO()
+                    BinaryOp.PLUS -> TODO()
+                    BinaryOp.MINUS -> TODO()
+                    BinaryOp.GT -> TODO()
+                    BinaryOp.GTE -> TODO()
+                    BinaryOp.LT -> TODO()
+                    BinaryOp.LTE -> TODO()
+                    BinaryOp.AND -> TODO()
+                    BinaryOp.OR -> TODO()
                 }
             }
 //            CharType -> {
