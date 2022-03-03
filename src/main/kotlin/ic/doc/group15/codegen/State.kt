@@ -10,9 +10,9 @@ class State {
     // the most local variables stack position is pushed to the top of the Stack<INT>. whenever a scope
     // is exited, we pop all of the relevant stacks.
 
-    val map : HashMap<String, Stack<Int>> = hashMapOf()
+    val map: HashMap<String, Stack<Int>> = hashMapOf()
 
-    fun setStackPos(ident : String, stackPos : Int) {
+    fun setStackPos(ident: String, stackPos: Int) {
         if (!map.containsKey(ident)) {
             map[ident] = Stack()
             (map[ident] as Stack).push(stackPos)
@@ -21,13 +21,13 @@ class State {
         }
     }
 
-    fun popStacks(idents : List<String>) {
+    fun popStacks(idents: List<String>) {
         for (ident in idents) {
             (map[ident] as Stack).pop()
         }
     }
 
-    fun getStackPos(ident: String) : Int {
+    fun getStackPos(ident: String): Int {
         return (map[ident] as Stack).peek()
     }
 }

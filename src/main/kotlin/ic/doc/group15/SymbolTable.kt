@@ -2,6 +2,7 @@ package ic.doc.group15
 
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.*
+import kotlin.reflect.KClass
 
 class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
 
@@ -9,8 +10,8 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
 
     private var stackSize: Int = 0
 
-    fun getMap(): MutableMap<String, Identifier> {
-        return map
+    fun <T : Identifier> getValuesByType(klass: KClass<T>): List<T> {
+        return map.values.filter { it::class == klass }.map { it as T }
     }
 
     companion object {

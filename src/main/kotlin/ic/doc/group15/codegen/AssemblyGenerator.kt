@@ -26,11 +26,11 @@ import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Variable
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
+import kotlin.reflect.jvm.isAccessible
 
 const val START_VAL = 0
 
 private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
-private typealias TranslatorMapPair = Pair<KClass<out ASTNode>, KCallable<*>>
 
 class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
@@ -66,6 +66,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
             }.map {
                 assert(it.annotations.size == 1)
+                it.isAccessible = true
                 val annotation = it.annotations[0] as TranslatorMethod
                 annotation.nodeType to it
             }.toMap()
@@ -111,7 +112,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             addLines(Sub(SP, SP, ImmediateOperand(currentStackPosition)))
 
             // Calculate the stack position for each variable
-            val variables = node.symbolTable.getMap().keys.filterIsInstance<Variable>()
+            val variables = node.symbolTable.getValuesByType(Variable::class)
             for (v in variables) {
                 currentStackPosition -= v.type.sizeInBytes()
                 v.stackPosition = currentStackPosition
@@ -121,7 +122,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     /**
      * Restores the state so that the program can resume from where it left off before entering the block
-    */
+     */
     private fun blockEpilogue(node: BlockAST) {
         // Unwind stack
         val stackSpaceUsed = node.symbolTable.getStackSize()
@@ -212,8 +213,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     @TranslatorMethod(FunctionDeclarationAST::class)
     private fun transFunctionDeclaration(node: FunctionDeclarationAST) {
         // Define label
-        text[currentLabel.name] = currentLabel
-        val funcLabel = BranchLabel("f_$node.funcName")
+        val funcLabel = newBranchLabel("f_${node.funcName}")
         currentLabel = funcLabel
 
         // Translate block statements and add to loop label - we start from register R4
