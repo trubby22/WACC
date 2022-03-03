@@ -28,15 +28,9 @@ import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
 
-const val START_VAL = 0
-
 private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
 
-class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
-
-    private val state: State = State()
-
-    private var sp: Int = START_VAL - 1
+class AssemblyGenerator(private val ast: AST) {
 
     private lateinit var currentLabel: BranchLabel
     private lateinit var resultRegister: Register
@@ -241,23 +235,16 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(VariableDeclarationAST::class)
     private fun transVariableDeclaration(node: VariableDeclarationAST) {
-        sp -= node.varIdent.type.sizeInBytes()
-        state.setStackPos(node.varName, sp)
+        // Parse the expression whose value is to be stored in the variable
         translate(node.rhs)
-        addLines(
-            StoreWord(SP, ImmediateOffset(resultRegister, state.getStackPos(node.varName)))
-        )
+        transAssign(node.varIdent)
     }
 
     @TranslatorMethod(AssignToIdentAST::class)
     private fun transAssignToIdent(node: AssignToIdentAST) {
+        // Parse the expression whose value is to be stored in the variable
         translate(node.rhs)
-        addLines(
-            StoreWord(
-                SP,
-                ImmediateOffset(resultRegister, state.getStackPos(node.lhs.varName) - sp)
-            )
-        )
+        transAssign(node.lhs.ident)
     }
 
     @TranslatorMethod(AssignToPairElemAST::class)
@@ -695,19 +682,14 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(VariableIdentifierAST::class)
     private fun translateVariableIdentifier(node: VariableIdentifierAST) {
-        addLines(
-            LoadWord(
-                SP,
-                ImmediateOffset(resultRegister, state.getStackPos(node.varName) - sp)
-            )
-        )
+        transRetrieve(node.ident)
     }
 
     @TranslatorMethod(ArrayElemAST::class)
     private fun translateArrayElem(node: ArrayElemAST) {
         addLines(LoadWord(resultRegister, ImmediateOffset(SP, state.getStackPos(node.arrayName) - sp)))
         for (i in node.indexExpr.indices) {
-            val index = node.indexExpr.get(i)
+            val index = node.indexExpr[i]
             translate(index) // translating the index of the array
             addLines(Move(R0, resultRegister.nextReg())) // this and next two lines just check bounds of array
             addLines(Move(R1, resultRegister)) //
@@ -916,6 +898,32 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 utilText[func.labelName] = func.labelBlock
             }
         }
+    }
+
+    private fun transAssign(variable: Variable) {
+        val size = variable.type.sizeInBytes()
+        val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, size) }
+
+        addLines(
+            if (size == BYTE) {
+                StoreByte(resultRegister, addressOperand)
+            } else {
+                StoreWord(resultRegister, addressOperand)
+            }
+        )
+    }
+
+    private fun transRetrieve(variable: Variable) {
+        val size = variable.type.sizeInBytes()
+        val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, size) }
+
+        addLines(
+            if (size == BYTE) {
+                LoadByte(resultRegister, addressOperand)
+            } else {
+                LoadWord(resultRegister, addressOperand)
+            }
+        )
     }
 
     //endregion
