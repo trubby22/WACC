@@ -12,6 +12,7 @@ import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTCHAR
 import ic.doc.group15.codegen.assembly.UtilFunction.*
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
+import ic.doc.group15.codegen.assembly.instruction.Directive.Companion.LTORG
 import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.ArrayType
@@ -106,45 +107,45 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
         // translate all function blocks into assembly
-        functionASTs.map { f -> f as FunctionDeclarationAST }
-            .forEach { f -> transFunctionDeclaration(f) }
+        functionASTs.forEach { f -> transFunctionDeclaration(f) }
 
         // Translate main instructions into assembly
         // We create a new FunctionDeclarationAST to store statements in the main function
         // and let transFunction add the entries to the text attribute
 
         // The symbol table contains the statements AND the FunctionDeclarationAST
-        // For future proofing, we might want to remove all FunctionDeclarationASTs when
-        // nested function definition is introduced in the extension task
         val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
         mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
-        mainAST.returnStat = ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0))
+
+        // Add statements
+        val statementASTs = program.statements.filter { s -> s !is FunctionDeclarationAST }
+        mainAST.statements.addAll(statementASTs)
+        // Add return statement (main function implicitly returns 0)
+        mainAST.statements.add(ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0)))
+
         transFunctionDeclaration(mainAST)
     }
 
     // TODO: Implement
     @TranslatorMethod(FunctionDeclarationAST::class)
-    private fun transFunctionDeclaration(funcDec: FunctionDeclarationAST) {
-//        val instructions = mutableListOf<Line>()
-//        var pos = 0
-//        for (i in funcDec.formals) {
-//            state.setStackPos(i.varName, sp + pos)
-//            pos += i.type.sizeInBytes()
-//        }
-//        val stackSpace =
-//            requiredStackSpace(funcDec) - pos // the required stack space function will take into account the parameters as they are part of the symbol table for functions but we have already taken these into account
-//        sp -= stackSpace
-//        // functions are missing labels for now as well as .ltorg at the end
-//        instructions.addAll(
-//            mutableListOf(
-//                Push(LR),
-//                Sub(SP, SP, ImmediateOperand(stackSpace))
-//            )
-//        )
-//        instructions.addAll(transBlock((funcDec) as BlockAST, R4))
-//        instructions.add(Move(R0, R4))
-//        instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
-//        instructions.add(Pop(PC))
+    private fun transFunctionDeclaration(node: FunctionDeclarationAST) {
+        // Define label
+        text[currentLabel.name] = currentLabel
+        val funcLabel = BranchLabel("f_$node.funcName")
+        currentLabel = funcLabel
+
+        // Translate block statements and add to loop label - we start from register R4
+        // TODO: issue - interdependence of statements to be addressed
+        // TODO: setup and unwind stack
+        // setupStack()
+        node.statements.map { s -> transStat(s, R4) }
+        // unwindStack()
+
+        // Housekeeping
+        currentLabel.addLines(
+            Pop(PC),
+            LTORG
+        )
     }
 
     // TODO: Implement
@@ -257,11 +258,14 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         addLines(
             Branch(BranchLabelOperand(checkLabel))
         )
+        text[currentLabel.name] = currentLabel
 
         // Translate block statements and add to loop label
         // TODO: issue - interdependence of statements to be addressed
         currentLabel = loopLabel
         node.statements.forEach { s -> translate(s, resultRegister) }
+        // TODO: the statements should have to setup stack and unwind stack
+        text[currentLabel.name] = currentLabel
 
         // Translate condition statements and add to check label
         currentLabel = checkLabel
