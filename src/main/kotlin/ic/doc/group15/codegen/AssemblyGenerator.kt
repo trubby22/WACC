@@ -5,6 +5,7 @@ import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIV
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.MALLOC
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTCHAR
 import ic.doc.group15.codegen.assembly.UtilFunction.*
@@ -249,8 +250,21 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         node: AssignToArrayElemAST, resultReg:
         Register
     ): List<Line> {
-//        TODO
-        return emptyList()
+        val instructions: MutableList<Line> = mutableListOf()
+        instructions.addAll(transAssignRhs(node.rhs, resultReg))
+        val arrayElemAST = node.lhs as ArrayElemAST
+        val symbolTable = arrayElemAST.symbolTable
+        val arrayName = arrayElemAST.arrayName
+//        TODO: calculate stack pointer offset of array pointer using values
+//         above
+        val stackPointerOffset = 0
+        instructions.addAll(listOf(
+            Add(resultReg.nextReg(), SP, ImmediateOperand(stackPointerOffset)),
+//            Assumption: array is 1-dimensional
+            LoadWord(resultReg.nextReg().nextReg(), ImmediateOperand
+                (arrayElemAST.indexExpr[0]))
+        ))
+        return instructions
     }
 
     fun transAssignToPairElem(
@@ -376,8 +390,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         node: ExitStatementAST, resultReg:
         Register
     ): List<Line> {
-//        TODO
-        return emptyList()
+        return transExp(node.expr, resultReg) + BranchLink(EXIT)
     }
 
     fun transPrintStatement(
@@ -779,11 +792,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 instructions.add(Xor(resultReg, resultReg, ImmediateOperand(1)))
             }
             UnaryOp.MINUS -> {
-                val label1 : String = stringLabelGenerator.generate()
-                data[label1] = StringData(label1, "DivideByZeroError: divide " +
-                        "or modulo by zero\\n\\0")
-                val label2: String = stringLabelGenerator.generate()
-                data[label2] = StringData(label2, "%.*s\\0")
                 defineUtilFuncs(
                     P_CHECK_DIVIDE_BY_ZERO,
                     P_THROW_RUNTIME_ERROR,
@@ -817,5 +825,66 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 utilText[func.labelName] = func.labelBlock
             }
         }
+    }
+
+    private fun evaluateIntExpr(expr: ExpressionAST): Int {
+        assert(expr.type == IntType)
+        when (expr) {
+            is IntLiteralAST -> {
+                return expr.intValue
+            }
+            is VariableIdentifierAST -> {
+
+            }
+            is ArrayElemAST -> {
+
+            }
+            is UnaryOpExprAST -> {
+                when (expr.operator) {
+                    UnaryOp.MINUS -> return - evaluateIntExpr(expr.expr)
+                    UnaryOp.LEN -> {
+                        val arrayIdentifier = expr.expr as
+                        VariableIdentifierAST
+//                        TODO
+                    }
+                    UnaryOp.ORD -> return evaluateCharExpr(expr.expr).code
+                }
+            }
+            is BinaryOpExprAST -> {
+
+            }
+        }
+        throw Error("Should not get here")
+    }
+
+    private fun evaluateBoolExpr(expr: ExpressionAST): Boolean {
+        assert(expr.type == BoolType)
+        return false
+    }
+
+    private fun evaluateCharExpr(expr: ExpressionAST): Char {
+        assert(expr.type == CharType)
+        when (expr) {
+            is CharLiteralAST -> return expr.charValue
+            is UnaryOpExprAST -> return evaluateIntExpr(expr.expr).toChar()
+            is ArrayElemAST -> {
+//                TODO
+            }
+        }
+        throw Error("Should not get here")
+    }
+
+    private fun evaluateStringExpr(expr: ExpressionAST): String {
+        assert(expr.type == StringType)
+        when (expr) {
+            is StringLiteralAST -> return expr.stringValue
+            is ArrayElemAST -> {
+//                TODO
+            }
+            is PairElemAST -> {
+//                TODO
+            }
+        }
+        throw Error("Should not get here")
     }
 }
