@@ -66,13 +66,11 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Move(R1, R0),
-//            TODO: Load correct label
-//            Corresponding message in .data sector: "%d\0"
-                LoadWord(R0, DataLabelOperand("TODO")),
+                LoadWord(R0, generateStringData("%d")),
                 Add(R0, R0, ImmediateOperand(4)),
-                BranchLink("printf"),
+                BranchLink(PRINTF),
                 Move(R0, ImmediateOperand(0)),
-                BranchLink("fflush"),
+                BranchLink(FFLUSH),
                 Pop(PC)
             )
         }
@@ -82,16 +80,12 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Compare(R0, ImmediateOperand(0)),
-//            TODO: Load correct label
-//            Corresponding messages in .data sector:
-//            TODO1: "true\0",
-//            TODO2: "false\0"
-                LoadWord(ConditionCode.NE, R0, DataLabelOperand("TODO1")),
-                LoadWord(ConditionCode.EQ, R0, DataLabelOperand("TODO2")),
+                LoadWord(NE, R0, generateStringData("true")),
+                LoadWord(EQ, R0, generateStringData("false")),
                 Add(R0, R0, ImmediateOperand(4)),
-                BranchLink("printf"),
+                BranchLink(PRINTF),
                 Move(R0, ImmediateOperand(0)),
-                BranchLink("fflush"),
+                BranchLink(FFLUSH),
                 Pop(PC)
             )
         }
@@ -101,13 +95,24 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Move(R1, R0),
-//            TODO: Load correct label
-//            Corresponding message in .data sector: "%p\0"
-                LoadWord(R0, DataLabelOperand("TODO")),
+                LoadWord(R0, generateStringData("%p")),
                 Add(R0, R0, ImmediateOperand(4)),
-                BranchLink("printf"),
+                BranchLink(PRINTF),
                 Move(R0, ImmediateOperand(0)),
-                BranchLink("fflush"),
+                BranchLink(FFLUSH),
+                Pop(PC)
+            )
+        }
+    },
+    P_PRINT_LN {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                LoadWord(R0, generateStringData("")),
+                Add(R0, R0, ImmediateOperand(4)),
+                BranchLink(PUTS),
+                Move(R0, ImmediateOperand(0)),
+                BranchLink(FFLUSH),
                 Pop(PC)
             )
         }

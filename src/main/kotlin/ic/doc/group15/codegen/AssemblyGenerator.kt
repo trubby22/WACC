@@ -8,8 +8,11 @@ import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
 import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
+import ic.doc.group15.type.ArrayType
+import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.FunctionType
+import ic.doc.group15.type.PairType
 
 const val START_VAL = 0
 
@@ -196,12 +199,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             is FreeStatementAST -> {
 //                TODO
             }
-            is PrintStatementAST -> {
-//                TODO
-            }
-            is PrintlnStatementAST -> {
-//                TODO
-            }
+            is PrintStatementAST -> instructions.addAll(transPrintStatement(stat, resultReg) as List<Instruction>)
+            is PrintlnStatementAST -> instructions.addAll(transPrintlnStatement(stat, resultReg) as List<Instruction>)
             is IfBlockAST -> {
                 // Define label
                 val elseLabel = BranchLabel(branchLabelGenerator.generate())
@@ -381,25 +380,45 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         node: PrintStatementAST, resultReg:
         Register
     ): List<Line> {
-        val label1 : String = stringLabelGenerator.generate()
-//        Works for: print "hello" but not for string x = "hello"; print x
-        data[label1] = StringData(label1, (node.expr as StringLiteralAST).stringValue)
-        val label2: String = stringLabelGenerator.generate()
-        data[label2] = StringData(label2, "%.*s\\0")
-        defineUtilFuncs(
-            P_PRINT_STRING
-        )
-        return listOf(
-            Move(R0, resultReg),
-            BranchLink("p_print_string")
-        )
+        val instructions: MutableList<Line> = mutableListOf()
+        instructions.addAll(transExp(node.expr, resultReg))
+        instructions.add(Move(R0, resultReg))
+        when (node.expr.type) {
+            StringType -> {
+                defineUtilFuncs(P_PRINT_STRING)
+                instructions.add(BranchLink(P_PRINT_STRING))
+            }
+            CharType -> {
+                instructions.add(BranchLink(PUTCHAR))
+            }
+            IntType -> {
+                defineUtilFuncs(P_PRINT_INT)
+                instructions.add(BranchLink(P_PRINT_INT))
+            }
+            BoolType -> {
+                defineUtilFuncs(P_PRINT_BOOL)
+                instructions.add(BranchLink(P_PRINT_BOOL))
+            }
+            is PairType -> {
+                defineUtilFuncs(P_PRINT_REFERENCE)
+                instructions.add(BranchLink(P_PRINT_REFERENCE))
+            }
+            is ArrayType -> {
+                defineUtilFuncs(P_PRINT_REFERENCE)
+                instructions.add(BranchLink(P_PRINT_REFERENCE))
+            }
+        }
+        return instructions
     }
 
-    fun transPrintlnStatment(
+    fun transPrintlnStatement(
         node: PrintlnStatementAST, resultReg:
         Register
     ): List<Line> {
-//        TODO
+        val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
+        val instructions: MutableList<Line> = mutableListOf()
+        instructions.addAll(transPrintStatement(printStatementAST, resultReg))
+        instructions.add(BranchLink(P_PRINT_LN))
         return emptyList()
     }
 
@@ -638,11 +657,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 BinaryOp.DIV,
                 BinaryOp.MOD
             ).contains(expr.operator) -> {
-                val label1 : String = stringLabelGenerator.generate()
-                data[label1] = StringData(label1, "DivideByZeroError: divide " +
-                        "or modulo by zero\\n\\0")
-                val label2: String = stringLabelGenerator.generate()
-                data[label2] = StringData(label2, "%.*s\\0")
                 defineUtilFuncs(
                     P_CHECK_DIVIDE_BY_ZERO,
                     P_THROW_RUNTIME_ERROR,
@@ -667,7 +681,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                         instructions.addAll(listOf(
                             Move(R0, resultReg),
                             Move(R1, resultReg.nextReg()),
-                            BranchLink("p_check_divide_by_zero"),
+                            BranchLink(P_CHECK_DIVIDE_BY_ZERO),
                             BranchLink("__aeabi_idiv"),
                             Move(resultReg, R0))
                         )
@@ -676,7 +690,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                         instructions.addAll(listOf(
                             Move(R0, resultReg),
                             Move(R1, resultReg.nextReg()),
-                            BranchLink("p_check_divide_by_zero"),
+                            BranchLink(P_CHECK_DIVIDE_BY_ZERO),
                             BranchLink("__aeabi_idivmod"),
                             Move(resultReg, R1)
                         ))
