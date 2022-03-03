@@ -22,6 +22,7 @@ import ic.doc.group15.type.ArrayType
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.PairType
+import ic.doc.group15.type.Variable
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 
@@ -94,6 +95,33 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     private fun translate(node: ASTNode) {
         translators[node::class]?.call(this, node)
+    }
+
+    /**
+     * Sets up the environment for the block of statements, specifically by initialising the stack variables
+     */
+    private fun blockPrologue(node: BlockAST) {
+        // Calculate how much space to be allocated (and modify each variable to include its position on the stack)
+        var currentStackPosition = node.symbolTable.getStackSize()
+
+        // Setup stack
+        addLines(Sub(SP, SP, ImmediateOperand(currentStackPosition)))
+
+        // Calculate the stack position for each variable
+        val variables = node.symbolTable.getMap().keys.filterIsInstance<Variable>()
+        for (v in variables) {
+            currentStackPosition -= v.type.sizeInBytes()
+            v.stackPosition = currentStackPosition
+        }
+    }
+
+    /**
+     * Restores the state so that the program can resume from where it left off before entering the block
+    */
+    private fun blockEpilogue(node: BlockAST) {
+        // Unwind stack
+        val stackSpaceUsed = node.symbolTable.getStackSize()
+        addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
     }
 
     /**

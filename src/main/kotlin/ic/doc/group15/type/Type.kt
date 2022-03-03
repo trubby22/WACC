@@ -51,6 +51,8 @@ open class Variable(
     companion object {
         val ANY_VAR = Variable(Type.ANY)
     }
+
+    var stackPosition: Int = 0
 }
 
 class Param(type: Type) : Variable(type)
