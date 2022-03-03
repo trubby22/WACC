@@ -326,11 +326,48 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    /**
+     * Per WACC language spec, a while-block matches the grammar "while expr do stat done"
+     * The while block follows the basic implementation as follows:
+     *
+     * B check
+     *
+     * loop:
+     *
+     * {Sequence of instructions in WHILE block}
+     *
+     * check:
+     *
+     * {Sequence of instructions to test WHILE condition}
+     *
+     * BEQ loop
+     */
     fun transWhileBlock(
         node: WhileBlockAST, resultReg:
         Register
     ): List<Line> {
-//        TODO?
+        // Define labels
+        val loopLabel = BranchLabel(branchLabelGenerator.generate())
+        val checkLabel = BranchLabel(branchLabelGenerator.generate())
+
+        // Add branch instruction
+        currentLabel.addLine(Branch(BranchLabelOperand(checkLabel)))
+
+        // Translate block statements and add to loop label
+        // TODO: issue - interdependence of statements to be addressed
+        currentLabel = loopLabel
+        node.statements.map { s -> transStat(s, resultReg) }
+
+        // Translate condition statements and add to check label
+        currentLabel = checkLabel
+        transExp(node.condExpr, resultReg)
+
+        // Add compare and branch instruction
+        currentLabel.addLines(
+            Compare(resultReg, ImmediateOperand(1)),
+            Branch(EQ, BranchLabelOperand(loopLabel))
+        )
+
         return emptyList()
     }
 
