@@ -30,7 +30,7 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Move(R1, R0),
-                LoadWord(R0, generateStringData("%c")),
+                LoadWord(R0, generateStringData(" %c")),
                 Add(R0, R0, ImmediateOperand(4)),
                 BranchLink(SCANF),
                 Pop(PC)
