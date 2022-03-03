@@ -187,36 +187,76 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         )
     }
 
-    // TOOD: Implement
-    @TranslatorMethod(AssignToArrayElemAST::class)
-    private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
-
-    }
-
-    // TODO: Implement
     @TranslatorMethod(AssignToPairElemAST::class)
     private fun transAssignToPairElem(node: AssignToPairElemAST) {
-
+        val instructions: MutableList<Line> = mutableListOf()
+        instructions.addAll(transAssignRhs(node.rhs, resultRegister))
+//        TODO: calculate pairStackOffset instead of assuming it's 0
+        val pairStackOffset = 0
+        val storeInstruction = when (node.rhs.type.sizeInBytes()) {
+            1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
+            else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg
+                ()))
+        }
+        instructions.addAll(listOf(
+            LoadWord(resultRegister.nextReg(), ImmediateOffset(SP, pairStackOffset)),
+            Move(R0, resultRegister.nextReg()),
+            BranchLink(P_CHECK_NULL_POINTER),
+            LoadWord(resultRegister.nextReg(), ZeroOffset(resultRegister
+                .nextReg())),
+            storeInstruction
+        ))
     }
 
-    fun transAssignToArrayElem(
-        node: AssignToArrayElemAST, resultReg:
-        Register
-    ): List<Line> {
+    @TranslatorMethod(AssignToArrayElemAST::class)
+    private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
         val instructions: MutableList<Line> = mutableListOf()
-        instructions.addAll(transAssignRhs(node.rhs, resultReg))
+        instructions.addAll(transAssignRhs(node.rhs, resultRegister))
         val arrayElemAST = node.lhs as ArrayElemAST
         val symbolTable = arrayElemAST.symbolTable
         val arrayName = arrayElemAST.arrayName
 //        TODO: calculate stack pointer offset of array pointer using values
-//         above
+//         above and calculate hardcodedNum's instead of
+//         hardcoding them
         val stackPointerOffset = 0
-        instructions.addAll(listOf(
-            Add(resultReg.nextReg(), SP, ImmediateOperand(stackPointerOffset)),
-//            Assumption: array is 1-dimensional
-            LoadWord(resultReg.nextReg().nextReg(), ImmediateOperand
-                (arrayElemAST.indexExpr[0]))
-        ))
+        val evaluatedIndexLst = arrayElemAST.indexExpr
+            .map { evaluateIntExpr(it) }
+        val hardcodedNum1 = 4
+        val hardcodedNum2 = 2
+        instructions.add(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
+        for (arrayIndex in evaluatedIndexLst) {
+            instructions.addAll(
+                listOf(
+                    LoadWord(
+                        resultRegister.nextReg().nextReg(),
+                        ImmediateOperand(arrayIndex)
+                    ),
+                    LoadWord(
+                        resultRegister.nextReg(),
+                        ZeroOffset(resultRegister.nextReg())
+                    ),
+                    Move(R0, resultRegister.nextReg().nextReg()),
+                    Move(R1, resultRegister.nextReg().nextReg()),
+                    BranchLink(P_CHECK_ARRAY_BOUNDS),
+                    Add(
+                        resultRegister.nextReg(),
+                        resultRegister.nextReg(),
+                        ImmediateOperand
+                            (hardcodedNum1)
+                    ),
+                    Add(
+                        resultRegister.nextReg(),
+                        resultRegister.nextReg(),
+//                        Sometimes LSL is performed, sometimes not - I don't
+//                        know what it depends on
+//                        TODO: perform LSL only when needed
+                        LogicalShiftLeft
+                            (resultRegister.nextReg().nextReg(), hardcodedNum2)
+                    )
+                )
+            )
+        }
+        instructions.add(StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg())))
         return instructions
     }
 

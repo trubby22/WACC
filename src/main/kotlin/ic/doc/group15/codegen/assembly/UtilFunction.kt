@@ -82,6 +82,18 @@ enum class UtilFunction {
             )
         }
     },
+    P_CHECK_NULL_POINTER {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Compare(R0, ImmediateOperand(0)),
+                LoadWord(EQ, R0, generateStringData
+                    ("NullReferenceError: dereference a null reference\\n")),
+                BranchLink(EQ, P_THROW_RUNTIME_ERROR),
+                Pop(PC)
+            )
+        }
+    },
     P_PRINT_STRING {
         override val assembly by lazy {
             listOf(
