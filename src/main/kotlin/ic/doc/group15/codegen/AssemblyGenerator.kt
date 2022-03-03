@@ -220,12 +220,11 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 //         above and calculate hardcodedNum's instead of
 //         hardcoding them
         val stackPointerOffset = 0
-        val evaluatedIndexLst = arrayElemAST.indexExpr
-            .map { evaluateIntExpr(it) }
         val hardcodedNum1 = 4
         val hardcodedNum2 = 2
         instructions.add(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
-        for (arrayIndex in evaluatedIndexLst) {
+        for (indexExpr in arrayElemAST.indexExpr) {
+            instructions.addAll(translate(indexExpr) as List<Instruction>)
             instructions.addAll(
                 listOf(
                     LoadWord(
@@ -828,65 +827,5 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         }
     }
 
-    private fun evaluateIntExpr(expr: ExpressionAST): Int {
-        assert(expr.type == IntType)
-        when (expr) {
-            is IntLiteralAST -> {
-                return expr.intValue
-            }
-            is VariableIdentifierAST -> {
-
-            }
-            is ArrayElemAST -> {
-
-            }
-            is UnaryOpExprAST -> {
-                when (expr.operator) {
-                    UnaryOp.MINUS -> return - evaluateIntExpr(expr.expr)
-                    UnaryOp.LEN -> {
-                        val arrayIdentifier = expr.expr as
-                        VariableIdentifierAST
-//                        TODO
-                    }
-                    UnaryOp.ORD -> return evaluateCharExpr(expr.expr).code
-                }
-            }
-            is BinaryOpExprAST -> {
-
-            }
-        }
-        throw Error("Should not get here")
-    }
-
-    private fun evaluateBoolExpr(expr: ExpressionAST): Boolean {
-        assert(expr.type == BoolType)
-        return false
-    }
-
-    private fun evaluateCharExpr(expr: ExpressionAST): Char {
-        assert(expr.type == CharType)
-        when (expr) {
-            is CharLiteralAST -> return expr.charValue
-            is UnaryOpExprAST -> return evaluateIntExpr(expr.expr).toChar()
-            is ArrayElemAST -> {
-//                TODO
-            }
-        }
-        throw Error("Should not get here")
-    }
-
-    private fun evaluateStringExpr(expr: ExpressionAST): String {
-        assert(expr.type == StringType)
-        when (expr) {
-            is StringLiteralAST -> return expr.stringValue
-            is ArrayElemAST -> {
-//                TODO
-            }
-            is PairElemAST -> {
-//                TODO
-            }
-        }
-        throw Error("Should not get here")
-    }
     //endregion
 }
