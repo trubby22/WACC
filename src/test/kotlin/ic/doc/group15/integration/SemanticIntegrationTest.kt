@@ -4,6 +4,7 @@ import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
+import ic.doc.group15.codegen.AssemblyGenerator
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.visitor.Visitor
 import org.antlr.v4.runtime.CharStreams
@@ -544,6 +545,10 @@ class SemanticIntegrationTest {
             println(path)
             errors.printErrors()
         }
+
+        val asm = AssemblyGenerator(ast, st)
+        println(asm.generate())
+
         return !errors.hasErrors()
     }
 }

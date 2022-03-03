@@ -12,6 +12,7 @@ import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTCHAR
 import ic.doc.group15.codegen.assembly.UtilFunction.*
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
+import ic.doc.group15.codegen.assembly.instruction.Directive.Companion.LTORG
 import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.ArrayType
@@ -56,7 +57,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     companion object {
         private val translators: TranslatorMap by lazy {
-            this::class.members.filter {
+            AssemblyGenerator::class.members.filter {
                 it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
             }.map {
                 assert(it.annotations.size == 1)
@@ -106,45 +107,45 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
         // translate all function blocks into assembly
-        functionASTs.map { f -> f as FunctionDeclarationAST }
-            .forEach { f -> transFunctionDeclaration(f) }
+        functionASTs.forEach { f -> transFunctionDeclaration(f) }
 
         // Translate main instructions into assembly
         // We create a new FunctionDeclarationAST to store statements in the main function
         // and let transFunction add the entries to the text attribute
 
         // The symbol table contains the statements AND the FunctionDeclarationAST
-        // For future proofing, we might want to remove all FunctionDeclarationASTs when
-        // nested function definition is introduced in the extension task
         val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
         mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
-        mainAST.returnStat = ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0))
+
+        // Add statements
+        val statementASTs = program.statements.filter { s -> s !is FunctionDeclarationAST }
+        mainAST.statements.addAll(statementASTs)
+        // Add return statement (main function implicitly returns 0)
+        mainAST.statements.add(ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0)))
+
         transFunctionDeclaration(mainAST)
     }
 
     // TODO: Implement
     @TranslatorMethod(FunctionDeclarationAST::class)
-    private fun transFunctionDeclaration(funcDec: FunctionDeclarationAST) {
-//        val instructions = mutableListOf<Line>()
-//        var pos = 0
-//        for (i in funcDec.formals) {
-//            state.setStackPos(i.varName, sp + pos)
-//            pos += i.type.sizeInBytes()
-//        }
-//        val stackSpace =
-//            requiredStackSpace(funcDec) - pos // the required stack space function will take into account the parameters as they are part of the symbol table for functions but we have already taken these into account
-//        sp -= stackSpace
-//        // functions are missing labels for now as well as .ltorg at the end
-//        instructions.addAll(
-//            mutableListOf(
-//                Push(LR),
-//                Sub(SP, SP, ImmediateOperand(stackSpace))
-//            )
-//        )
-//        instructions.addAll(transBlock((funcDec) as BlockAST, R4))
-//        instructions.add(Move(R0, R4))
-//        instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
-//        instructions.add(Pop(PC))
+    private fun transFunctionDeclaration(node: FunctionDeclarationAST) {
+        // Define label
+        text[currentLabel.name] = currentLabel
+        val funcLabel = BranchLabel("f_$node.funcName")
+        currentLabel = funcLabel
+
+        // Translate block statements and add to loop label - we start from register R4
+        // TODO: issue - interdependence of statements to be addressed
+        // TODO: setup and unwind stack
+        // setupStack()
+        node.statements.map { s -> transStat(s, R4) }
+        // unwindStack()
+
+        // Housekeeping
+        currentLabel.addLines(
+            Pop(PC),
+            LTORG
+        )
     }
 
     // TODO: Implement
@@ -178,7 +179,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(AssignToIdentAST::class)
     private fun transAssignToIdent(node: AssignToIdentAST) {
-        transAssignRhs(node.rhs, resultRegister)
+        translate(node.rhs, resultRegister)
         addLines(
             StoreWord(
                 SP,
@@ -270,21 +271,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     }
 
-    @TranslatorMethod(ElseBlockAST::class)
-    fun transElseBlock(node: ElseBlockAST) {
-
-    }
-
-    @TranslatorMethod(WhileBlockAST::class)
-    fun transWhileBlock(node: WhileBlockAST) {
-
-    }
-
-    @TranslatorMethod(BeginEndBlockAST::class)
-    fun transBeginEndBlock(node: BeginEndBlockAST) {
-
-    }
-
     /**
      * Per WACC language spec, a while-block matches the grammar "while expr do stat done"
      * The while block follows the basic implementation as follows:
@@ -309,31 +295,36 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         val checkLabel = BranchLabel(branchLabelGenerator.generate())
 
         // Add branch instruction
-        currentLabel.addLine(Branch(BranchLabelOperand(checkLabel)))
+        addLines(
+            Branch(BranchLabelOperand(checkLabel))
+        )
+        text[currentLabel.name] = currentLabel
 
         // Translate block statements and add to loop label
         // TODO: issue - interdependence of statements to be addressed
         currentLabel = loopLabel
-        node.statements.map { s -> transStat(s, resultReg) }
+        node.statements.forEach { s -> translate(s, resultRegister) }
+        // TODO: the statements should have to setup stack and unwind stack
+        text[currentLabel.name] = currentLabel
 
         // Translate condition statements and add to check label
         currentLabel = checkLabel
-        transExp(node.condExpr, resultReg)
+        translate(node.condExpr, resultRegister)
 
         // Add compare and branch instruction
         currentLabel.addLines(
-            Compare(resultReg, ImmediateOperand(1)),
+            Compare(resultRegister, ImmediateOperand(1)),
             Branch(EQ, BranchLabelOperand(loopLabel))
         )
     }
 
-    @TranslatorMethod(ArrayElemAST::class)
-    fun transArrayElem(node: ArrayElemAST) {
-
+    @TranslatorMethod(BeginEndBlockAST::class)
+    fun transBeginEndBlock(node: BeginEndBlockAST) {
+        node.statements.forEach { translate(it) }
     }
 
-    @TranslatorMethod(ParameterAST::class)
-    fun transParameter(node: ParameterAST) {
+    @TranslatorMethod(ArrayElemAST::class)
+    fun transArrayElem(node: ArrayElemAST) {
 
     }
 
@@ -357,30 +348,24 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      * only exist in a body of a non-main function and is used to return a value from
      * that function.
      */
-    fun transReturnStatement(
-        node: ReturnStatementAST, resultReg:
-        Register
-    ): List<Line> {
-        return transExp(node.expr, resultReg) +
-                listOf(
-                    Move(R0, resultReg),
-                    Pop(PC)
-                )
+    fun transReturnStatement(node: ReturnStatementAST, resultReg: Register) {
+        translate(node.expr, resultReg)
+        addLines(
+            Move(R0, resultReg),
+            Pop(PC)
+        )
     }
 
     /**
      * Per WACC language spec, exit statements have the format "exit x", where x is
      * an exit code of type int in range [0, 255].
      */
-    fun transExitStatement(
-        node: ExitStatementAST, resultReg:
-        Register
-    ): List<Line> {
-        return transExp(node.expr, resultReg) +
-                listOf(
-                    Move(R0, resultReg),
-                    BranchLink(EXIT)
-                )
+    fun transExitStatement(node: ExitStatementAST, resultReg: Register) {
+        translate(node.expr, resultReg)
+        addLines(
+            Move(R0, resultReg),
+            BranchLink(EXIT)
+        )
     }
 
     @TranslatorMethod(PrintStatementAST::class)
@@ -417,10 +402,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     }
 
     @TranslatorMethod(PrintlnStatementAST::class)
-    fun transPrintlnStatement(
-        node: PrintlnStatementAST, resultRegister:
-        Register
-    ) {
+    fun transPrintlnStatement(node: PrintlnStatementAST, resultRegister: Register) {
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
         transPrintStatement(printStatementAST, resultRegister)
         addLines(BranchLink(P_PRINT_LN))
@@ -438,7 +420,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      */
     @TranslatorMethod(ReadStatementAST::class)
     fun transReadStatement(node: ReadStatementAST) {
-        val instructions = mutableListOf<Line>()
         when (node.target.type) {
             IntType -> {
                 defineUtilFuncs(P_READ_INT)
@@ -450,9 +431,11 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             }
             CharType -> {
                 defineUtilFuncs(P_READ_CHAR)
-                instructions.addAll(translate(node.target, resultReg))
-                instructions.add(Move(R0, resultReg))
-                instructions.add(BranchLink(P_READ_CHAR))
+                translate(node.target, resultRegister)
+                addLines(
+                    Move(R0, resultRegister),
+                    BranchLink(P_READ_CHAR)
+                )
             }
             else -> throw IllegalArgumentException("Read does not support input of type ${node.target.type}")
         }
@@ -505,7 +488,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
         // add sequence of instructions in ELSE block under else label
         currentLabel = elseLabel
-        translate(stat.elseBlock, resultRegister)
+        stat.elseBlock.statements.forEach { translate(it) }
         currentLabel = fiLabel
     }
 
