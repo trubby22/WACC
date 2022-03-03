@@ -3,6 +3,10 @@ package ic.doc.group15.codegen
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIV
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.MALLOC
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTCHAR
 import ic.doc.group15.codegen.assembly.UtilFunction.*
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
@@ -262,7 +266,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         val instructions = mutableListOf<Line>()
         val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
         instructions.add(LoadWord(R0, ImmediateOperand(size))) // set up to malloc those bytes
-        instructions.add(BranchLink("malloc")) // malloc those bytes
+        instructions.add(BranchLink(MALLOC))
         instructions.add(Move(resultReg, R0)) // malloc returns us address in R0, we put that in resultReg
         var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
         for (expr in node.elems) {
@@ -428,9 +432,9 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         when (node.target.type) {
             IntType -> {
                 defineUtilFuncs(P_READ_INT)
-                instructions.addAll(transExp(node.target as ExpressionAST, resultReg))
+                instructions.addAll(transExp(node.target, resultReg))
                 instructions.add(Move(R0, resultReg))
-                instructions.add(BranchLink(P_READ_INT.labelName))
+                instructions.add(BranchLink(P_READ_INT))
             }
             // complete remaining types...
         }
@@ -468,19 +472,17 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         // compare to set condition flags and branch (can be optimised)
         currentLabel.addLines(
             Compare(resultReg, ImmediateOperand(0)),
-            Branch(EQ, elseLabel.name)
+            Branch(EQ, BranchLabelOperand(elseLabel))
         )
 
         // add sequence of instructions in THEN block under if label
         transBlock(stat, resultReg, currentLabel)
 
         // add branch to fi label under if label
-        currentLabel.addLine(Branch(fiLabel.name))
+        currentLabel.addLine(Branch(BranchLabelOperand(fiLabel)))
 
         // add sequence of instructions in ELSE block under else label
-        if (stat.elseBlock != null) {
-            transBlock(stat.elseBlock!!, resultReg, elseLabel)
-        }
+        transBlock(stat.elseBlock, resultReg, elseLabel)
 
         // add labels to text/instruction segment
         // possible optimisation: check if no instructions contained in label then un-include label
@@ -508,7 +510,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     fun transNewPair(node: NewPairAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.add(LoadWord(R0, ImmediateOperand(8))) // sets up malloc arg to alloc 8 bytes for the pair
-        instructions.add(BranchLink("malloc")) // jump to malloc
+        instructions.add(BranchLink(MALLOC))
         instructions.add(
             Move(
                 resultReg,
@@ -527,7 +529,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 ImmediateOperand(node.fstExpr.type.sizeInBytes())
             )
         ) // sets up malloc arg to allocate sufficient bytes for the type of pair.fst
-        instructions.add(BranchLink("malloc")) // jumps to malloc
+        instructions.add(BranchLink(MALLOC)) // jumps to malloc
         if (node.fstExpr.type.sizeInBytes() == 4) {
             instructions.add(
                 StoreWord(
@@ -561,7 +563,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 ImmediateOperand(node.sndExpr.type.sizeInBytes())
             )
         ) // sets up malloc arg to allocate sufficient bytes for the type of pair.snd
-        instructions.add(BranchLink("malloc")) // jumps to malloc
+        instructions.add(BranchLink(MALLOC)) // jumps to malloc
         if (node.sndExpr.type.sizeInBytes() == 4) {
             instructions.add(
                 StoreWord(
@@ -682,7 +684,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                             Move(R0, resultReg),
                             Move(R1, resultReg.nextReg()),
                             BranchLink(P_CHECK_DIVIDE_BY_ZERO),
-                            BranchLink("__aeabi_idiv"),
+                            BranchLink(AEABI_IDIV),
                             Move(resultReg, R0))
                         )
                     }
@@ -691,20 +693,20 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                             Move(R0, resultReg),
                             Move(R1, resultReg.nextReg()),
                             BranchLink(P_CHECK_DIVIDE_BY_ZERO),
-                            BranchLink("__aeabi_idivmod"),
+                            BranchLink(AEABI_IDIVMOD),
                             Move(resultReg, R1)
                         ))
                     }
                     BinaryOp.PLUS -> {
                         instructions.addAll(listOf(
                             Add(true, resultReg, resultReg, resultReg.nextReg()),
-                            BranchLink(V, "p_throw_overflow_error")
+                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
                         ))
                     }
                     BinaryOp.MINUS -> {
                         instructions.addAll(listOf(
                             Sub(true, resultReg, resultReg, resultReg.nextReg()),
-                            BranchLink(V, "p_throw_overflow_error")
+                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
                         ))
                     }
                 }
@@ -789,7 +791,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 )
                 instructions.addAll(listOf(
                     ReverseSub(resultReg, resultReg, ImmediateOperand(0)),
-                    BranchLink("p_throw_overflow_error")
+                    BranchLink(P_THROW_OVERFLOW_ERROR)
                 ))
             }
             UnaryOp.LEN -> {

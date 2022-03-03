@@ -3,6 +3,7 @@ package ic.doc.group15.codegen.assembly
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.FFLUSH
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PRINTF
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTS
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.SCANF
 import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
@@ -10,8 +11,6 @@ import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
 import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import java.util.*
-
-const val NULL = "\u0000"
 
 enum class UtilFunction {
     P_READ_INT {
@@ -43,6 +42,15 @@ enum class UtilFunction {
                 BranchLink(P_PRINT_STRING),
                 Move(R0, ImmediateOperand(-1)),
                 BranchLink(EXIT)
+            )
+        }
+    },
+    P_THROW_OVERFLOW_ERROR {
+        override val assembly by lazy {
+            listOf(
+                LoadWord(R0, generateStringData("OverflowError: the result is" +
+                        " too small/large to store in a 4-byte signed-integer.\\n")),
+                BranchLink(P_THROW_RUNTIME_ERROR)
             )
         }
     },
