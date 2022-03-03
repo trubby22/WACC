@@ -416,7 +416,12 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(FreeStatementAST::class)
     fun transFreeStatement(node: FreeStatementAST) {
-//        TODO
+        val variable = (node.expr as VariableIdentifierAST).ident
+        transRetrieve(variable)
+        addLines(
+            Move(R0, resultRegister),
+            BranchLink(P_FREE_PAIR)
+        )
     }
 
     /**

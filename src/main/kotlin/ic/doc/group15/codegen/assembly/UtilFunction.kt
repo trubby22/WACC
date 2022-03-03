@@ -2,13 +2,13 @@ package ic.doc.group15.codegen.assembly
 
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.FFLUSH
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.FREE
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PRINTF
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTS
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.SCANF
 import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
-import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
-import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
+import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import java.util.*
 
@@ -161,6 +161,26 @@ enum class UtilFunction {
                 BranchLink(PUTS),
                 Move(R0, ImmediateOperand(0)),
                 BranchLink(FFLUSH),
+                Pop(PC)
+            )
+        }
+    },
+    P_FREE_PAIR {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Compare(R0, ImmediateOperand(0)),
+                LoadWord(EQ, R0, generateStringData(
+                    "NullReferenceError: dereference a null reference\\n")),
+                Branch(EQ, P_THROW_RUNTIME_ERROR),
+                Push(R0),
+                LoadWord(R0, ZeroOffset(R0)),
+                BranchLink(FREE),
+                LoadWord(R0, ZeroOffset(SP)),
+                LoadWord(R0, ImmediateOffset(SP, 4)),
+                BranchLink(FREE),
+                Pop(R0),
+                BranchLink(FREE),
                 Pop(PC)
             )
         }

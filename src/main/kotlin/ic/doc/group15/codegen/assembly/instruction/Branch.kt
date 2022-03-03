@@ -24,6 +24,10 @@ class Branch(
 ) : BranchInstruction("b", conditionCode, labelOp) {
 
     constructor(labelOp: BranchLabelOperand) : this(null, labelOp)
+
+    constructor(conditionCode: ConditionCode?, utilFunc: UtilFunction) :
+            this(null, BranchLabelOperand(utilFunc.labelBlock))
+    constructor(utilFunc: UtilFunction) : this(null, utilFunc)
 }
 
 /**
