@@ -135,8 +135,9 @@ class AssemblyGenerator(private val ast: AST) {
     /**
      * Restores the state so that the program can resume from where it left off before entering the function
      */
-    private fun functionEpilogue(node: BlockAST) {
+    private fun functionEpilogue(node: FunctionDeclarationAST) {
         addLines(
+            if (node.funcName == "main")
             Pop(PC),
             LTORG
         )
@@ -211,7 +212,7 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(FunctionDeclarationAST::class)
     private fun transFunctionDeclaration(node: FunctionDeclarationAST) {
         // Define label
-        val funcLabel = newBranchLabel("f_${node.funcName}")
+        val funcLabel = newBranchLabel(node.funcName)
         currentLabel = funcLabel
 
         // Translate block statements and add to loop label - we start from register R4
