@@ -6,13 +6,13 @@ import java.util.*
 
 abstract class AssignRhsAST protected constructor(
     symbolTable: SymbolTable = SymbolTable.emptyTable,
-    val type: Type
+    val type: ReturnableType
 ) : ASTNode(symbolTable)
 
 abstract class AssignmentAST<T : ASTNode> protected constructor(
     parent: BlockAST,
     val lhs: T,
-    val type: Type,
+    val type: ReturnableType,
 ) : StatementAST(parent) {
     lateinit var rhs: AssignRhsAST
 }
@@ -46,7 +46,7 @@ class NewPairAST(
 
 abstract class PairElemAST protected constructor(
     symbolTable: SymbolTable,
-    val elemType: Type
+    val elemType: ReturnableType
 ) : AssignRhsAST(symbolTable, elemType)
 
 class FstPairElemAST(

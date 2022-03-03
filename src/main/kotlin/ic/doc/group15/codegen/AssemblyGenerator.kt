@@ -107,7 +107,7 @@ class AssemblyGenerator(private val ast: AST) {
             // Calculate the stack position for each variable
             val variables = node.symbolTable.getValuesByType(Variable::class)
             for (v in variables) {
-                currentStackPosition -= v.type.sizeInBytes()
+                currentStackPosition -= v.type.size()
                 v.stackPosition = currentStackPosition
             }
         }
@@ -147,10 +147,10 @@ class AssemblyGenerator(private val ast: AST) {
         node.actuals.forEach {
             // Load variable to resultRegister
             translate(it)
-            val size = it.type.sizeInBytes()
+            val size = it.type.size()
             addLines(
                 // Allocate space in stack
-                Sub(SP, SP, ImmediateOperand(it.type.sizeInBytes())),
+                Sub(SP, SP, ImmediateOperand(it.type.size())),
                 // Move value from resultRegister to stack
                 if (size == BYTE) {
                     StoreByte(resultRegister, ZeroOffset(SP))
@@ -167,7 +167,7 @@ class AssemblyGenerator(private val ast: AST) {
      */
     private fun functionCallEpilogue(node: CallAST) {
         // Increment the stack pointer back to where it was
-        val stackSpaceUsed = node.actuals.sumOf { arg -> arg.type.sizeInBytes() }
+        val stackSpaceUsed = node.actuals.sumOf { arg -> arg.type.size() }
 
         addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
     }
@@ -250,7 +250,7 @@ class AssemblyGenerator(private val ast: AST) {
         translate(node.rhs)
 //        TODO: calculate pairStackOffset instead of assuming it's 0
         val pairStackOffset = 0
-        val storeInstruction = when (node.rhs.type.sizeInBytes()) {
+        val storeInstruction = when (node.rhs.type.size()) {
             1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
             else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
         }
@@ -322,12 +322,18 @@ class AssemblyGenerator(private val ast: AST) {
     fun transFstPairElem(node: FstPairElemAST) {
 //        TODO: calculate offset
         val pairPointerOffset = 0
-        val loadInstruction = if (node.pairExpr.type.sizeInBytes() == BYTE) {
-            LoadByte(resultRegister, ZeroOffset
-                (resultRegister))
+        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
+            LoadByte(
+                resultRegister,
+                ZeroOffset
+                (resultRegister)
+            )
         } else {
-            LoadWord(resultRegister, ZeroOffset
-                (resultRegister))
+            LoadWord(
+                resultRegister,
+                ZeroOffset
+                (resultRegister)
+            )
         }
         addLines(
             LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
@@ -342,13 +348,19 @@ class AssemblyGenerator(private val ast: AST) {
     fun transSndPairElem(node: SndPairElemAST) {
 //        TODO: calculate offset
         val pairPointerOffset = 0
-        val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.sizeInBytes()
-        val loadInstruction = if (node.pairExpr.type.sizeInBytes() == BYTE) {
-            LoadByte(resultRegister, ZeroOffset
-                (resultRegister))
+        val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
+        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
+            LoadByte(
+                resultRegister,
+                ZeroOffset
+                (resultRegister)
+            )
         } else {
-            LoadWord(resultRegister, ZeroOffset
-                (resultRegister))
+            LoadWord(
+                resultRegister,
+                ZeroOffset
+                (resultRegister)
+            )
         }
         addLines(
             LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
@@ -483,7 +495,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(PrintlnStatementAST::class)
-    fun transPrintlnStatement(node: PrintlnStatementAST, resultRegister: Register) {
+    fun transPrintlnStatement(node: PrintlnStatementAST) {
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
         transPrintStatement(printStatementAST)
         addLines(BranchLink(P_PRINT_LN))
@@ -541,10 +553,7 @@ class AssemblyGenerator(private val ast: AST) {
      * fi: ...
      */
     @TranslatorMethod(IfBlockAST::class)
-    fun transIfBlock(
-        stat: IfBlockAST,
-        resultRegister: Register
-    ) {
+    fun transIfBlock(stat: IfBlockAST) {
         val curLabel = currentLabel
 
         // Add instructions to currentLabel
@@ -586,13 +595,13 @@ class AssemblyGenerator(private val ast: AST) {
             resultRegister = resultRegister.nextReg()
             translate(expr)
             addLines(
-                LoadWord(R0, PseudoImmediateOperand(expr.type.sizeInBytes())),
+                LoadWord(R0, PseudoImmediateOperand(expr.type.size())),
                 BranchLink(MALLOC)
             )
 
             // Store the value of the item of the pair in the address received from malloc
             addLines(
-                when (expr.type.sizeInBytes()) {
+                when (expr.type.size()) {
                     WORD -> StoreWord(resultRegister.nextReg(), ZeroOffset(R0))
                     else -> StoreByte(resultRegister.nextReg(), ZeroOffset(R0))
                 }
@@ -655,7 +664,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(ArrayLiteralAST::class)
     private fun transArrayLiteral(node: ArrayLiteralAST) {
-        val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
+        val size = 4 + (node.elems.size * (node.elems[0].type.size())) // calculate bytes need to malloc
         currentLabel.addLines(
             LoadWord(R0, PseudoImmediateOperand(size)),
             BranchLink(MALLOC),
@@ -665,7 +674,7 @@ class AssemblyGenerator(private val ast: AST) {
         for (expr in node.elems) {
             resultRegister = resultRegister.nextReg()
             translate(expr)
-            if (expr.type.sizeInBytes() == 4) {
+            if (expr.type.size() == 4) {
                 offset += 4
                 currentLabel.addLines(
                     StoreWord(resultRegister.nextReg(), ImmediateOffset(resultRegister, offset))
@@ -701,13 +710,13 @@ class AssemblyGenerator(private val ast: AST) {
             resultRegister = currReg
             addLines(
                 LoadWord(resultRegister, ZeroOffset(resultRegister)),
-                Move(R0, resultRegister.nextReg()),// this and next two lines just check bounds of array
+                Move(R0, resultRegister.nextReg()), // this and next two lines just check bounds of array
                 Move(R1, resultRegister),
                 BranchLink(P_CHECK_ARRAY_BOUNDS),
                 Add(resultRegister, resultRegister, ImmediateOperand(WORD))
             ) // move past array size
             if (i == node.indexExpr.lastIndex) {
-                if (node.elemType.sizeInBytes() == WORD) {
+                if (node.elemType.size() == WORD) {
                     addLines(
                         // get address of desired index into result reg
                         Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2)),
@@ -725,7 +734,8 @@ class AssemblyGenerator(private val ast: AST) {
                     // get address of desired index into result reg
                     Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2)),
                     // put whats at that index into result reg
-                    LoadWord(resultRegister, ZeroOffset(resultRegister)))
+                    LoadWord(resultRegister, ZeroOffset(resultRegister))
+                )
             }
         }
     }
@@ -752,8 +762,10 @@ class AssemblyGenerator(private val ast: AST) {
                                 resultRegister,
                                 resultRegister.nextReg()
                             ),
-                            Compare(resultRegister.nextReg(),
-                                ArithmeticShiftRight(resultRegister, 31)),
+                            Compare(
+                                resultRegister.nextReg(),
+                                ArithmeticShiftRight(resultRegister, 31)
+                            ),
                             BranchLink(NE, P_THROW_OVERFLOW_ERROR)
                         )
                     }
@@ -920,7 +932,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     private fun transAssign(variable: Variable) {
-        val size = variable.type.sizeInBytes()
+        val size = variable.type.size()
         val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, size) }
 
         addLines(
@@ -933,8 +945,12 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     private fun transRetrieve(variable: Variable) {
-        val size = variable.type.sizeInBytes()
-        val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, size) }
+        val size = variable.type.size()
+        val addressOperand = if (variable.stackPosition == 0) {
+            ZeroOffset(SP)
+        } else {
+            ImmediateOffset(SP, size)
+        }
 
         addLines(
             if (size == BYTE) {

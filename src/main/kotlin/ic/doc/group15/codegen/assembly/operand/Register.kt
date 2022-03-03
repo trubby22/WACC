@@ -131,7 +131,7 @@ enum class Register : Operand {
         return name.lowercase()
     }
 
-    fun nextReg() : Register {
+    fun nextReg(): Register {
         return values()[this.ordinal + 1]
     }
 }

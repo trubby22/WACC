@@ -30,8 +30,8 @@ class TypeParser {
         private fun parse(symbolTable: SymbolTable, ctx: Pair_typeContext): Type {
 
             return PairType(
-                parse(symbolTable, ctx.pair_elem_type(0)),
-                parse(symbolTable, ctx.pair_elem_type(1))
+                parse(symbolTable, ctx.pair_elem_type(0)) as ReturnableType,
+                parse(symbolTable, ctx.pair_elem_type(1)) as ReturnableType
             )
         }
 

@@ -164,7 +164,7 @@ class Visitor(
             }
         }
 
-        parameterAST = ParameterAST(symbolTable, paramName, Param(t))
+        parameterAST = ParameterAST(symbolTable, paramName, Param(t as ReturnableType))
 
         symbolTable.add(paramName, parameterAST.ident)
 
@@ -396,7 +396,13 @@ class Visitor(
             }
         }
 
-        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, typeName, assignRhs, Variable(t))
+        val varDecl = VariableDeclarationAST(
+            scopeAST,
+            symbolTable,
+            typeName,
+            assignRhs,
+            Variable(t as ReturnableType)
+        )
         symbolTable.add(varName, varDecl.varIdent)
 
         return varDecl
@@ -454,7 +460,7 @@ class Visitor(
 
         return ArrayElemAST(
             symbolTable, ctx.ident().text, indexList,
-            arr.elementType
+            arr.elementType as ReturnableType
         )
     }
 

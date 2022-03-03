@@ -11,23 +11,15 @@ interface Identifier
 
 interface Type : Identifier {
 
-    fun sizeInBytes() : Int {
-        when (this) {
-            is PairType -> return 8
-            BasicType.IntType -> return 4
-            BasicType.BoolType -> return 1
-            BasicType.CharType -> return 1
-            BasicType.StringType -> return 4
-        }
-        return 90000
-    }
-
     fun compatible(type: Type): Boolean
 
     companion object {
-        val ANY: Type = AnyType()
+        val ANY: ReturnableType = AnyType()
 
-        private class AnyType : Type {
+        private class AnyType : Type, ReturnableType {
+
+            override fun size(): Int = 0
+
             override fun compatible(type: Type): Boolean = true
 
             override fun toString(): String {
@@ -46,7 +38,7 @@ interface HeapAllocatedType : Type
 
 // we assign the stackPos to be Int.MIN_VALUE until stackPos is actually assigned
 open class Variable(
-    val type: Type,
+    val type: ReturnableType,
 ) : Identifier {
     companion object {
         val ANY_VAR = Variable(Type.ANY)
@@ -55,7 +47,7 @@ open class Variable(
     var stackPosition: Int = 0
 }
 
-class Param(type: Type) : Variable(type)
+class Param(type: ReturnableType) : Variable(type)
 
 enum class BasicType(private val size: Int) : ReturnableType {
     IntType(WORD) {
@@ -138,7 +130,7 @@ class ArrayType(elementType: Type, dimension: Int) : ReturnableType, HeapAllocat
         return elementType.compatible(type.elementType)
     }
 
-    override fun size(): Int = WORD
+    override fun size(): Int = 2 * WORD
 
     override fun toString(): String {
         return elementType.toString() + "[]".repeat(dimension)
@@ -146,12 +138,12 @@ class ArrayType(elementType: Type, dimension: Int) : ReturnableType, HeapAllocat
 }
 
 class PairType(
-    fstType: Type = Type.ANY,
-    sndType: Type = Type.ANY
+    fstType: ReturnableType = Type.ANY,
+    sndType: ReturnableType = Type.ANY
 ) : ReturnableType, HeapAllocatedType {
 
-    val fstType: Type = if (fstType is PairType) PairType() else fstType
-    val sndType: Type = if (sndType is PairType) PairType() else sndType
+    val fstType: ReturnableType = if (fstType is PairType) PairType() else fstType
+    val sndType: ReturnableType = if (sndType is PairType) PairType() else sndType
 
     companion object {
         val ANY_PAIR = PairType()
@@ -165,7 +157,7 @@ class PairType(
             (sndType.compatible(type.sndType) || type.sndType == Type.ANY)
     }
 
-    override fun size(): Int = WORD
+    override fun size(): Int = 2 * WORD
 
     override fun toString(): String {
         return "pair($fstType, $sndType)"
@@ -173,7 +165,7 @@ class PairType(
 }
 
 class FunctionType(
-    val returnType: Type,
+    val returnType: ReturnableType,
     val formals: List<Param>,
     val symbolTable: SymbolTable
 ) : Type {

@@ -5,7 +5,7 @@ import ic.doc.group15.type.*
 
 abstract class ExpressionAST protected constructor(
     symbolTable: SymbolTable = SymbolTable.emptyTable,
-    type: Type
+    type: ReturnableType
 ) : AssignRhsAST(symbolTable, type)
 
 class IntLiteralAST(val intValue: Int) : ExpressionAST(type = BasicType.IntType)
@@ -24,7 +24,7 @@ class ArrayElemAST(
     symbolTable: SymbolTable,
     val arrayName: String,
     val indexExpr: List<ExpressionAST>,
-    val elemType: Type
+    val elemType: ReturnableType
 ) : ExpressionAST(symbolTable, elemType)
 
 class UnaryOpExprAST(
