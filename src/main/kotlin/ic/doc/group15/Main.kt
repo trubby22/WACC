@@ -34,12 +34,12 @@ fun main(args: Array<String>) {
 
     semanticErrors.checkErrors()
 
-    val assemblyGenerator = AssemblyGenerator(ast, st)
-    val assemblyStr = assemblyGenerator.generate()
+    val assemblyGenerator = AssemblyGenerator(ast)
+    val assemblyCode = assemblyGenerator.generate()
 
     // Create assembly file
     val filename = args[0].split("/").last()
     val asmFilename = filename.substring(0, filename.length - 4) + "s"
 
-    File(asmFilename).writeText(assemblyStr)
+    File(asmFilename).writeText(assemblyCode)
 }

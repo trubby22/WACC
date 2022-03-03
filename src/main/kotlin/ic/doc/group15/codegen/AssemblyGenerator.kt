@@ -21,7 +21,7 @@ import ic.doc.group15.type.PairType
 
 const val START_VAL = 0
 
-class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
+class AssemblyGenerator(private val ast: AST) {
 
     private val state : State = State()
 
@@ -51,6 +51,10 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         if (data.isNotEmpty() || utilData.isNotEmpty()) {
             asm += ".data\n\n"
         }
+
+        // Translate the program
+        transProgram(ast)
+
         asm += joinAsm(data.values) +
                joinAsm(utilData.values) +
                ".text\n\n.global main\n" +
@@ -340,6 +344,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      *
      * {Sequence of instructions to test WHILE condition}
      *
+     * CMP resultReg, 1
      * BEQ loop
      */
     fun transWhileBlock(
