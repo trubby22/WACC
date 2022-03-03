@@ -692,25 +692,42 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(ArrayElemAST::class)
     private fun translateArrayElem(node: ArrayElemAST) {
-        addLines(LoadWord(resultRegister, ImmediateOffset(SP, state.getStackPos(node.arrayName) - sp)))
+        val variable = node.symbolTable.lookup(node.arrayName) as Variable
+        addLines(Add(resultRegister, SP, ImmediateOperand(variable.stackPosition)))
+
         for (i in node.indexExpr.indices) {
             val index = node.indexExpr[i]
+            val currReg = resultRegister
+            resultRegister = currReg.nextReg()
             translate(index) // translating the index of the array
-            addLines(Move(R0, resultRegister.nextReg())) // this and next two lines just check bounds of array
-            addLines(Move(R1, resultRegister)) //
-            addLines(BranchLink(P_CHECK_ARRAY_BOUNDS)) //
-            addLines(Add(resultRegister, resultRegister, ImmediateOperand(4))) // move past array size
+            resultRegister = currReg
+            addLines(
+                LoadWord(resultRegister, ZeroOffset(resultRegister)),
+                Move(R0, resultRegister.nextReg()),// this and next two lines just check bounds of array
+                Move(R1, resultRegister),
+                BranchLink(P_CHECK_ARRAY_BOUNDS),
+                Add(resultRegister, resultRegister, ImmediateOperand(WORD))
+            ) // move past array size
             if (i == node.indexExpr.lastIndex) {
-                if (node.elemType.sizeInBytes() == 4) {
-                    addLines(Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2))) // get address of desired index into result reg
-                    addLines(LoadWord(resultRegister, resultRegister)) // put whats at that index into result reg
-                } else if (node.elemType.sizeInBytes() == 1) {
-                    addLines(Add(resultRegister, resultRegister, resultRegister.nextReg()))
-                    addLines(LoadByte(resultRegister, ZeroOffset(resultRegister)))
+                if (node.elemType.sizeInBytes() == WORD) {
+                    addLines(
+                        // get address of desired index into result reg
+                        Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2)),
+                        // put whats at that index into result reg
+                        LoadWord(resultRegister, ZeroOffset(resultRegister))
+                    )
+                } else {
+                    addLines(
+                        Add(resultRegister, resultRegister, resultRegister.nextReg()),
+                        LoadByte(resultRegister, ZeroOffset(resultRegister))
+                    )
                 }
             } else {
-                addLines(Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2))) // get address of desired index into result reg
-                addLines(LoadWord(resultRegister, resultRegister)) // put whats at that index into result reg
+                addLines(
+                    // get address of desired index into result reg
+                    Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2)),
+                    // put whats at that index into result reg
+                    LoadWord(resultRegister, ZeroOffset(resultRegister)))
             }
         }
     }
