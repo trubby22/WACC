@@ -103,16 +103,19 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      */
     private fun blockPrologue(node: BlockAST) {
         // Calculate how much space to be allocated (and modify each variable to include its position on the stack)
-        var currentStackPosition = node.symbolTable.getStackSize()
+        val stackSpaceUsed = node.symbolTable.getStackSize()
+        if (stackSpaceUsed > 0) {
+            var currentStackPosition = stackSpaceUsed
 
-        // Setup stack
-        addLines(Sub(SP, SP, ImmediateOperand(currentStackPosition)))
+            // Setup stack
+            addLines(Sub(SP, SP, ImmediateOperand(currentStackPosition)))
 
-        // Calculate the stack position for each variable
-        val variables = node.symbolTable.getMap().keys.filterIsInstance<Variable>()
-        for (v in variables) {
-            currentStackPosition -= v.type.sizeInBytes()
-            v.stackPosition = currentStackPosition
+            // Calculate the stack position for each variable
+            val variables = node.symbolTable.getMap().keys.filterIsInstance<Variable>()
+            for (v in variables) {
+                currentStackPosition -= v.type.sizeInBytes()
+                v.stackPosition = currentStackPosition
+            }
         }
     }
 
@@ -122,7 +125,9 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     private fun blockEpilogue(node: BlockAST) {
         // Unwind stack
         val stackSpaceUsed = node.symbolTable.getStackSize()
-        addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
+        if (stackSpaceUsed > 0) {
+            addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
+        }
     }
 
     /**
@@ -204,7 +209,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         transFunctionDeclaration(mainAST)
     }
 
-    // TODO: Implement
     @TranslatorMethod(FunctionDeclarationAST::class)
     private fun transFunctionDeclaration(node: FunctionDeclarationAST) {
         // Define label
@@ -213,17 +217,13 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         currentLabel = funcLabel
 
         // Translate block statements and add to loop label - we start from register R4
+        resultRegister = R4
         // TODO: issue - interdependence of statements to be addressed
-        // TODO: setup and unwind stack
-        // setupStack()
+        functionPrologue(node)
+        blockPrologue(node)
         node.statements.map { s -> translate(s) }
-        // unwindStack()
-
-        // Housekeeping
-        currentLabel.addLines(
-            Pop(PC),
-            LTORG
-        )
+        blockEpilogue(node)
+        functionEpilogue(node)
     }
 
     // TODO: Implement
