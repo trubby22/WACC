@@ -746,14 +746,13 @@ class AssemblyGenerator(private val ast: AST) {
                 when (expr.operator) {
                     MULT -> {
                         addLines(
-                            Mult(
+                            LongMult(
                                 updateFlags = true,
                                 resultRegister,
+                                resultRegister.nextReg(),
                                 resultRegister,
                                 resultRegister.nextReg()
                             ),
-//                            TODO: use SMULL using schema below
-//                             SMULL resultRegister, resultRegister.nextReg(), resultRegister, resultRegister.nextReg()
                             Compare(resultRegister.nextReg(),
                                 ArithmeticShiftRight(resultRegister, 31)),
                             BranchLink(NE, P_THROW_OVERFLOW_ERROR)
