@@ -609,7 +609,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     }
 
     @TranslatorMethod(ArrayElemAST::class)
-    private fun translateVariableIdentifier(node: ArrayElemAST) {
+    private fun translateArrayElem(node: ArrayElemAST) {
         addLines(LoadWord(resultRegister, ImmediateOffset(SP, state.getStackPos(node.arrayName) - sp)))
         for (i in node.indexExpr.indices) {
             val index = node.indexExpr.get(i)
