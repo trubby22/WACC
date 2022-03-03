@@ -155,13 +155,17 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         node.formals.forEach {
             // Load variable to resultRegister
             translate(it)
+            val size = it.type.sizeInBytes()
             addLines(
                 // Allocate space in stack
                 Sub(SP, SP, ImmediateOperand(it.type.sizeInBytes())),
                 // Move value from resultRegister to stack
-                StoreWord(resultRegister, ZeroOffset(SP))
+                if (size == BYTE) {
+                    StoreByte(resultRegister, ZeroOffset(SP))
+                } else {
+                    StoreWord(resultRegister, ZeroOffset(SP))
+                }
             )
-
         }
     }
 
