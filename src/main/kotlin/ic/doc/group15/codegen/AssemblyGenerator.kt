@@ -172,35 +172,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     }
 
-    @Translator(ArrayLiteralAST::class)
-    private fun transArrayLiteral(node: ArrayLiteralAST, resultReg: Register) {
-        val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
-        currentLabel.addLines(
-            LoadWord(R0, ImmediateOperand(size)),
-            BranchLink(MALLOC),
-            Move(resultReg, R0)
-        )
-        var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
-        for (expr in node.elems) {
-            transExp(expr, resultReg.nextReg())
-            if (expr.type.sizeInBytes() == 4) {
-                offset += 4
-                currentLabel.addLines(
-                    StoreWord(resultReg.nextReg(), ImmediateOffset(resultReg, offset))
-                )
-            } else {
-                offset += 1
-                currentLabel.addLines(
-                    StoreByte(resultReg.nextReg(), ImmediateOffset(resultReg, offset))
-                )
-            }
-        }
-        currentLabel.addLines(
-            LoadWord(resultReg.nextReg(), ImmediateOperand(node.elems.size)),
-            StoreWord(resultReg.nextReg(), ZeroOffset(resultReg))
-        )
-    }
-
     @Translator(FstPairElemAST::class)
     fun transFstPairElem(node: FstPairElemAST, resultReg: Register) {
 
@@ -399,63 +370,89 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         }
     }
 
-    fun transExp(expr: ExpressionAST, resultReg: Register) {
-        when (expr) {
-            is IntLiteralAST -> {
-                instructions.add(LoadWord(resultReg, ImmediateOperand(expr.intValue)))
-            }
-            is BoolLiteralAST -> {
-                instructions.add(Move(resultReg, ImmediateOperand(expr.boolValue)))
-            }
-            is CharLiteralAST -> {
-                instructions.add(Move(resultReg, ImmediateOperand(expr.charValue)))
-            }
-            is StringLiteralAST -> {
-                val label: String = stringLabelGenerator.generate()
-                data.put(label, StringData(label, expr.stringValue))
-                instructions.add(LoadWord(resultReg, BranchLabelOperand(label)))
-            }
-            is NullPairLiteralAST -> {
-//                TODO
-            }
-            is VariableIdentifierAST -> {
-                when (expr.type) {
-                    IntType -> instructions.add(
-                        LoadWord(
-                            SP,
-                            ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)
-                        )
-                    )
-                    BoolType -> instructions.add(
-                        LoadByte(
-                            SP,
-                            ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)
-                        )
-                    )
-                    CharType -> instructions.add(
-                        LoadByte(
-                            SP,
-                            ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)
-                        )
-                    )
-                    StringType -> instructions.add(
-                        LoadWord(
-                            SP,
-                            ImmediateOffset(resultReg, state.getStackPos(expr.varName) - sp)
-                        )
-                    )
-                }
-            }
-            is ArrayElemAST -> {
-//                TODO
-            }
-            is BinaryOpExprAST -> instructions.addAll(transBinOp(expr, resultReg))
-            is UnaryOpExprAST -> instructions.addAll(transUnOp(expr, resultReg))
-        }
-        return instructions
+    //endregion
+
+    //region translateExpr
+
+    @Translator(IntLiteralAST::class)
+    private fun translateIntLiteral(node: IntLiteralAST, resultReg: Register) {
+        addLines(
+            LoadWord(resultReg, ImmediateOperand(node.intValue))
+        )
     }
 
-    fun transBinOp(expr: BinaryOpExprAST, resultReg: Register) {
+    @Translator(BoolLiteralAST::class)
+    private fun translateBoolLiteral(node: BoolLiteralAST, resultReg: Register) {
+        addLines(
+            Move(resultReg, ImmediateOperand(node.boolValue))
+        )
+    }
+
+    @Translator(CharLiteralAST::class)
+    private fun translateCharLiteral(node: CharLiteralAST, resultReg: Register) {
+        addLines(
+            Move(resultReg, ImmediateOperand(node.charValue))
+        )
+    }
+
+    @Translator(StringLiteralAST::class)
+    private fun translateStringLiteral(node: StringLiteralAST, resultReg: Register) {
+        addLines(
+            LoadWord(resultReg, newStringLabel(node.stringValue))
+        )
+    }
+
+    @Translator(NullPairLiteralAST::class)
+    private fun translateNullPairLiteral(node: NullPairLiteralAST, resultReg: Register) {
+        // TODO
+    }
+
+    @Translator(ArrayLiteralAST::class)
+    private fun transArrayLiteral(node: ArrayLiteralAST, resultReg: Register) {
+        val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
+        currentLabel.addLines(
+            LoadWord(R0, ImmediateOperand(size)),
+            BranchLink(MALLOC),
+            Move(resultReg, R0)
+        )
+        var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
+        for (expr in node.elems) {
+            translate(expr, resultReg.nextReg())
+            if (expr.type.sizeInBytes() == 4) {
+                offset += 4
+                currentLabel.addLines(
+                    StoreWord(resultReg.nextReg(), ImmediateOffset(resultReg, offset))
+                )
+            } else {
+                offset += 1
+                currentLabel.addLines(
+                    StoreByte(resultReg.nextReg(), ImmediateOffset(resultReg, offset))
+                )
+            }
+        }
+        currentLabel.addLines(
+            LoadWord(resultReg.nextReg(), ImmediateOperand(node.elems.size)),
+            StoreWord(resultReg.nextReg(), ZeroOffset(resultReg))
+        )
+    }
+
+    @Translator(VariableIdentifierAST::class)
+    private fun translateVariableIdentifier(node: VariableIdentifierAST, resultReg: Register) {
+        addLines(
+            LoadWord(
+                SP,
+                ImmediateOffset(resultReg, state.getStackPos(node.varName) - sp)
+            )
+        )
+    }
+
+    @Translator(ArrayElemAST::class)
+    private fun translateArrayElem(node: ArrayElemAST, resultReg: Register) {
+        // TODO
+    }
+
+    @Translator(BinaryOpExprAST::class)
+    private fun transBinOp(expr: BinaryOpExprAST, resultReg: Register) {
         instructions.addAll(transExp(expr.expr1, resultReg))
         instructions.addAll(transExp(expr.expr2, resultReg.nextReg()))
         when {
@@ -577,7 +574,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    fun transUnOp(unOpExpr: UnaryOpExprAST, resultReg: Register) {
+    @Translator(UnaryOpExprAST::class)
+    private fun transUnOp(unOpExpr: UnaryOpExprAST, resultReg: Register) {
         instructions.addAll(transExp(unOpExpr.expr, resultReg))
 
         when (unOpExpr.operator) {
@@ -614,6 +612,10 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
+    //endregion
+
+    //region helpers
+
     private fun addLines(vararg lines: Instruction) {
         currentLabel.addLines(*lines)
     }
@@ -648,4 +650,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             }
         }
     }
+
+    //endregion
 }
