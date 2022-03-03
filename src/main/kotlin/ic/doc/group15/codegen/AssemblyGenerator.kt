@@ -151,8 +151,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     /**
      * Sets up the stack with the necessary parameters before a function call.
      */
-    private fun functionCallPrologue(node: FunctionDeclarationAST) {
-        node.formals.forEach {
+    private fun functionCallPrologue(node: CallAST) {
+        node.actuals.forEach {
             // Load variable to resultRegister
             translate(it)
             val size = it.type.sizeInBytes()
@@ -173,9 +173,9 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      * Restores the state so that the program can resume from where it left off before the
      * function sub-call was made
      */
-    private fun functionCallEpilogue(node: FunctionDeclarationAST) {
+    private fun functionCallEpilogue(node: CallAST) {
         // Increment the stack pointer back to where it was
-        val stackSpaceUsed = node.formals.sumOf { arg -> arg.type.sizeInBytes() }
+        val stackSpaceUsed = node.actuals.sumOf { arg -> arg.type.sizeInBytes() }
 
         addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
     }
@@ -230,22 +230,13 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         functionEpilogue(node)
     }
 
-    // TODO: Implement
     @TranslatorMethod(CallAST::class)
-    private fun transCall(call: CallAST) {
-//        // parameters will be put onto the stack in reverse order e.g. f(a, b, c)
-//        val revParams = call.actuals.toMutableList().reversed()
-//        var spDec = 0
-//        for (i in revParams) {
-//            sp -= i.type.sizeInBytes()
-//            spDec += i.type.sizeInBytes()
-//            instructions.addAll(transExp(i, resultRegister))
-//            instructions.add(Sub(SP, SP, ImmediateOperand(-i.type.sizeInBytes())))
-//            instructions.add(StoreWord(SP, ZeroOffset(resultRegister)))
-//        }
-//        instructions.add(BranchLink("p_" + call.funcName))
-//        instructions.add(Add(SP, SP, ImmediateOperand(spDec)))
-//        instructions.add(Move(resultRegister, R0))
+    private fun transCall(node: CallAST) {
+        functionCallPrologue(node)
+        addLines(BranchLink(BranchLabelOperand("f_${node.funcName}")))
+        functionCallEpilogue(node)
+        // Move the result from R0 to resultRegister
+        addLines(Move(resultRegister, R0))
     }
 
     @TranslatorMethod(VariableDeclarationAST::class)
