@@ -60,10 +60,3 @@ class PrintlnStatementAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST
 ) : StatementAST(parent, symbolTable)
-
-class SequenceStatementAST(
-    parent: BlockAST,
-    symbolTable: SymbolTable,
-    val stat1: StatementAST,
-    val stat2: StatementAST
-) : StatementAST(parent, symbolTable)

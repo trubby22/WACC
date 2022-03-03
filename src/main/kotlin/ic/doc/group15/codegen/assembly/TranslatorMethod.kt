@@ -4,4 +4,4 @@ import ic.doc.group15.ast.ASTNode
 import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.FUNCTION)
-annotation class Translator(val nodeType: KClass<out ASTNode>)
+annotation class TranslatorMethod(val nodeType: KClass<out ASTNode>)
