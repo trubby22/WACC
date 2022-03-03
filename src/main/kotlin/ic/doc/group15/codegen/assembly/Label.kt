@@ -26,9 +26,7 @@ abstract class Label<L : Line> protected constructor(val name: String) : Assembl
     }
 
     override fun toString(): String {
-        return "$name:" + if (lines.isNotEmpty()) "\n$ASM_TAB" else "" + lines.joinToString(
-            separator = "\n$ASM_TAB",
-        )
+        return "$name:\n$ASM_TAB" + lines.joinToString(separator = "\n$ASM_TAB")
     }
 }
 

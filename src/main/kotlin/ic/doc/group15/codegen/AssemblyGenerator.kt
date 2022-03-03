@@ -73,9 +73,6 @@ class AssemblyGenerator(private val ast: AST) {
             asm += ".data\n\n"
         }
 
-        // Translate the program
-        transProgram(ast)
-
         asm += joinAsm(data.values) +
             joinAsm(utilData.values) +
             ".text\n\n.global main\n" +
