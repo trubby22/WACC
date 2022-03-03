@@ -17,10 +17,6 @@ abstract class Label<L : Line> protected constructor(val name: String) : Assembl
     protected constructor(uniqueLabel: UniqueLabelGenerator, vararg lines: L) :
         this(uniqueLabel.generate(), *lines)
 
-    fun addLine(line: L) {
-        addLines(line)
-    }
-
     fun addLines(vararg lines: L) {
         this.lines.addAll(lines)
     }

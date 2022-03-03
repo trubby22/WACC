@@ -290,26 +290,6 @@ class Visitor(
         return addToScope(returnStat)
     }
 
-    override fun visitSequenceRecursiveReturn1(ctx: WaccParser.SequenceRecursiveReturn1Context): ASTNode {
-        return if (ctx.valid_return_stat() != null) {
-            SequenceStatementAST(
-                scopeAST, symbolTable,
-                visit(ctx.return_stat()) as StatementAST,
-                visit(ctx.valid_return_stat()) as StatementAST
-            )
-        } else {
-            visit(ctx.return_stat())
-        }
-    }
-
-    override fun visitSequenceRecursiveReturn2(ctx: WaccParser.SequenceRecursiveReturn2Context): ASTNode {
-        return SequenceStatementAST(
-            scopeAST, symbolTable,
-            visit(ctx.stat()) as StatementAST,
-            visit(ctx.valid_return_stat()) as StatementAST
-        )
-    }
-
     override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext): ASTNode {
         symbolTable = symbolTable.subScope()
         val node = visit(ctx.valid_return_stat())
@@ -368,19 +348,11 @@ class Visitor(
         return addToScope(SkipStatementAST(scopeAST))
     }
 
-    override fun visitSequenceStat(ctx: SequenceStatContext): ASTNode {
-        return SequenceStatementAST(
-            scopeAST, symbolTable,
-            visit(ctx.stat(0)) as StatementAST,
-            visit(ctx.stat(1)) as StatementAST
-        )
-    }
-
     override fun visitReadStat(ctx: ReadStatContext): ASTNode {
         log("Visiting read statement")
 
         val assignLhs = ctx.assign_lhs()
-        val target = visit(assignLhs) as AssignmentAST
+        val target = visit(assignLhs) as AssignmentAST<*>
         if (target.type !is BasicType || target.type == BasicType.BoolType) {
             errors.addError(ReadTypeError(assignLhs.start, target.type))
         }
@@ -433,7 +405,7 @@ class Visitor(
     override fun visitAssignmentStat(ctx: AssignmentStatContext): ASTNode {
         val exprRhs = ctx.assign_rhs()
         val assignRhs = visit(exprRhs) as AssignRhsAST
-        val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST
+        val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST<*>
 
         log("Visiting variable assignment ${ctx.assign_lhs().text}")
 
