@@ -75,10 +75,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      * into transFunction, and add the list of statements of the main program into a FunctionDeclarationAST,
      * thereby processing it via transFunction as well.
      */
-    fun transProgram(program: BlockAST) {
-        // Sanity check: program is well-defined after syntactic and semantic checks
-        assert(program is BeginEndBlockAST)
-
+    @Translator(AST::class)
+    private fun transProgram(program: AST) {
         val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
         // translate all function blocks into assembly
@@ -99,7 +97,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     }
 
     // TODO: Fix transBlock
-    fun transBlock(block: BlockAST, resultReg: Register, currentLabel: BranchLabel) {
+    private fun transBlock(block: BlockAST, resultReg: Register, currentLabel: BranchLabel) {
         val instructions = mutableListOf<Instruction>()
         var stackSpace = requiredStackSpace(block)
         sp -= stackSpace
@@ -117,9 +115,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         currentLabel.addLines(instructions)
     }
 
-    //region statement
-
-    fun transFunctionDeclaration(funcDec: FunctionDeclarationAST): BranchLabel {
+    @Translator(FunctionDeclarationAST::class)
+    private fun transFunctionDeclaration(funcDec: FunctionDeclarationAST): BranchLabel {
 
         // i think im gonna have to push all registers to stack then pop
         // before and after a function call cus if you look at the reference compiler,
@@ -154,7 +151,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    fun transCall(call: CallAST, resultReg: Register) {
+    @Translator(CallAST::class)
+    private fun transCall(call: CallAST, resultReg: Register) {
         val instructions = mutableListOf<Line>()
         // parameters will be put onto the stack in reverse order e.g. f(a, b, c)
         // stack will look like so:
@@ -181,49 +179,11 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         instructions.add(Move(resultReg, R0))
     }
 
-    // generates the assembly code for a BlockAST node and returns the list of instructions
-    fun transStat(stat: StatementAST, resultReg: Register, currentLabel: BranchLabel): List<Instruction> {
-        val instructions = mutableListOf<Instruction>()
-        when (stat) {
-            is SkipStatementAST -> {
-            }
-            is VariableDeclarationAST -> instructions.addAll(transVariableDeclaration(stat, resultReg))
-            is AssignToIdentAST -> instructions.addAll(transAssignToIdent(stat, resultReg))
-            is AssignToArrayElemAST -> {
-//                TODO
-            }
-            is AssignToPairElemAST -> {
-//                TODO
-            }
-            is ReadStatementAST -> instructions.addAll(transReadStatement(stat, resultReg))
-            is FreeStatementAST -> {
-//                TODO
-            }
-            is PrintStatementAST -> {
-//                TODO
-            }
-            is PrintlnStatementAST -> {
-//                TODO
-            }
-            is IfBlockAST -> {
-                // Define label
-                val elseLabel = BranchLabel(branchLabelGenerator.generate())
-                val fiLabel = BranchLabel(branchLabelGenerator.generate())
-
-                transIfBlock(stat, resultReg, currentLabel, elseLabel, fiLabel)
-            }
-            is WhileBlockAST -> {
-//                TODO
-            }
-            is BeginEndBlockAST -> {
-//                TODO
-            }
-         }
-        return instructions
-    }
-
-    // generates assembly code for a VariableDeclarationAST node and returns the list of instructions
-    fun transVariableDeclaration(node: VariableDeclarationAST, resultReg: Register): List<Line> {
+    @Translator(VariableDeclarationAST::class)
+    private fun transVariableDeclaration(
+        node: VariableDeclarationAST,
+        resultReg: Register
+    ): List<Line> {
         val instructions = mutableListOf<Line>()
         sp -= node.varIdent.type.sizeInBytes()
         state.setStackPos(node.varName, sp)
@@ -232,8 +192,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    // this function will generate the assembly code for an AssignToIdentAST node and return the list of instructions
-    fun transAssignToIdent(node: AssignToIdentAST, resultReg: Register): List<Line> {
+    @Translator(AssignToIdentAST::class)
+    private fun transAssignToIdent(node: AssignToIdentAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transAssignRhs(node.rhs, resultReg))
         instructions.add(
@@ -245,7 +205,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    fun transAssignToArrayElem(
+    @Translator(AssignToArrayElemAST::class)
+    private fun transAssignToArrayElem(
         node: AssignToArrayElemAST, resultReg:
         Register
     ): List<Line> {
@@ -253,7 +214,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
-    fun transAssignToPairElem(
+    @Translator(AssignToPairElemAST::class)
+    private fun transAssignToPairElem(
         node: AssignToPairElemAST, resultReg:
         Register
     ): List<Line> {
@@ -261,8 +223,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
-    fun transArrayLiteral(node: ArrayLiteralAST, resultReg:
-    Register): List<Line> {
+    @Translator(ArrayLiteralAST::class)
+    private fun transArrayLiteral(node: ArrayLiteralAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
         instructions.add(LoadWord(R0, ImmediateOperand(size))) // set up to malloc those bytes
@@ -284,22 +246,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    fun transPairElem(
-        node: PairElemAST, resultReg:
-        Register
-    ): List<Line> {
-//        TODO
-        when (node) {
-            is FstPairElemAST -> {
-//                TODO
-            }
-            is SndPairElemAST -> {
-//                TODO
-            }
-        }
-        return emptyList()
-    }
-
+    @Translator(FstPairElemAST::class)
     fun transFstPairElem(
         node: FstPairElemAST, resultReg:
         Register
@@ -308,6 +255,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(SndPairElemAST::class)
     fun transSndPairElem(
         node: SndPairElemAST, resultReg:
         Register
@@ -316,6 +264,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(ElseBlockAST::class)
     fun transElseBlock(
         node: ElseBlockAST, resultReg:
         Register
@@ -324,6 +273,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(WhileBlockAST::class)
     fun transWhileBlock(
         node: WhileBlockAST, resultReg:
         Register
@@ -332,6 +282,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(BeginEndBlockAST::class)
     fun transBeginEndBlock(
         node: BeginEndBlockAST, resultReg:
         Register
@@ -340,6 +291,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(ArrayElemAST::class)
     fun transArrayElem(
         node: ArrayElemAST, resultReg:
         Register
@@ -348,6 +300,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(ParameterAST::class)
     fun transParameter(
         node: ParameterAST, resultReg:
         Register
@@ -356,6 +309,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(FreeStatementAST::class)
     fun transFreeStatement(
         node: FreeStatementAST, resultReg:
         Register
@@ -364,6 +318,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(ReturnStatementAST::class)
     fun transReturnStatement(
         node: ReturnStatementAST, resultReg:
         Register
@@ -372,6 +327,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(ExitStatementAST::class)
     fun transExitStatement(
         node: ExitStatementAST, resultReg:
         Register
@@ -380,6 +336,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    @Translator(PrintStatementAST::class)
     fun transPrintStatement(
         node: PrintStatementAST, resultReg:
         Register
@@ -388,7 +345,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
-    fun transPrintlnStatment(
+    @Translator(PrintlnStatementAST::class)
+    fun transPrintlnStatement(
         node: PrintlnStatementAST, resultReg:
         Register
     ): List<Line> {
@@ -396,7 +354,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
-    // generates the assembly code for an ReadStatementAST node and returns the list of instructions
+    @Translator(ReadStatementAST::class)
     fun transReadStatement(node: ReadStatementAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         when (node.target.type) {
@@ -429,6 +387,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      *
      * fi: ...
      */
+    @Translator(IfBlockAST::class)
     fun transIfBlock(
         stat: IfBlockAST,
         resultReg: Register,
@@ -461,7 +420,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         text[elseLabel.name] = elseLabel
     }
 
-    // generates the assembly code for an AssignRhsAST node and returns the list of instructions
+    @Translator(AssignRhsAST::class)
     fun transAssignRhs(node: AssignRhsAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         when (node) {
@@ -476,7 +435,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    // generates assembly code for a NewPairAST node and returns the list of instructions
+    @Translator(NewPairAST::class)
     fun transNewPair(node: NewPairAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.add(LoadWord(R0, ImmediateOperand(8))) // sets up malloc arg to alloc 8 bytes for the pair
@@ -558,7 +517,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    // generates the assembly code for an ExpressionAST node and returns the list of instructions
     fun transExp(expr: ExpressionAST, resultReg: Register): List<Line> {
         val instructions: MutableList<Line> = mutableListOf()
         when (expr) {
@@ -616,7 +574,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return instructions
     }
 
-    // generates the assembly code for a BinaryOpExprAST node and returns the list of instructions
     fun transBinOp(expr: BinaryOpExprAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         instructions.addAll(transExp(expr.expr1, resultReg))
