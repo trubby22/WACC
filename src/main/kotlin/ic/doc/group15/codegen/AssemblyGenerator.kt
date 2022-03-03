@@ -124,6 +124,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     //region statement
 
+    // TODO: Fix transFunctionDeclaration
     fun transFunctionDeclaration(funcDec: FunctionDeclarationAST): BranchLabel {
 
         // i think im gonna have to push all registers to stack then pop
@@ -365,12 +366,20 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    /**
+     * Per WACC language spec, a return statement has the format "return x". It can
+     * only exist in a body of a non-main function and is used to return a value from
+     * that function.
+     */
     fun transReturnStatement(
         node: ReturnStatementAST, resultReg:
         Register
     ): List<Line> {
-//        TODO
-        return emptyList()
+        return transExp(node.expr, resultReg) +
+                listOf(
+                    Move(R0, resultReg),
+                    Pop(PC)
+                )
     }
 
     /**
