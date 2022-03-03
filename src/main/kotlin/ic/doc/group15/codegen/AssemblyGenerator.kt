@@ -583,7 +583,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             is StringLiteralAST -> {
                 val label: String = stringLabelGenerator.generate()
                 data.put(label, StringData(label, expr.stringValue))
-                instructions.add(LoadWord(resultReg, LabelOperand(label)))
+                instructions.add(LoadWord(resultReg, BranchLabelOperand(label)))
             }
             is NullPairLiteralAST -> {
 //                TODO
