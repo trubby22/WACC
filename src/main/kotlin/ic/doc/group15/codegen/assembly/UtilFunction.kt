@@ -11,8 +11,6 @@ import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import java.util.*
 
-const val NULL = "\u0000"
-
 enum class UtilFunction {
 
     P_READ_INT {

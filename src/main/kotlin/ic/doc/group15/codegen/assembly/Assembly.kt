@@ -2,7 +2,6 @@ package ic.doc.group15.codegen.assembly
 
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode
 import ic.doc.group15.codegen.assembly.operand.Operand
-import java.util.*
 
 const val ASM_TAB_SIZE = 8
 val ASM_TAB = " ".repeat(ASM_TAB_SIZE)

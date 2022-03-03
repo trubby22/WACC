@@ -9,5 +9,9 @@ class LibraryFunction private constructor(labelName: String) : BranchLabelOperan
         val PRINTF = LibraryFunction("printf")
         val FFLUSH = LibraryFunction("fflush")
         val EXIT = LibraryFunction("exit")
+        val MALLOC = LibraryFunction("malloc")
+
+        val AEABI_IDIV = LibraryFunction("__aeabi_idiv")
+        val AEABI_IDIVMOD = LibraryFunction("__aeabi_idivmod")
     }
 }
