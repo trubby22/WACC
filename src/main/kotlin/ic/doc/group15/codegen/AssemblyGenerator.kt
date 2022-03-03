@@ -381,8 +381,18 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         node: PrintStatementAST, resultReg:
         Register
     ): List<Line> {
-//        TODO
-        return emptyList()
+        val label1 : String = stringLabelGenerator.generate()
+//        Works for: print "hello" but not for string x = "hello"; print x
+        data[label1] = StringData(label1, (node.expr as StringLiteralAST).stringValue)
+        val label2: String = stringLabelGenerator.generate()
+        data[label2] = StringData(label2, "%.*s\\0")
+        defineUtilFuncs(
+            P_PRINT_STRING
+        )
+        return listOf(
+            Move(R0, resultReg),
+            BranchLink("p_print_string")
+        )
     }
 
     fun transPrintlnStatment(

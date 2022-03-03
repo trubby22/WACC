@@ -41,12 +41,57 @@ enum class UtilFunction {
         )
     },
     P_PRINT_STRING {
-        override val assembly: List<Instruction> = listOf(
+        override val assembly = listOf(
             Push(LR),
             LoadWord(R1, R0),
             Add(R2, R0, ImmediateOperand(4)),
 //            TODO: Load correct label
 //            Corresponding message in .data sector: "%.*s\0"
+            LoadWord(R0, DataLabelOperand("TODO")),
+            Add(R0, R0, ImmediateOperand(4)),
+            BranchLink("printf"),
+            Move(R0, ImmediateOperand(0)),
+            BranchLink("fflush"),
+            Pop(PC)
+        )
+    },
+    P_PRINT_INT {
+        override val assembly: List<Instruction> = listOf(
+            Push(LR),
+            Move(R1, R0),
+//            TODO: Load correct label
+//            Corresponding message in .data sector: "%d\0"
+            LoadWord(R0, DataLabelOperand("TODO")),
+            Add(R0, R0, ImmediateOperand(4)),
+            BranchLink("printf"),
+            Move(R0, ImmediateOperand(0)),
+            BranchLink("fflush"),
+            Pop(PC)
+        )
+    },
+    P_PRINT_BOOL {
+        override val assembly: List<Instruction> = listOf(
+            Push(LR),
+            Compare(R0, ImmediateOperand(0)),
+//            TODO: Load correct label
+//            Corresponding messages in .data sector:
+//            TODO1: "true\0",
+//            TODO2: "false\0"
+            LoadWord(ConditionCode.NE, R0, DataLabelOperand("TODO1")),
+            LoadWord(ConditionCode.EQ, R0, DataLabelOperand("TODO2")),
+            Add(R0, R0, ImmediateOperand(4)),
+            BranchLink("printf"),
+            Move(R0, ImmediateOperand(0)),
+            BranchLink("fflush"),
+            Pop(PC)
+        )
+    },
+    P_PRINT_REFERENCE {
+        override val assembly = listOf(
+            Push(LR),
+            Move(R1, R0),
+//            TODO: Load correct label
+//            Corresponding message in .data sector: "%p\0"
             LoadWord(R0, DataLabelOperand("TODO")),
             Add(R0, R0, ImmediateOperand(4)),
             BranchLink("printf"),
