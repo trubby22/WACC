@@ -406,14 +406,17 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         // Translate block statements and add to loop label
         // TODO: issue - interdependence of statements to be addressed
         currentLabel = loopLabel
+        blockPrologue(node)
         node.statements.forEach { translate(it) }
+        blockEpilogue(node)
+        text[currentLabel.name] = currentLabel
 
         // Translate condition statements and add to check label
         currentLabel = checkLabel
         translate(node.condExpr)
 
         // Add compare and branch instruction
-        currentLabel.addLines(
+        addLines(
             Compare(resultRegister, ImmediateOperand(1)),
             Branch(EQ, BranchLabelOperand(loopLabel))
         )
