@@ -609,8 +609,28 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     }
 
     @TranslatorMethod(ArrayElemAST::class)
-    private fun translateArrayElem(node: ArrayElemAST) {
-        // TODO
+    private fun translateVariableIdentifier(node: ArrayElemAST) {
+        addLines(LoadWord(resultRegister, ImmediateOffset(SP, state.getStackPos(node.arrayName) - sp)))
+        for (i in node.indexExpr.indices) {
+            val index = node.indexExpr.get(i)
+            translate(index) // translating the index of the array
+            addLines(Move(R0, resultRegister.nextReg())) // this and next two lines just check bounds of array
+            addLines(Move(R1, resultRegister)) //
+            addLines(BranchLink(P_CHECK_ARRAY_BOUNDS)) //
+            addLines(Add(resultRegister, resultRegister, ImmediateOperand(4))) // move past array size
+            if (i == node.indexExpr.lastIndex) {
+                if (node.elemType.sizeInBytes() == 4) {
+                    addLines(Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2))) // get address of desired index into result reg
+                    addLines(LoadWord(resultRegister, resultRegister)) // put whats at that index into result reg
+                } else if (node.elemType.sizeInBytes() == 1) {
+                    addLines(Add(resultRegister, resultRegister, resultRegister.nextReg()))
+                    addLines(LoadByte(resultRegister, ZeroOffset(resultRegister)))
+                }
+            } else {
+                addLines(Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2))) // get address of desired index into result reg
+                addLines(LoadWord(resultRegister, resultRegister)) // put whats at that index into result reg
+            }
+        }
     }
 
     @TranslatorMethod(BinaryOpExprAST::class)
