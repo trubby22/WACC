@@ -98,543 +98,543 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      */
     @TranslatorMethod(AST::class)
     private fun transProgram(program: AST) {
-//        val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
-//
-//        // translate all function blocks into assembly
-//        functionASTs.map { f -> f as FunctionDeclarationAST }
-//            .forEach { f -> transFunctionDeclaration(f) }
-//
-//        // Translate main instructions into assembly
-//        // We create a new FunctionDeclarationAST to store statements in the main function
-//        // and let transFunction add the entries to the text attribute
-//
-//        // The symbol table contains the statements AND the FunctionDeclarationAST
-//        // For future proofing, we might want to remove all FunctionDeclarationASTs when
-//        // nested function definition is introduced in the extension task
-//        val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
-//        mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
-//        mainAST.returnStat = ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0))
-//        transFunctionDeclaration(mainAST)
+        val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
+
+        // translate all function blocks into assembly
+        functionASTs.map { f -> f as FunctionDeclarationAST }
+            .forEach { f -> transFunctionDeclaration(f) }
+
+        // Translate main instructions into assembly
+        // We create a new FunctionDeclarationAST to store statements in the main function
+        // and let transFunction add the entries to the text attribute
+
+        // The symbol table contains the statements AND the FunctionDeclarationAST
+        // For future proofing, we might want to remove all FunctionDeclarationASTs when
+        // nested function definition is introduced in the extension task
+        val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
+        mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
+        mainAST.returnStat = ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0))
+        transFunctionDeclaration(mainAST)
     }
 
-//    // TODO: Implement
-//    @TranslatorMethod(FunctionDeclarationAST::class)
-//    private fun transFunctionDeclaration(funcDec: FunctionDeclarationAST) {
-////        val instructions = mutableListOf<Line>()
-////        var pos = 0
-////        for (i in funcDec.formals) {
-////            state.setStackPos(i.varName, sp + pos)
-////            pos += i.type.sizeInBytes()
-////        }
-////        val stackSpace =
-////            requiredStackSpace(funcDec) - pos // the required stack space function will take into account the parameters as they are part of the symbol table for functions but we have already taken these into account
-////        sp -= stackSpace
-////        // functions are missing labels for now as well as .ltorg at the end
-////        instructions.addAll(
-////            mutableListOf(
-////                Push(LR),
-////                Sub(SP, SP, ImmediateOperand(stackSpace))
-////            )
-////        )
-////        instructions.addAll(transBlock((funcDec) as BlockAST, R4))
-////        instructions.add(Move(R0, R4))
-////        instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
-////        instructions.add(Pop(PC))
-//    }
-//
-//    // TODO: Implement
-//    @TranslatorMethod(CallAST::class)
-//    private fun transCall(call: CallAST) {
-////        // parameters will be put onto the stack in reverse order e.g. f(a, b, c)
-////        val revParams = call.actuals.toMutableList().reversed()
-////        var spDec = 0
-////        for (i in revParams) {
-////            sp -= i.type.sizeInBytes()
-////            spDec += i.type.sizeInBytes()
-////            instructions.addAll(transExp(i, resultRegister))
-////            instructions.add(Sub(SP, SP, ImmediateOperand(-i.type.sizeInBytes())))
-////            instructions.add(StoreWord(SP, ZeroOffset(resultRegister)))
-////        }
-////        instructions.add(BranchLink("p_" + call.funcName))
-////        instructions.add(Add(SP, SP, ImmediateOperand(spDec)))
-////        instructions.add(Move(resultRegister, R0))
-//    }
-//
-//    @TranslatorMethod(VariableDeclarationAST::class)
-//    private fun transVariableDeclaration(node: VariableDeclarationAST) {
+    // TODO: Implement
+    @TranslatorMethod(FunctionDeclarationAST::class)
+    private fun transFunctionDeclaration(funcDec: FunctionDeclarationAST) {
 //        val instructions = mutableListOf<Line>()
-//        sp -= node.varIdent.type.sizeInBytes()
-//        state.setStackPos(node.varName, sp)
-//        translate(node.rhs, resultRegister)
-//        addLines(
-//            StoreWord(SP, ImmediateOffset(resultRegister, state.getStackPos(node.varName)))
-//        )
-//    }
-//
-//    @TranslatorMethod(AssignToIdentAST::class)
-//    private fun transAssignToIdent(node: AssignToIdentAST) {
-//        transAssignRhs(node.rhs, resultRegister)
-//        addLines(
-//            StoreWord(
-//                SP,
-//                ImmediateOffset(resultRegister, state.getStackPos(node.lhs.varName) - sp)
+//        var pos = 0
+//        for (i in funcDec.formals) {
+//            state.setStackPos(i.varName, sp + pos)
+//            pos += i.type.sizeInBytes()
+//        }
+//        val stackSpace =
+//            requiredStackSpace(funcDec) - pos // the required stack space function will take into account the parameters as they are part of the symbol table for functions but we have already taken these into account
+//        sp -= stackSpace
+//        // functions are missing labels for now as well as .ltorg at the end
+//        instructions.addAll(
+//            mutableListOf(
+//                Push(LR),
+//                Sub(SP, SP, ImmediateOperand(stackSpace))
 //            )
 //        )
-//    }
-//
-//    // TOOD: Implement
-//    @TranslatorMethod(AssignToArrayElemAST::class)
-//    private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
-//
-//    }
-//
-//    // TODO: Implement
-//    @TranslatorMethod(AssignToPairElemAST::class)
-//    private fun transAssignToPairElem(node: AssignToPairElemAST) {
-//
-//    }
-//
-//    @TranslatorMethod(FstPairElemAST::class)
-//    fun transFstPairElem(node: FstPairElemAST) {
-//
-//    }
-//
-//    @TranslatorMethod(SndPairElemAST::class)
-//    fun transSndPairElem(node: SndPairElemAST) {
-//
-//    }
-//
-//    @TranslatorMethod(ElseBlockAST::class)
-//    fun transElseBlock(node: ElseBlockAST) {
-//
-//    }
-//
-//    @TranslatorMethod(WhileBlockAST::class)
-//    fun transWhileBlock(node: WhileBlockAST) {
-//
-//    }
-//
-//    @TranslatorMethod(BeginEndBlockAST::class)
-//    fun transBeginEndBlock(node: BeginEndBlockAST) {
-//
-//    }
-//
-//    @TranslatorMethod(ArrayElemAST::class)
-//    fun transArrayElem(node: ArrayElemAST) {
-//
-//    }
-//
-//    @TranslatorMethod(ParameterAST::class)
-//    fun transParameter(node: ParameterAST) {
-//
-//    }
-//
-//    @TranslatorMethod(FreeStatementAST::class)
-//    fun transFreeStatement(node: FreeStatementAST) {
-//
-//    }
-//
-//    @TranslatorMethod(ReturnStatementAST::class)
-//    fun transReturnStatement(node: ReturnStatementAST) {
-//
-//    }
-//
-//    @TranslatorMethod(ExitStatementAST::class)
-//    fun transExitStatement(node: ExitStatementAST) {
-//
-//    }
-//
-//    @TranslatorMethod(PrintStatementAST::class)
-//    fun transPrintStatement(node: PrintStatementAST) {
-//        translate(node.expr, resultRegister)
-//        addLines(
-//            Move(R0, resultRegister)
-//        )
-//        when (node.expr.type) {
-//            StringType -> {
-//                defineUtilFuncs(P_PRINT_STRING)
-//                addLines(BranchLink(P_PRINT_STRING))
-//            }
-//            CharType -> {
-//                addLines(BranchLink(PUTCHAR))
-//            }
-//            IntType -> {
-//                defineUtilFuncs(P_PRINT_INT)
-//                addLines(BranchLink(P_PRINT_INT))
-//            }
-//            BoolType -> {
-//                defineUtilFuncs(P_PRINT_BOOL)
-//                addLines(BranchLink(P_PRINT_BOOL))
-//            }
-//            is PairType -> {
-//                defineUtilFuncs(P_PRINT_REFERENCE)
-//                addLines(BranchLink(P_PRINT_REFERENCE))
-//            }
-//            is ArrayType -> {
-//                defineUtilFuncs(P_PRINT_REFERENCE)
-//                addLines(BranchLink(P_PRINT_REFERENCE))
-//            }
+//        instructions.addAll(transBlock((funcDec) as BlockAST, R4))
+//        instructions.add(Move(R0, R4))
+//        instructions.add(Add(SP, SP, ImmediateOperand(stackSpace)))
+//        instructions.add(Pop(PC))
+    }
+
+    // TODO: Implement
+    @TranslatorMethod(CallAST::class)
+    private fun transCall(call: CallAST) {
+//        // parameters will be put onto the stack in reverse order e.g. f(a, b, c)
+//        val revParams = call.actuals.toMutableList().reversed()
+//        var spDec = 0
+//        for (i in revParams) {
+//            sp -= i.type.sizeInBytes()
+//            spDec += i.type.sizeInBytes()
+//            instructions.addAll(transExp(i, resultRegister))
+//            instructions.add(Sub(SP, SP, ImmediateOperand(-i.type.sizeInBytes())))
+//            instructions.add(StoreWord(SP, ZeroOffset(resultRegister)))
 //        }
-//    }
-//
-//    @TranslatorMethod(PrintlnStatementAST::class)
-//    fun transPrintlnStatement(
-//        node: PrintlnStatementAST, resultRegister:
-//        Register
-//    ) {
-//        val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
-//        transPrintStatement(printStatementAST, resultRegister)
-//        addLines(BranchLink(P_PRINT_LN))
-//    }
-//
-//    @TranslatorMethod(ReadStatementAST::class)
-//    fun transReadStatement(node: ReadStatementAST) {
-//        val instructions = mutableListOf<Line>()
-//        when (node.target.type) {
-//            IntType -> {
-//                defineUtilFuncs(P_READ_INT)
-//                translate(node.target, resultRegister)
-//                addLines(
-//                    Move(R0, resultRegister),
-//                    BranchLink(P_READ_INT)
-//                )
-//            }
-//            // complete remaining types...
-//        }
-//    }
-//
-//    /**
-//     * Per WACC language spec, a if-block matches the grammar "if expr then stat else stat fi"
-//     * The if-then-else block follows the basic implementation as follows:
-//     *
-//     * [Sequence of instructions to test IF condition]
-//     *
-//     * B{cond} else
-//     *
-//     * [Sequence of instructions in THEN block]
-//     *
-//     * B fi
-//     *
-//     * else:
-//     *
-//     * [Sequence of instructions in ELSE block]
-//     *
-//     * fi: ...
-//     */
-//    @TranslatorMethod(IfBlockAST::class)
-//    fun transIfBlock(
-//        stat: IfBlockAST,
-//        resultRegister: Register
-//    ) {
-//        val curLabel = currentLabel
-//
-//        // Add instructions to currentLabel
-//        translate(stat.condExpr, resultRegister)
-//
-//        val elseLabel = newBranchLabel()
-//        val fiLabel = newBranchLabel()
-//
-//        // compare to set condition flags and branch (can be optimised)
-//        addLines(
-//            Compare(resultRegister, ImmediateOperand(0)),
-//            Branch(EQ, BranchLabelOperand(elseLabel))
-//        )
-//
-//        // add sequence of instructions in THEN block under if label
-//        translate(stat, resultRegister)
-//
-//        // add branch to fi label
-//        addLines(
-//            Branch(BranchLabelOperand(fiLabel))
-//        )
-//
-//        // add sequence of instructions in ELSE block under else label
-//        currentLabel = elseLabel
-//        translate(stat.elseBlock, resultRegister)
-//        currentLabel = fiLabel
-//    }
-//
-//    @TranslatorMethod(NewPairAST::class)
-//    fun transNewPair(node: NewPairAST) {
-//        addLines(
-//            LoadWord(R0, ImmediateOperand(2 * WORD)),
-//            BranchLink(MALLOC),
-//            Move(resultRegister, R0)
-//        )
-//
-//        listOf(node.fstExpr, node.sndExpr).forEachIndexed { index, expr ->
-//            // Translate the expression and store it in memory with malloc
-//            resultRegister = resultRegister.nextReg()
-//            translate(expr)
-//            addLines(
-//                LoadWord(R0, ImmediateOperand(expr.type.sizeInBytes())),
-//                BranchLink(MALLOC)
-//            )
-//
-//            // Store the value of the item of the pair in the address received from malloc
-//            addLines(
-//                when (expr.type.sizeInBytes()) {
-//                    WORD -> StoreWord(resultRegister.nextReg(), ZeroOffset(R0))
-//                    else -> StoreByte(resultRegister.nextReg(), ZeroOffset(R0))
-//                }
-//            )
-//
-//            // Store the address of the pair item into the actual pairs memory
-//            addLines(
-//                StoreWord(
-//                    R0,
-//                    if (index == 0) {
-//                        ZeroOffset(resultRegister)
-//                    } else {
-//                        ImmediateOffset(resultRegister, index * WORD)
-//                    }
-//                )
-//            )
-//        }
-//    }
-//
-//    //endregion
-//
-//    //region translateExpr
-//
-//    @TranslatorMethod(IntLiteralAST::class)
-//    private fun translateIntLiteral(node: IntLiteralAST) {
-//        addLines(
-//            LoadWord(resultRegister, ImmediateOperand(node.intValue))
-//        )
-//    }
-//
-//    @TranslatorMethod(BoolLiteralAST::class)
-//    private fun translateBoolLiteral(node: BoolLiteralAST) {
-//        addLines(
-//            Move(resultRegister, ImmediateOperand(node.boolValue))
-//        )
-//    }
-//
-//    @TranslatorMethod(CharLiteralAST::class)
-//    private fun translateCharLiteral(node: CharLiteralAST) {
-//        addLines(
-//            Move(resultRegister, ImmediateOperand(node.charValue))
-//        )
-//    }
-//
-//    @TranslatorMethod(StringLiteralAST::class)
-//    private fun translateStringLiteral(node: StringLiteralAST) {
-//        addLines(
-//            LoadWord(resultRegister, DataLabelOperand(newStringLabel(node.stringValue)))
-//        )
-//    }
-//
-//    @TranslatorMethod(NullPairLiteralAST::class)
-//    private fun translateNullPairLiteral(node: NullPairLiteralAST) {
-//        // TODO
-//    }
-//
-//    @TranslatorMethod(ArrayLiteralAST::class)
-//    private fun transArrayLiteral(node: ArrayLiteralAST) {
-//        val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
-//        currentLabel.addLines(
-//            LoadWord(R0, ImmediateOperand(size)),
-//            BranchLink(MALLOC),
-//            Move(resultRegister, R0)
-//        )
-//        var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
-//        for (expr in node.elems) {
-//            resultRegister = resultRegister.nextReg()
-//            translate(expr)
-//            if (expr.type.sizeInBytes() == 4) {
-//                offset += 4
-//                currentLabel.addLines(
-//                    StoreWord(resultRegister.nextReg(), ImmediateOffset(resultRegister, offset))
-//                )
-//            } else {
-//                offset += 1
-//                currentLabel.addLines(
-//                    StoreByte(resultRegister.nextReg(), ImmediateOffset(resultRegister, offset))
-//                )
-//            }
-//        }
-//        currentLabel.addLines(
-//            LoadWord(resultRegister.nextReg(), ImmediateOperand(node.elems.size)),
-//            StoreWord(resultRegister.nextReg(), ZeroOffset(resultRegister))
-//        )
-//    }
-//
-//    @TranslatorMethod(VariableIdentifierAST::class)
-//    private fun translateVariableIdentifier(node: VariableIdentifierAST) {
-//        addLines(
-//            LoadWord(
-//                SP,
-//                ImmediateOffset(resultRegister, state.getStackPos(node.varName) - sp)
-//            )
-//        )
-//    }
-//
-//    @TranslatorMethod(ArrayElemAST::class)
-//    private fun translateArrayElem(node: ArrayElemAST) {
-//        // TODO
-//    }
-//
-//    @TranslatorMethod(BinaryOpExprAST::class)
-//    private fun transBinOp(expr: BinaryOpExprAST) {
-//        instructions.addAll(transExp(expr.expr1, resultRegister))
-//        instructions.addAll(transExp(expr.expr2, resultRegister.nextReg()))
-//        when {
-//            setOf(
-//                BinaryOp.PLUS,
-//                BinaryOp.MINUS,
-//                BinaryOp.MULT,
-//                BinaryOp.DIV,
-//                BinaryOp.MOD
-//            ).contains(expr.operator) -> {
-//                defineUtilFuncs(
-//                    P_CHECK_DIVIDE_BY_ZERO,
-//                    P_THROW_RUNTIME_ERROR,
-//                    P_PRINT_STRING
-//                )
-//                when (expr.operator) {
-//                    BinaryOp.MULT -> {
-//                        instructions.addAll(listOf(
-//                            Mult(
-//                                updateFlags = true,
-//                                resultRegister,
-//                                resultRegister,
-//                                resultRegister.nextReg()
-//                            )
-////                TODO: use SMULL and check for overflow using schema below
-////                SMULL resultRegister, resultRegister.nextReg(), resultRegister, resultRegister.nextReg()
-////                CMP resultRegister.next(), resultRegister, ASR #31
-////                BLNE p_throw_overflow_error
-//                        ))
-//                    }
-//                    BinaryOp.DIV -> {
-//                        instructions.addAll(listOf(
-//                            Move(R0, resultRegister),
-//                            Move(R1, resultRegister.nextReg()),
-//                            BranchLink(P_CHECK_DIVIDE_BY_ZERO),
-//                            BranchLink(AEABI_IDIV),
-//                            Move(resultRegister, R0))
-//                        )
-//                    }
-//                    BinaryOp.MOD -> {
-//                        instructions.addAll(listOf(
-//                            Move(R0, resultRegister),
-//                            Move(R1, resultRegister.nextReg()),
-//                            BranchLink(P_CHECK_DIVIDE_BY_ZERO),
-//                            BranchLink(AEABI_IDIVMOD),
-//                            Move(resultRegister, R1)
-//                        ))
-//                    }
-//                    BinaryOp.PLUS -> {
-//                        instructions.addAll(listOf(
-//                            Add(true, resultRegister, resultRegister, resultRegister.nextReg()),
-//                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
-//                        ))
-//                    }
-//                    BinaryOp.MINUS -> {
-//                        instructions.addAll(listOf(
-//                            Sub(true, resultRegister, resultRegister, resultRegister.nextReg()),
-//                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
-//                        ))
-//                    }
-//                }
-//            }
-//            setOf(
-//                BinaryOp.GTE,
-//                BinaryOp.LT,
-//                BinaryOp.LTE,
-//                BinaryOp.EQUALS,
-//                BinaryOp.NOT_EQUALS
-//            ).contains(expr.operator) -> {
-//                instructions.addAll(listOf(
-//                    Compare(resultRegister, resultRegister.nextReg())
-//                ))
-//                when (expr.operator) {
-//                    BinaryOp.GT -> {
-//                        instructions.addAll(listOf(
-//                            Move(GT, resultRegister, ImmediateOperand(1)),
-//                            Move(LE, resultRegister, ImmediateOperand(0))
-//                        ))
-//                    }
-//                    BinaryOp.GTE -> {
-//                        instructions.addAll(listOf(
-//                            Move(GE, resultRegister, ImmediateOperand(1)),
-//                            Move(LT, resultRegister, ImmediateOperand(0))
-//                        ))
-//                    }
-//                    BinaryOp.LT -> {
-//                        instructions.addAll(listOf(
-//                            Move(LT, resultRegister, ImmediateOperand(1)),
-//                            Move(GE, resultRegister, ImmediateOperand(0))
-//                        ))
-//                    }
-//                    BinaryOp.LTE -> {
-//                        instructions.addAll(listOf(
-//                            Move(LE, resultRegister, ImmediateOperand(1)),
-//                            Move(GT, resultRegister, ImmediateOperand(0))
-//                        ))
-//                    }
-//                    BinaryOp.EQUALS -> {
-//                        instructions.addAll(listOf(
-//                            Move(EQ, resultRegister, ImmediateOperand(1)),
-//                            Move(NE, resultRegister, ImmediateOperand(0))
-//                        ))
-//                    }
-//                    BinaryOp.NOT_EQUALS -> {
-//                        instructions.addAll(listOf(
-//                            Move(NE, resultRegister, ImmediateOperand(1)),
-//                            Move(EQ, resultRegister, ImmediateOperand(0))
-//                        ))
-//                    }
-//                }
-//            }
-//            expr.operator == BinaryOp.AND -> {
-//                instructions.add(And(resultRegister, resultRegister, resultRegister.nextReg()))
-//            }
-//            expr.operator == BinaryOp.OR -> {
-//                instructions.add(Or(resultRegister, resultRegister, resultRegister.nextReg()))
-//            }
-//        }
-//        return instructions
-//    }
-//
-//    @TranslatorMethod(UnaryOpExprAST::class)
-//    private fun transUnOp(unOpExpr: UnaryOpExprAST) {
-//        instructions.addAll(transExp(unOpExpr.expr, resultRegister))
-//
-//        when (unOpExpr.operator) {
-//            UnaryOp.BANG -> {
-//                instructions.add(Xor(resultRegister, resultRegister, ImmediateOperand(1)))
-//            }
-//            UnaryOp.MINUS -> {
-//                val label1 : String = stringLabelGenerator.generate()
-//                data[label1] = StringData(label1, "DivideByZeroError: divide " +
-//                        "or modulo by zero\\n\\0")
-//                val label2: String = stringLabelGenerator.generate()
-//                data[label2] = StringData(label2, "%.*s\\0")
-//                defineUtilFuncs(
-//                    P_CHECK_DIVIDE_BY_ZERO,
-//                    P_THROW_RUNTIME_ERROR,
-//                    P_PRINT_STRING
-//                )
-//                instructions.addAll(listOf(
-//                    ReverseSub(resultRegister, resultRegister, ImmediateOperand(0)),
-//                    BranchLink(P_THROW_OVERFLOW_ERROR)
-//                ))
-//            }
-//            UnaryOp.LEN -> {
-//                 instructions.add(LoadWord(resultRegister, resultRegister))
-//            }
-//            UnaryOp.ORD -> {
-////                No actions needed since int ~ char
-//            }
-//            UnaryOp.CHR -> {
-////                No actions needed since int ~ char
-//            }
-//        }
-//
-//        return instructions
-//    }
+//        instructions.add(BranchLink("p_" + call.funcName))
+//        instructions.add(Add(SP, SP, ImmediateOperand(spDec)))
+//        instructions.add(Move(resultRegister, R0))
+    }
+
+    @TranslatorMethod(VariableDeclarationAST::class)
+    private fun transVariableDeclaration(node: VariableDeclarationAST) {
+        val instructions = mutableListOf<Line>()
+        sp -= node.varIdent.type.sizeInBytes()
+        state.setStackPos(node.varName, sp)
+        translate(node.rhs, resultRegister)
+        addLines(
+            StoreWord(SP, ImmediateOffset(resultRegister, state.getStackPos(node.varName)))
+        )
+    }
+
+    @TranslatorMethod(AssignToIdentAST::class)
+    private fun transAssignToIdent(node: AssignToIdentAST) {
+        transAssignRhs(node.rhs, resultRegister)
+        addLines(
+            StoreWord(
+                SP,
+                ImmediateOffset(resultRegister, state.getStackPos(node.lhs.varName) - sp)
+            )
+        )
+    }
+
+    // TOOD: Implement
+    @TranslatorMethod(AssignToArrayElemAST::class)
+    private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
+
+    }
+
+    // TODO: Implement
+    @TranslatorMethod(AssignToPairElemAST::class)
+    private fun transAssignToPairElem(node: AssignToPairElemAST) {
+
+    }
+
+    @TranslatorMethod(FstPairElemAST::class)
+    fun transFstPairElem(node: FstPairElemAST) {
+
+    }
+
+    @TranslatorMethod(SndPairElemAST::class)
+    fun transSndPairElem(node: SndPairElemAST) {
+
+    }
+
+    @TranslatorMethod(ElseBlockAST::class)
+    fun transElseBlock(node: ElseBlockAST) {
+
+    }
+
+    @TranslatorMethod(WhileBlockAST::class)
+    fun transWhileBlock(node: WhileBlockAST) {
+
+    }
+
+    @TranslatorMethod(BeginEndBlockAST::class)
+    fun transBeginEndBlock(node: BeginEndBlockAST) {
+
+    }
+
+    @TranslatorMethod(ArrayElemAST::class)
+    fun transArrayElem(node: ArrayElemAST) {
+
+    }
+
+    @TranslatorMethod(ParameterAST::class)
+    fun transParameter(node: ParameterAST) {
+
+    }
+
+    @TranslatorMethod(FreeStatementAST::class)
+    fun transFreeStatement(node: FreeStatementAST) {
+
+    }
+
+    @TranslatorMethod(ReturnStatementAST::class)
+    fun transReturnStatement(node: ReturnStatementAST) {
+
+    }
+
+    @TranslatorMethod(ExitStatementAST::class)
+    fun transExitStatement(node: ExitStatementAST) {
+
+    }
+
+    @TranslatorMethod(PrintStatementAST::class)
+    fun transPrintStatement(node: PrintStatementAST) {
+        translate(node.expr, resultRegister)
+        addLines(
+            Move(R0, resultRegister)
+        )
+        when (node.expr.type) {
+            StringType -> {
+                defineUtilFuncs(P_PRINT_STRING)
+                addLines(BranchLink(P_PRINT_STRING))
+            }
+            CharType -> {
+                addLines(BranchLink(PUTCHAR))
+            }
+            IntType -> {
+                defineUtilFuncs(P_PRINT_INT)
+                addLines(BranchLink(P_PRINT_INT))
+            }
+            BoolType -> {
+                defineUtilFuncs(P_PRINT_BOOL)
+                addLines(BranchLink(P_PRINT_BOOL))
+            }
+            is PairType -> {
+                defineUtilFuncs(P_PRINT_REFERENCE)
+                addLines(BranchLink(P_PRINT_REFERENCE))
+            }
+            is ArrayType -> {
+                defineUtilFuncs(P_PRINT_REFERENCE)
+                addLines(BranchLink(P_PRINT_REFERENCE))
+            }
+        }
+    }
+
+    @TranslatorMethod(PrintlnStatementAST::class)
+    fun transPrintlnStatement(
+        node: PrintlnStatementAST, resultRegister:
+        Register
+    ) {
+        val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
+        transPrintStatement(printStatementAST, resultRegister)
+        addLines(BranchLink(P_PRINT_LN))
+    }
+
+    @TranslatorMethod(ReadStatementAST::class)
+    fun transReadStatement(node: ReadStatementAST) {
+        val instructions = mutableListOf<Line>()
+        when (node.target.type) {
+            IntType -> {
+                defineUtilFuncs(P_READ_INT)
+                translate(node.target, resultRegister)
+                addLines(
+                    Move(R0, resultRegister),
+                    BranchLink(P_READ_INT)
+                )
+            }
+            // complete remaining types...
+        }
+    }
+
+    /**
+     * Per WACC language spec, a if-block matches the grammar "if expr then stat else stat fi"
+     * The if-then-else block follows the basic implementation as follows:
+     *
+     * [Sequence of instructions to test IF condition]
+     *
+     * B{cond} else
+     *
+     * [Sequence of instructions in THEN block]
+     *
+     * B fi
+     *
+     * else:
+     *
+     * [Sequence of instructions in ELSE block]
+     *
+     * fi: ...
+     */
+    @TranslatorMethod(IfBlockAST::class)
+    fun transIfBlock(
+        stat: IfBlockAST,
+        resultRegister: Register
+    ) {
+        val curLabel = currentLabel
+
+        // Add instructions to currentLabel
+        translate(stat.condExpr, resultRegister)
+
+        val elseLabel = newBranchLabel()
+        val fiLabel = newBranchLabel()
+
+        // compare to set condition flags and branch (can be optimised)
+        addLines(
+            Compare(resultRegister, ImmediateOperand(0)),
+            Branch(EQ, BranchLabelOperand(elseLabel))
+        )
+
+        // add sequence of instructions in THEN block under if label
+        translate(stat, resultRegister)
+
+        // add branch to fi label
+        addLines(
+            Branch(BranchLabelOperand(fiLabel))
+        )
+
+        // add sequence of instructions in ELSE block under else label
+        currentLabel = elseLabel
+        translate(stat.elseBlock, resultRegister)
+        currentLabel = fiLabel
+    }
+
+    @TranslatorMethod(NewPairAST::class)
+    fun transNewPair(node: NewPairAST) {
+        addLines(
+            LoadWord(R0, ImmediateOperand(2 * WORD)),
+            BranchLink(MALLOC),
+            Move(resultRegister, R0)
+        )
+
+        listOf(node.fstExpr, node.sndExpr).forEachIndexed { index, expr ->
+            // Translate the expression and store it in memory with malloc
+            resultRegister = resultRegister.nextReg()
+            translate(expr)
+            addLines(
+                LoadWord(R0, ImmediateOperand(expr.type.sizeInBytes())),
+                BranchLink(MALLOC)
+            )
+
+            // Store the value of the item of the pair in the address received from malloc
+            addLines(
+                when (expr.type.sizeInBytes()) {
+                    WORD -> StoreWord(resultRegister.nextReg(), ZeroOffset(R0))
+                    else -> StoreByte(resultRegister.nextReg(), ZeroOffset(R0))
+                }
+            )
+
+            // Store the address of the pair item into the actual pairs memory
+            addLines(
+                StoreWord(
+                    R0,
+                    if (index == 0) {
+                        ZeroOffset(resultRegister)
+                    } else {
+                        ImmediateOffset(resultRegister, index * WORD)
+                    }
+                )
+            )
+        }
+    }
+
+    //endregion
+
+    //region translateExpr
+
+    @TranslatorMethod(IntLiteralAST::class)
+    private fun translateIntLiteral(node: IntLiteralAST) {
+        addLines(
+            LoadWord(resultRegister, ImmediateOperand(node.intValue))
+        )
+    }
+
+    @TranslatorMethod(BoolLiteralAST::class)
+    private fun translateBoolLiteral(node: BoolLiteralAST) {
+        addLines(
+            Move(resultRegister, ImmediateOperand(node.boolValue))
+        )
+    }
+
+    @TranslatorMethod(CharLiteralAST::class)
+    private fun translateCharLiteral(node: CharLiteralAST) {
+        addLines(
+            Move(resultRegister, ImmediateOperand(node.charValue))
+        )
+    }
+
+    @TranslatorMethod(StringLiteralAST::class)
+    private fun translateStringLiteral(node: StringLiteralAST) {
+        addLines(
+            LoadWord(resultRegister, DataLabelOperand(newStringLabel(node.stringValue)))
+        )
+    }
+
+    @TranslatorMethod(NullPairLiteralAST::class)
+    private fun translateNullPairLiteral(node: NullPairLiteralAST) {
+        // TODO
+    }
+
+    @TranslatorMethod(ArrayLiteralAST::class)
+    private fun transArrayLiteral(node: ArrayLiteralAST) {
+        val size = 4 + (node.elems.size * (node.elems[0].type.sizeInBytes())) // calculate bytes need to malloc
+        currentLabel.addLines(
+            LoadWord(R0, ImmediateOperand(size)),
+            BranchLink(MALLOC),
+            Move(resultRegister, R0)
+        )
+        var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
+        for (expr in node.elems) {
+            resultRegister = resultRegister.nextReg()
+            translate(expr)
+            if (expr.type.sizeInBytes() == 4) {
+                offset += 4
+                currentLabel.addLines(
+                    StoreWord(resultRegister.nextReg(), ImmediateOffset(resultRegister, offset))
+                )
+            } else {
+                offset += 1
+                currentLabel.addLines(
+                    StoreByte(resultRegister.nextReg(), ImmediateOffset(resultRegister, offset))
+                )
+            }
+        }
+        currentLabel.addLines(
+            LoadWord(resultRegister.nextReg(), ImmediateOperand(node.elems.size)),
+            StoreWord(resultRegister.nextReg(), ZeroOffset(resultRegister))
+        )
+    }
+
+    @TranslatorMethod(VariableIdentifierAST::class)
+    private fun translateVariableIdentifier(node: VariableIdentifierAST) {
+        addLines(
+            LoadWord(
+                SP,
+                ImmediateOffset(resultRegister, state.getStackPos(node.varName) - sp)
+            )
+        )
+    }
+
+    @TranslatorMethod(ArrayElemAST::class)
+    private fun translateArrayElem(node: ArrayElemAST) {
+        // TODO
+    }
+
+    @TranslatorMethod(BinaryOpExprAST::class)
+    private fun transBinOp(expr: BinaryOpExprAST) {
+        instructions.addAll(transExp(expr.expr1, resultRegister))
+        instructions.addAll(transExp(expr.expr2, resultRegister.nextReg()))
+        when {
+            setOf(
+                BinaryOp.PLUS,
+                BinaryOp.MINUS,
+                BinaryOp.MULT,
+                BinaryOp.DIV,
+                BinaryOp.MOD
+            ).contains(expr.operator) -> {
+                defineUtilFuncs(
+                    P_CHECK_DIVIDE_BY_ZERO,
+                    P_THROW_RUNTIME_ERROR,
+                    P_PRINT_STRING
+                )
+                when (expr.operator) {
+                    BinaryOp.MULT -> {
+                        instructions.addAll(listOf(
+                            Mult(
+                                updateFlags = true,
+                                resultRegister,
+                                resultRegister,
+                                resultRegister.nextReg()
+                            )
+//                TODO: use SMULL and check for overflow using schema below
+//                SMULL resultRegister, resultRegister.nextReg(), resultRegister, resultRegister.nextReg()
+//                CMP resultRegister.next(), resultRegister, ASR #31
+//                BLNE p_throw_overflow_error
+                        ))
+                    }
+                    BinaryOp.DIV -> {
+                        instructions.addAll(listOf(
+                            Move(R0, resultRegister),
+                            Move(R1, resultRegister.nextReg()),
+                            BranchLink(P_CHECK_DIVIDE_BY_ZERO),
+                            BranchLink(AEABI_IDIV),
+                            Move(resultRegister, R0))
+                        )
+                    }
+                    BinaryOp.MOD -> {
+                        instructions.addAll(listOf(
+                            Move(R0, resultRegister),
+                            Move(R1, resultRegister.nextReg()),
+                            BranchLink(P_CHECK_DIVIDE_BY_ZERO),
+                            BranchLink(AEABI_IDIVMOD),
+                            Move(resultRegister, R1)
+                        ))
+                    }
+                    BinaryOp.PLUS -> {
+                        instructions.addAll(listOf(
+                            Add(true, resultRegister, resultRegister, resultRegister.nextReg()),
+                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
+                        ))
+                    }
+                    BinaryOp.MINUS -> {
+                        instructions.addAll(listOf(
+                            Sub(true, resultRegister, resultRegister, resultRegister.nextReg()),
+                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
+                        ))
+                    }
+                }
+            }
+            setOf(
+                BinaryOp.GTE,
+                BinaryOp.LT,
+                BinaryOp.LTE,
+                BinaryOp.EQUALS,
+                BinaryOp.NOT_EQUALS
+            ).contains(expr.operator) -> {
+                instructions.addAll(listOf(
+                    Compare(resultRegister, resultRegister.nextReg())
+                ))
+                when (expr.operator) {
+                    BinaryOp.GT -> {
+                        instructions.addAll(listOf(
+                            Move(GT, resultRegister, ImmediateOperand(1)),
+                            Move(LE, resultRegister, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.GTE -> {
+                        instructions.addAll(listOf(
+                            Move(GE, resultRegister, ImmediateOperand(1)),
+                            Move(LT, resultRegister, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.LT -> {
+                        instructions.addAll(listOf(
+                            Move(LT, resultRegister, ImmediateOperand(1)),
+                            Move(GE, resultRegister, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.LTE -> {
+                        instructions.addAll(listOf(
+                            Move(LE, resultRegister, ImmediateOperand(1)),
+                            Move(GT, resultRegister, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.EQUALS -> {
+                        instructions.addAll(listOf(
+                            Move(EQ, resultRegister, ImmediateOperand(1)),
+                            Move(NE, resultRegister, ImmediateOperand(0))
+                        ))
+                    }
+                    BinaryOp.NOT_EQUALS -> {
+                        instructions.addAll(listOf(
+                            Move(NE, resultRegister, ImmediateOperand(1)),
+                            Move(EQ, resultRegister, ImmediateOperand(0))
+                        ))
+                    }
+                }
+            }
+            expr.operator == BinaryOp.AND -> {
+                instructions.add(And(resultRegister, resultRegister, resultRegister.nextReg()))
+            }
+            expr.operator == BinaryOp.OR -> {
+                instructions.add(Or(resultRegister, resultRegister, resultRegister.nextReg()))
+            }
+        }
+        return instructions
+    }
+
+    @TranslatorMethod(UnaryOpExprAST::class)
+    private fun transUnOp(unOpExpr: UnaryOpExprAST) {
+        instructions.addAll(transExp(unOpExpr.expr, resultRegister))
+
+        when (unOpExpr.operator) {
+            UnaryOp.BANG -> {
+                instructions.add(Xor(resultRegister, resultRegister, ImmediateOperand(1)))
+            }
+            UnaryOp.MINUS -> {
+                val label1 : String = stringLabelGenerator.generate()
+                data[label1] = StringData(label1, "DivideByZeroError: divide " +
+                        "or modulo by zero\\n\\0")
+                val label2: String = stringLabelGenerator.generate()
+                data[label2] = StringData(label2, "%.*s\\0")
+                defineUtilFuncs(
+                    P_CHECK_DIVIDE_BY_ZERO,
+                    P_THROW_RUNTIME_ERROR,
+                    P_PRINT_STRING
+                )
+                instructions.addAll(listOf(
+                    ReverseSub(resultRegister, resultRegister, ImmediateOperand(0)),
+                    BranchLink(P_THROW_OVERFLOW_ERROR)
+                ))
+            }
+            UnaryOp.LEN -> {
+                 instructions.add(LoadWord(resultRegister, resultRegister))
+            }
+            UnaryOp.ORD -> {
+//                No actions needed since int ~ char
+            }
+            UnaryOp.CHR -> {
+//                No actions needed since int ~ char
+            }
+        }
+
+        return instructions
+    }
 
     //endregion
 
