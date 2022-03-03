@@ -3,6 +3,7 @@ package ic.doc.group15.codegen
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.WORD
 import ic.doc.group15.ast.*
+import ic.doc.group15.ast.BinaryOp.*
 import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIV
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
@@ -13,6 +14,8 @@ import ic.doc.group15.codegen.assembly.UtilFunction.*
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
 import ic.doc.group15.codegen.assembly.instruction.Directive.Companion.LTORG
+import ic.doc.group15.codegen.assembly.instruction.ConditionCode.GT
+import ic.doc.group15.codegen.assembly.instruction.ConditionCode.LT
 import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.ArrayType
@@ -104,6 +107,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      */
     @TranslatorMethod(AST::class)
     private fun transProgram(program: AST) {
+        resultRegister = R4
         val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
         // translate all function blocks into assembly
@@ -138,7 +142,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         // TODO: issue - interdependence of statements to be addressed
         // TODO: setup and unwind stack
         // setupStack()
-        node.statements.map { s -> transStat(s, R4) }
+        node.statements.map { s -> translate(s) }
         // unwindStack()
 
         // Housekeeping
@@ -168,10 +172,9 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(VariableDeclarationAST::class)
     private fun transVariableDeclaration(node: VariableDeclarationAST) {
-        val instructions = mutableListOf<Line>()
         sp -= node.varIdent.type.sizeInBytes()
         state.setStackPos(node.varName, sp)
-        translate(node.rhs, resultRegister)
+        translate(node.rhs)
         addLines(
             StoreWord(SP, ImmediateOffset(resultRegister, state.getStackPos(node.varName)))
         )
@@ -179,7 +182,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(AssignToIdentAST::class)
     private fun transAssignToIdent(node: AssignToIdentAST) {
-        translate(node.rhs, resultRegister)
+        translate(node.rhs)
         addLines(
             StoreWord(
                 SP,
@@ -191,13 +194,12 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     @TranslatorMethod(AssignToPairElemAST::class)
     private fun transAssignToPairElem(node: AssignToPairElemAST) {
         val instructions: MutableList<Line> = mutableListOf()
-        instructions.addAll(transAssignRhs(node.rhs, resultRegister))
+        translate(node.rhs)
 //        TODO: calculate pairStackOffset instead of assuming it's 0
         val pairStackOffset = 0
         val storeInstruction = when (node.rhs.type.sizeInBytes()) {
             1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
-            else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg
-                ()))
+            else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
         }
         instructions.addAll(listOf(
             LoadWord(resultRegister.nextReg(), ImmediateOffset(SP, pairStackOffset)),
@@ -210,9 +212,8 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     }
 
     @TranslatorMethod(AssignToArrayElemAST::class)
-    private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
-        val instructions: MutableList<Line> = mutableListOf()
-        instructions.addAll(transAssignRhs(node.rhs, resultRegister))
+    fun transAssignToArrayElem(node: AssignToArrayElemAST) {
+        translate(node.rhs)
         val arrayElemAST = node.lhs as ArrayElemAST
         val symbolTable = arrayElemAST.symbolTable
         val arrayName = arrayElemAST.arrayName
@@ -224,41 +225,40 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             .map { evaluateIntExpr(it) }
         val hardcodedNum1 = 4
         val hardcodedNum2 = 2
-        instructions.add(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
+        addLines(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
         for (arrayIndex in evaluatedIndexLst) {
-            instructions.addAll(
-                listOf(
-                    LoadWord(
-                        resultRegister.nextReg().nextReg(),
-                        ImmediateOperand(arrayIndex)
-                    ),
-                    LoadWord(
-                        resultRegister.nextReg(),
-                        ZeroOffset(resultRegister.nextReg())
-                    ),
-                    Move(R0, resultRegister.nextReg().nextReg()),
-                    Move(R1, resultRegister.nextReg().nextReg()),
-                    BranchLink(P_CHECK_ARRAY_BOUNDS),
-                    Add(
-                        resultRegister.nextReg(),
-                        resultRegister.nextReg(),
-                        ImmediateOperand
-                            (hardcodedNum1)
-                    ),
-                    Add(
-                        resultRegister.nextReg(),
-                        resultRegister.nextReg(),
+            addLines(
+                LoadWord(
+                    resultRegister.nextReg().nextReg(),
+                    ImmediateOperand(arrayIndex)
+                ),
+                LoadWord(
+                    resultRegister.nextReg(),
+                    ZeroOffset(resultRegister.nextReg())
+                ),
+                Move(R0, resultRegister.nextReg().nextReg()),
+                Move(R1, resultRegister.nextReg().nextReg()),
+                BranchLink(P_CHECK_ARRAY_BOUNDS),
+                Add(
+                    resultRegister.nextReg(),
+                    resultRegister.nextReg(),
+                    ImmediateOperand
+                        (hardcodedNum1)
+                ),
+                Add(
+                    resultRegister.nextReg(),
+                    resultRegister.nextReg(),
 //                        Sometimes LSL is performed, sometimes not - I don't
 //                        know what it depends on
 //                        TODO: perform LSL only when needed
-                        LogicalShiftLeft
-                            (resultRegister.nextReg().nextReg(), hardcodedNum2)
-                    )
+                    LogicalShiftLeft
+                        (resultRegister.nextReg().nextReg(), hardcodedNum2)
                 )
             )
         }
-        instructions.add(StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg())))
-        return instructions
+        addLines(
+            StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
+        )
     }
 
     @TranslatorMethod(FstPairElemAST::class)
@@ -303,13 +303,11 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         // Translate block statements and add to loop label
         // TODO: issue - interdependence of statements to be addressed
         currentLabel = loopLabel
-        node.statements.forEach { s -> translate(s, resultRegister) }
-        // TODO: the statements should have to setup stack and unwind stack
-        text[currentLabel.name] = currentLabel
+        node.statements.forEach { translate(it) }
 
         // Translate condition statements and add to check label
         currentLabel = checkLabel
-        translate(node.condExpr, resultRegister)
+        translate(node.condExpr)
 
         // Add compare and branch instruction
         currentLabel.addLines(
@@ -333,25 +331,16 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     }
 
-    @TranslatorMethod(ReturnStatementAST::class)
-    fun transReturnStatement(node: ReturnStatementAST) {
-
-    }
-
-    @TranslatorMethod(ExitStatementAST::class)
-    fun transExitStatement(node: ExitStatementAST) {
-
-    }
-
     /**
-     * Per WACC language spec, a return statement has the format "return x". It can
+     * return statements have the format "return x". It can
      * only exist in a body of a non-main function and is used to return a value from
      * that function.
      */
-    fun transReturnStatement(node: ReturnStatementAST, resultReg: Register) {
-        translate(node.expr, resultReg)
+    @TranslatorMethod(ReturnStatementAST::class)
+    fun transReturnStatement(node: ReturnStatementAST) {
+        translate(node.expr)
         addLines(
-            Move(R0, resultReg),
+            Move(R0, resultRegister),
             Pop(PC)
         )
     }
@@ -360,17 +349,18 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
      * Per WACC language spec, exit statements have the format "exit x", where x is
      * an exit code of type int in range [0, 255].
      */
-    fun transExitStatement(node: ExitStatementAST, resultReg: Register) {
-        translate(node.expr, resultReg)
+    @TranslatorMethod(ExitStatementAST::class)
+    fun transExitStatement(node: ExitStatementAST) {
+        translate(node.expr)
         addLines(
-            Move(R0, resultReg),
+            Move(R0, resultRegister),
             BranchLink(EXIT)
         )
     }
 
     @TranslatorMethod(PrintStatementAST::class)
     fun transPrintStatement(node: PrintStatementAST) {
-        translate(node.expr, resultRegister)
+        translate(node.expr)
         addLines(
             Move(R0, resultRegister)
         )
@@ -404,7 +394,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     @TranslatorMethod(PrintlnStatementAST::class)
     fun transPrintlnStatement(node: PrintlnStatementAST, resultRegister: Register) {
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
-        transPrintStatement(printStatementAST, resultRegister)
+        transPrintStatement(printStatementAST)
         addLines(BranchLink(P_PRINT_LN))
     }
 
@@ -423,7 +413,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         when (node.target.type) {
             IntType -> {
                 defineUtilFuncs(P_READ_INT)
-                translate(node.target, resultRegister)
+                translate(node.target)
                 addLines(
                     Move(R0, resultRegister),
                     BranchLink(P_READ_INT)
@@ -431,7 +421,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             }
             CharType -> {
                 defineUtilFuncs(P_READ_CHAR)
-                translate(node.target, resultRegister)
+                translate(node.target)
                 addLines(
                     Move(R0, resultRegister),
                     BranchLink(P_READ_CHAR)
@@ -467,7 +457,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         val curLabel = currentLabel
 
         // Add instructions to currentLabel
-        translate(stat.condExpr, resultRegister)
+        translate(stat.condExpr)
 
         val elseLabel = newBranchLabel()
         val fiLabel = newBranchLabel()
@@ -479,7 +469,7 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         )
 
         // add sequence of instructions in THEN block under if label
-        translate(stat, resultRegister)
+        translate(stat)
 
         // add branch to fi label
         addLines(
@@ -635,24 +625,19 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(BinaryOpExprAST::class)
     private fun transBinOp(expr: BinaryOpExprAST) {
-        instructions.addAll(transExp(expr.expr1, resultRegister))
-        instructions.addAll(transExp(expr.expr2, resultRegister.nextReg()))
-        when {
-            setOf(
-                BinaryOp.PLUS,
-                BinaryOp.MINUS,
-                BinaryOp.MULT,
-                BinaryOp.DIV,
-                BinaryOp.MOD
-            ).contains(expr.operator) -> {
+        translate(expr.expr1)
+        resultRegister = resultRegister.nextReg()
+        translate(expr.expr2)
+        when (expr.operator) {
+            PLUS, MINUS, MULT, DIV, MOD -> {
                 defineUtilFuncs(
                     P_CHECK_DIVIDE_BY_ZERO,
                     P_THROW_RUNTIME_ERROR,
                     P_PRINT_STRING
                 )
                 when (expr.operator) {
-                    BinaryOp.MULT -> {
-                        instructions.addAll(listOf(
+                    MULT -> {
+                        addLines(
                             Mult(
                                 updateFlags = true,
                                 resultRegister,
@@ -663,106 +648,101 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 //                SMULL resultRegister, resultRegister.nextReg(), resultRegister, resultRegister.nextReg()
 //                CMP resultRegister.next(), resultRegister, ASR #31
 //                BLNE p_throw_overflow_error
-                        ))
+                        )
                     }
-                    BinaryOp.DIV -> {
-                        instructions.addAll(listOf(
+                    DIV -> {
+                        addLines(
                             Move(R0, resultRegister),
                             Move(R1, resultRegister.nextReg()),
                             BranchLink(P_CHECK_DIVIDE_BY_ZERO),
                             BranchLink(AEABI_IDIV),
-                            Move(resultRegister, R0))
+                            Move(resultRegister, R0)
                         )
                     }
-                    BinaryOp.MOD -> {
-                        instructions.addAll(listOf(
+                    MOD -> {
+                        addLines(
                             Move(R0, resultRegister),
                             Move(R1, resultRegister.nextReg()),
                             BranchLink(P_CHECK_DIVIDE_BY_ZERO),
                             BranchLink(AEABI_IDIVMOD),
                             Move(resultRegister, R1)
-                        ))
+                        )
                     }
-                    BinaryOp.PLUS -> {
-                        instructions.addAll(listOf(
+                    PLUS -> {
+                        addLines(
                             Add(true, resultRegister, resultRegister, resultRegister.nextReg()),
                             BranchLink(V, P_THROW_OVERFLOW_ERROR)
-                        ))
+                        )
                     }
-                    BinaryOp.MINUS -> {
-                        instructions.addAll(listOf(
+                    MINUS -> {
+                        addLines(
                             Sub(true, resultRegister, resultRegister, resultRegister.nextReg()),
                             BranchLink(V, P_THROW_OVERFLOW_ERROR)
-                        ))
+                        )
                     }
                 }
             }
-            setOf(
-                BinaryOp.GTE,
-                BinaryOp.LT,
-                BinaryOp.LTE,
-                BinaryOp.EQUALS,
-                BinaryOp.NOT_EQUALS
-            ).contains(expr.operator) -> {
-                instructions.addAll(listOf(
+            BinaryOp.GT, GTE, BinaryOp.LT, LTE, EQUALS, NOT_EQUALS -> {
+                addLines(
                     Compare(resultRegister, resultRegister.nextReg())
-                ))
+                )
                 when (expr.operator) {
                     BinaryOp.GT -> {
-                        instructions.addAll(listOf(
+                        addLines(
                             Move(GT, resultRegister, ImmediateOperand(1)),
                             Move(LE, resultRegister, ImmediateOperand(0))
-                        ))
+                        )
                     }
-                    BinaryOp.GTE -> {
-                        instructions.addAll(listOf(
+                    GTE -> {
+                        addLines(
                             Move(GE, resultRegister, ImmediateOperand(1)),
                             Move(LT, resultRegister, ImmediateOperand(0))
-                        ))
+                        )
                     }
                     BinaryOp.LT -> {
-                        instructions.addAll(listOf(
+                        addLines(
                             Move(LT, resultRegister, ImmediateOperand(1)),
                             Move(GE, resultRegister, ImmediateOperand(0))
-                        ))
+                        )
                     }
-                    BinaryOp.LTE -> {
-                        instructions.addAll(listOf(
+                    LTE -> {
+                        addLines(
                             Move(LE, resultRegister, ImmediateOperand(1)),
                             Move(GT, resultRegister, ImmediateOperand(0))
-                        ))
+                        )
                     }
-                    BinaryOp.EQUALS -> {
-                        instructions.addAll(listOf(
+                    EQUALS -> {
+                        addLines(
                             Move(EQ, resultRegister, ImmediateOperand(1)),
                             Move(NE, resultRegister, ImmediateOperand(0))
-                        ))
+                        )
                     }
-                    BinaryOp.NOT_EQUALS -> {
-                        instructions.addAll(listOf(
+                    NOT_EQUALS -> {
+                        addLines(
                             Move(NE, resultRegister, ImmediateOperand(1)),
                             Move(EQ, resultRegister, ImmediateOperand(0))
-                        ))
+                        )
                     }
                 }
             }
-            expr.operator == BinaryOp.AND -> {
-                instructions.add(And(resultRegister, resultRegister, resultRegister.nextReg()))
+            AND -> {
+                addLines(And(resultRegister, resultRegister, resultRegister.nextReg()))
             }
-            expr.operator == BinaryOp.OR -> {
-                instructions.add(Or(resultRegister, resultRegister, resultRegister.nextReg()))
+            OR -> {
+                addLines(Or(resultRegister, resultRegister, resultRegister.nextReg()))
             }
         }
-        return instructions
     }
 
     @TranslatorMethod(UnaryOpExprAST::class)
     private fun transUnOp(unOpExpr: UnaryOpExprAST) {
-        instructions.addAll(transExp(unOpExpr.expr, resultRegister))
+        translate(unOpExpr.expr)
 
         when (unOpExpr.operator) {
             UnaryOp.BANG -> {
-                instructions.add(Xor(resultRegister, resultRegister, ImmediateOperand(1)))
+                addLines(
+                    Xor(resultRegister, resultRegister, ImmediateOperand(1))
+                )
             }
             UnaryOp.MINUS -> {
                 defineUtilFuncs(
@@ -770,13 +750,15 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                     P_THROW_RUNTIME_ERROR,
                     P_PRINT_STRING
                 )
-                instructions.addAll(listOf(
+                addLines(
                     ReverseSub(resultRegister, resultRegister, ImmediateOperand(0)),
                     BranchLink(P_THROW_OVERFLOW_ERROR)
-                ))
+                )
             }
             UnaryOp.LEN -> {
-                 instructions.add(LoadWord(resultRegister, resultRegister))
+                 addLines(
+                     LoadWord(resultRegister, resultRegister)
+                 )
             }
             UnaryOp.ORD -> {
 //                No actions needed since int ~ char
@@ -785,8 +767,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 //                No actions needed since int ~ char
             }
         }
-
-        return instructions
     }
 
     //endregion
@@ -888,5 +868,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         }
         throw Error("Should not get here")
     }
+
     //endregion
 }
