@@ -1,5 +1,6 @@
 package ic.doc.group15.codegen
 
+import ic.doc.group15.BYTE
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.WORD
 import ic.doc.group15.ast.*
@@ -339,10 +340,43 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(FstPairElemAST::class)
     fun transFstPairElem(node: FstPairElemAST) {
+//        TODO: calculate offset
+        val pairPointerOffset = 0
+        val loadInstruction = if (node.pairExpr.type.sizeInBytes() == BYTE) {
+            LoadByte(resultRegister, ZeroOffset
+                (resultRegister))
+        } else {
+            LoadWord(resultRegister, ZeroOffset
+                (resultRegister))
+        }
+        addLines(
+            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
+            Move(R0, resultRegister),
+            BranchLink(P_CHECK_NULL_POINTER),
+            LoadWord(resultRegister, ZeroOffset(resultRegister)),
+            loadInstruction
+        )
     }
 
     @TranslatorMethod(SndPairElemAST::class)
     fun transSndPairElem(node: SndPairElemAST) {
+//        TODO: calculate offset
+        val pairPointerOffset = 0
+        val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.sizeInBytes()
+        val loadInstruction = if (node.pairExpr.type.sizeInBytes() == BYTE) {
+            LoadByte(resultRegister, ZeroOffset
+                (resultRegister))
+        } else {
+            LoadWord(resultRegister, ZeroOffset
+                (resultRegister))
+        }
+        addLines(
+            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
+            Move(R0, resultRegister),
+            BranchLink(P_CHECK_NULL_POINTER),
+            LoadWord(resultRegister, ImmediateOffset(resultRegister, sizeOfFstElem)),
+            loadInstruction
+        )
     }
 
     /**
@@ -395,12 +429,9 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         node.statements.forEach { translate(it) }
     }
 
-    @TranslatorMethod(ArrayElemAST::class)
-    fun transArrayElem(node: ArrayElemAST) {
-    }
-
     @TranslatorMethod(FreeStatementAST::class)
     fun transFreeStatement(node: FreeStatementAST) {
+//        TODO
     }
 
     /**
@@ -627,7 +658,11 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(NullPairLiteralAST::class)
     private fun translateNullPairLiteral(node: NullPairLiteralAST) {
-        // TODO
+//        TODO: Calculate SP offset instead of assuming it's 0
+        val stackPointerOffset = 0
+        addLines(
+            LoadWord(resultRegister, ImmediateOffset(SP, stackPointerOffset))
+        )
     }
 
     @TranslatorMethod(ArrayLiteralAST::class)
@@ -715,11 +750,12 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                                 resultRegister,
                                 resultRegister,
                                 resultRegister.nextReg()
-                            )
-//                TODO: use SMULL and check for overflow using schema below
-//                SMULL resultRegister, resultRegister.nextReg(), resultRegister, resultRegister.nextReg()
-//                CMP resultRegister.next(), resultRegister, ASR #31
-//                BLNE p_throw_overflow_error
+                            ),
+//                            TODO: use SMULL using schema below
+//                             SMULL resultRegister, resultRegister.nextReg(), resultRegister, resultRegister.nextReg()
+                            Compare(resultRegister.nextReg(),
+                                ArithmeticShiftRight(resultRegister, 31)),
+                            BranchLink(NE, P_THROW_OVERFLOW_ERROR)
                         )
                     }
                     DIV -> {
