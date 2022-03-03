@@ -25,6 +25,18 @@ enum class UtilFunction {
             )
         }
     },
+    P_READ_CHAR {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Move(R1, R0),
+                LoadWord(R0, generateStringData("%c")),
+                Add(R0, R0, ImmediateOperand(4)),
+                BranchLink(SCANF),
+                Pop(PC)
+            )
+        }
+    },
     P_CHECK_DIVIDE_BY_ZERO {
         override val assembly by lazy {
             listOf(

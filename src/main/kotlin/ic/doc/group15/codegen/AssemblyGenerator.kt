@@ -5,6 +5,7 @@ import ic.doc.group15.ast.*
 import ic.doc.group15.codegen.assembly.*
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIV
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.MALLOC
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTCHAR
 import ic.doc.group15.codegen.assembly.UtilFunction.*
@@ -372,12 +373,19 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
+    /**
+     * Per WACC language spec, exit statements have the format "exit x", where x is
+     * an exit code of type int in range [0, 255].
+     */
     fun transExitStatement(
         node: ExitStatementAST, resultReg:
         Register
     ): List<Line> {
-//        TODO
-        return emptyList()
+        return transExp(node.expr, resultReg) +
+                listOf(
+                    Move(R0, resultReg),
+                    BranchLink(EXIT)
+                )
     }
 
     fun transPrintStatement(
@@ -426,7 +434,16 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         return emptyList()
     }
 
-    // generates the assembly code for an ReadStatementAST node and returns the list of instructions
+    /**
+     * Per WACC language spec, a read statement follows the grammar "read x", where x
+     * is either of character or integer type.
+     *
+     * If the input is of type int, then it will convert the input string into an integer
+     * (truncated to fit within the minimum/maximum range of the int type). If the standard
+     * input value is incompatible with the type of the target, then this value will not be
+     * consumed from the standard input stream. Instead, the program will continue, leaving
+     * the target's value unchanged.
+     */
     fun transReadStatement(node: ReadStatementAST, resultReg: Register): List<Line> {
         val instructions = mutableListOf<Line>()
         when (node.target.type) {
@@ -436,7 +453,13 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 instructions.add(Move(R0, resultReg))
                 instructions.add(BranchLink(P_READ_INT))
             }
-            // complete remaining types...
+            CharType -> {
+                defineUtilFuncs(P_READ_CHAR)
+                instructions.addAll(transExp(node.target, resultReg))
+                instructions.add(Move(R0, resultReg))
+                instructions.add(BranchLink(P_READ_CHAR))
+            }
+            else -> throw IllegalArgumentException("Read does not support input of type ${node.target.type}")
         }
         return instructions
     }
