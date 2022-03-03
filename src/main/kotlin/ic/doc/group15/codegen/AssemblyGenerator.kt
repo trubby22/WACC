@@ -1,7 +1,6 @@
 package ic.doc.group15.codegen
 
 import ic.doc.group15.BYTE
-import ic.doc.group15.SymbolTable
 import ic.doc.group15.WORD
 import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
@@ -137,7 +136,6 @@ class AssemblyGenerator(private val ast: AST) {
      */
     private fun functionEpilogue(node: FunctionDeclarationAST) {
         addLines(
-            if (node.funcName == "main")
             Pop(PC),
             LTORG
         )
