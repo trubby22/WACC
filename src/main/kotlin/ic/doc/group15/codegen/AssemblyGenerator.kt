@@ -4,7 +4,7 @@ import ic.doc.group15.SymbolTable
 import ic.doc.group15.WORD
 import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
-import ic.doc.group15.codegen.assembly.*
+import ic.doc.group15.codegen.assembly.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIV
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
@@ -13,9 +13,9 @@ import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTCHAR
 import ic.doc.group15.codegen.assembly.UtilFunction.*
 import ic.doc.group15.codegen.assembly.instruction.*
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
-import ic.doc.group15.codegen.assembly.instruction.Directive.Companion.LTORG
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.GT
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.LT
+import ic.doc.group15.codegen.assembly.instruction.Directive.Companion.LTORG
 import ic.doc.group15.codegen.assembly.operand.*
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.ArrayType
@@ -32,7 +32,7 @@ private typealias TranslatorMapPair = Pair<KClass<out ASTNode>, KCallable<*>>
 
 class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
-    private val state : State = State()
+    private val state: State = State()
 
     private var sp: Int = START_VAL - 1
 
@@ -193,7 +193,6 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(AssignToPairElemAST::class)
     private fun transAssignToPairElem(node: AssignToPairElemAST) {
-        val instructions: MutableList<Line> = mutableListOf()
         translate(node.rhs)
 //        TODO: calculate pairStackOffset instead of assuming it's 0
         val pairStackOffset = 0
@@ -201,14 +200,19 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
             1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
             else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
         }
-        instructions.addAll(listOf(
+        addLines(
             LoadWord(resultRegister.nextReg(), ImmediateOffset(SP, pairStackOffset)),
             Move(R0, resultRegister.nextReg()),
             BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(resultRegister.nextReg(), ZeroOffset(resultRegister
-                .nextReg())),
+            LoadWord(
+                resultRegister.nextReg(),
+                ZeroOffset(
+                    resultRegister
+                        .nextReg()
+                )
+            ),
             storeInstruction
-        ))
+        )
     }
 
     @TranslatorMethod(AssignToArrayElemAST::class)
@@ -227,31 +231,31 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
         for (indexExpr in arrayElemAST.indexExpr) {
             addLines(translate(indexExpr) as List<Instruction>)
             addLines(
-                    LoadWord(
-                        resultRegister.nextReg().nextReg(),
-                        resultRegister.nextReg().nextReg()
-                    ),
-                    LoadWord(
-                        resultRegister.nextReg(),
-                        ZeroOffset(resultRegister.nextReg())
-                    ),
-                    Move(R0, resultRegister.nextReg().nextReg()),
-                    Move(R1, resultRegister.nextReg().nextReg()),
-                    BranchLink(P_CHECK_ARRAY_BOUNDS),
-                    Add(
-                        resultRegister.nextReg(),
-                        resultRegister.nextReg(),
-                        ImmediateOperand
-                            (hardcodedNum1)
-                    ),
-                    Add(
-                        resultRegister.nextReg(),
-                        resultRegister.nextReg(),
+                LoadWord(
+                    resultRegister.nextReg().nextReg(),
+                    resultRegister.nextReg().nextReg()
+                ),
+                LoadWord(
+                    resultRegister.nextReg(),
+                    ZeroOffset(resultRegister.nextReg())
+                ),
+                Move(R0, resultRegister.nextReg().nextReg()),
+                Move(R1, resultRegister.nextReg().nextReg()),
+                BranchLink(P_CHECK_ARRAY_BOUNDS),
+                Add(
+                    resultRegister.nextReg(),
+                    resultRegister.nextReg(),
+                    ImmediateOperand
+                    (hardcodedNum1)
+                ),
+                Add(
+                    resultRegister.nextReg(),
+                    resultRegister.nextReg(),
 //                        Sometimes LSL is performed, sometimes not - I don't
 //                        know what it depends on
 //                        TODO: perform LSL only when needed
                     LogicalShiftLeft
-                        (resultRegister.nextReg().nextReg(), hardcodedNum2)
+                    (resultRegister.nextReg().nextReg(), hardcodedNum2)
                 )
             )
         }
@@ -262,12 +266,10 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(FstPairElemAST::class)
     fun transFstPairElem(node: FstPairElemAST) {
-
     }
 
     @TranslatorMethod(SndPairElemAST::class)
     fun transSndPairElem(node: SndPairElemAST) {
-
     }
 
     /**
@@ -322,12 +324,10 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
 
     @TranslatorMethod(ArrayElemAST::class)
     fun transArrayElem(node: ArrayElemAST) {
-
     }
 
     @TranslatorMethod(FreeStatementAST::class)
     fun transFreeStatement(node: FreeStatementAST) {
-
     }
 
     /**
@@ -755,9 +755,9 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
                 )
             }
             UnaryOp.LEN -> {
-                 addLines(
-                     LoadWord(resultRegister, resultRegister)
-                 )
+                addLines(
+                    LoadWord(resultRegister, resultRegister)
+                )
             }
             UnaryOp.ORD -> {
 //                No actions needed since int ~ char
