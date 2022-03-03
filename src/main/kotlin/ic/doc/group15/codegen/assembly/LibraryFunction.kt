@@ -7,6 +7,8 @@ class LibraryFunction private constructor(labelName: String) : BranchLabelOperan
     companion object {
         val SCANF = LibraryFunction("scanf")
         val PRINTF = LibraryFunction("printf")
+        val PUTS = LibraryFunction("puts")
+        val PUTCHAR = LibraryFunction("putchar")
         val FFLUSH = LibraryFunction("fflush")
         val EXIT = LibraryFunction("exit")
         val MALLOC = LibraryFunction("malloc")

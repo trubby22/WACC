@@ -3,6 +3,7 @@ package ic.doc.group15.codegen.assembly
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.FFLUSH
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PRINTF
+import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTS
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.SCANF
 import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
@@ -12,7 +13,6 @@ import ic.doc.group15.codegen.assembly.operand.Register.*
 import java.util.*
 
 enum class UtilFunction {
-
     P_READ_INT {
         override val assembly by lazy {
             listOf(
@@ -45,6 +45,15 @@ enum class UtilFunction {
             )
         }
     },
+    P_THROW_OVERFLOW_ERROR {
+        override val assembly by lazy {
+            listOf(
+                LoadWord(R0, generateStringData("OverflowError: the result is" +
+                        " too small/large to store in a 4-byte signed-integer.\\n")),
+                BranchLink(P_THROW_RUNTIME_ERROR)
+            )
+        }
+    },
     P_PRINT_STRING {
         override val assembly by lazy {
             listOf(
@@ -54,6 +63,62 @@ enum class UtilFunction {
                 LoadWord(R0, generateStringData("%.*s")),
                 Add(R0, R0, ImmediateOperand(4)),
                 BranchLink(PRINTF),
+                Move(R0, ImmediateOperand(0)),
+                BranchLink(FFLUSH),
+                Pop(PC)
+            )
+        }
+    },
+    P_PRINT_INT {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Move(R1, R0),
+                LoadWord(R0, generateStringData("%d")),
+                Add(R0, R0, ImmediateOperand(4)),
+                BranchLink(PRINTF),
+                Move(R0, ImmediateOperand(0)),
+                BranchLink(FFLUSH),
+                Pop(PC)
+            )
+        }
+    },
+    P_PRINT_BOOL {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Compare(R0, ImmediateOperand(0)),
+                LoadWord(NE, R0, generateStringData("true")),
+                LoadWord(EQ, R0, generateStringData("false")),
+                Add(R0, R0, ImmediateOperand(4)),
+                BranchLink(PRINTF),
+                Move(R0, ImmediateOperand(0)),
+                BranchLink(FFLUSH),
+                Pop(PC)
+            )
+        }
+    },
+    P_PRINT_REFERENCE {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Move(R1, R0),
+                LoadWord(R0, generateStringData("%p")),
+                Add(R0, R0, ImmediateOperand(4)),
+                BranchLink(PRINTF),
+                Move(R0, ImmediateOperand(0)),
+                BranchLink(FFLUSH),
+                Pop(PC)
+            )
+        }
+    },
+    P_PRINT_LN {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                LoadWord(R0, generateStringData("")),
+                Add(R0, R0, ImmediateOperand(4)),
+                BranchLink(PUTS),
                 Move(R0, ImmediateOperand(0)),
                 BranchLink(FFLUSH),
                 Pop(PC)
