@@ -1,8 +1,8 @@
 package ic.doc.group15.codegen.assembly.instruction
 
-import ic.doc.group15.codegen.assembly.BranchLabel
 import ic.doc.group15.codegen.assembly.Instruction
-import ic.doc.group15.codegen.assembly.operand.LabelOperand
+import ic.doc.group15.codegen.assembly.UtilFunction
+import ic.doc.group15.codegen.assembly.operand.BranchLabelOperand
 
 /**
  * Branch operations present in ARM1176JZF-S, partly implemented.
@@ -10,8 +10,8 @@ import ic.doc.group15.codegen.assembly.operand.LabelOperand
 abstract class BranchInstruction protected constructor(
     instr: String,
     conditionCode: ConditionCode?,
-    val labelName: String
-) : Instruction(instr, conditionCode, LabelOperand(labelName))
+    val labelOp: BranchLabelOperand
+) : Instruction(instr, conditionCode, labelOp)
 
 /**
  * B is a branch instruction. Similar to JMP in x86, B causes a branch to label.
@@ -20,13 +20,10 @@ abstract class BranchInstruction protected constructor(
  */
 class Branch(
     conditionCode: ConditionCode?,
-    label: String
-) : BranchInstruction("b", conditionCode, label) {
+    labelOp: BranchLabelOperand
+) : BranchInstruction("b", conditionCode, labelOp) {
 
-    constructor(label: String) : this(null, label)
-
-    constructor(conditionCode: ConditionCode?, label: BranchLabel) : this(conditionCode, label.name)
-    constructor(label: BranchLabel) : this(null, label)
+    constructor(labelOp: BranchLabelOperand) : this(null, labelOp)
 }
 
 /**
@@ -39,11 +36,12 @@ class Branch(
  */
 class BranchLink(
     conditionCode: ConditionCode?,
-    label: String,
-) : BranchInstruction("bl", conditionCode, label) {
+    labelOp: BranchLabelOperand
+) : BranchInstruction("bl", conditionCode, labelOp) {
 
-    constructor(label: String) : this(null, label)
+    constructor(labelOp: BranchLabelOperand) : this(null, labelOp)
 
-    constructor(conditionCode: ConditionCode?, label: BranchLabel) : this(conditionCode, label.name)
-    constructor(label: BranchLabel) : this(null, label)
+    constructor(conditionCode: ConditionCode?, utilFunc: UtilFunction) :
+        this(null, BranchLabelOperand(utilFunc.labelBlock))
+    constructor(utilFunc: UtilFunction) : this(null, utilFunc)
 }

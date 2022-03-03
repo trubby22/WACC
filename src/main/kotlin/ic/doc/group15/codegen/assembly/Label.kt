@@ -65,6 +65,6 @@ private class Word(val byteSize: Int) : DataLine() {
 
 private class Ascii(val str: String) : DataLine() {
     override fun toString(): String {
-        return ".ascii".padEnd(ASM_TAB_SIZE) + "\"str\""
+        return ".ascii".padEnd(ASM_TAB_SIZE) + str
     }
 }

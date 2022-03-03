@@ -1,6 +1,9 @@
 package ic.doc.group15.codegen.assembly.operand
 
 import ic.doc.group15.codegen.assembly.Assembly
+import ic.doc.group15.codegen.assembly.BranchLabel
+import ic.doc.group15.codegen.assembly.DataLabel
+import ic.doc.group15.codegen.assembly.Label
 
 /**
  * Operand2 adopted in ARM1176JZF-S. Register controlled shift is not implemented.
@@ -8,13 +11,24 @@ import ic.doc.group15.codegen.assembly.Assembly
 
 interface Operand : Assembly
 
-open class LabelOperand(val labelName: String) : Operand {
+abstract class LabelOperand<T : Label<*>> protected constructor(
+    val labelName: String,
+    val prefix: String = ""
+) : Operand {
+
+    constructor(label: T, prefix: String = "") : this(label.name, prefix)
+
     override fun toString(): String {
-        return labelName
+        return prefix + labelName
     }
 }
 
-class DataLabelOperand(val labelName: String) : AddressOperand
+open class BranchLabelOperand : LabelOperand<BranchLabel> {
+    constructor(label: BranchLabel) : super(label)
+    constructor(labelName: String) : super(labelName)
+}
+
+class DataLabelOperand(label: DataLabel) : LabelOperand<DataLabel>(label, "=")
 
 class RegisterList(vararg regs: Register) : Operand {
 
