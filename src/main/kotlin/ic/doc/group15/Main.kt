@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
 
     semanticErrors.checkErrors()
 
-    val assemblyGenerator = AssemblyGenerator(ast)
+    val assemblyGenerator = AssemblyGenerator(ast, st)
     val assemblyCode = assemblyGenerator.generate()
 
     // Create assembly file
