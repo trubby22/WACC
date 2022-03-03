@@ -25,7 +25,7 @@ class ParameterAST(
 class ReadStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val target: AssignmentAST
+    val target: AssignmentAST<*>
 ) : StatementAST(parent, symbolTable)
 
 class SkipStatementAST(
