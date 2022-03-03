@@ -25,7 +25,7 @@ class ParameterAST(
 class ReadStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val target: AssignmentAST
+    val target: AssignmentAST<*>
 ) : StatementAST(parent, symbolTable)
 
 class SkipStatementAST(
@@ -59,11 +59,4 @@ class PrintlnStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
     val expr: ExpressionAST
-) : StatementAST(parent, symbolTable)
-
-class SequenceStatementAST(
-    parent: BlockAST,
-    symbolTable: SymbolTable,
-    val stat1: StatementAST,
-    val stat2: StatementAST
 ) : StatementAST(parent, symbolTable)
