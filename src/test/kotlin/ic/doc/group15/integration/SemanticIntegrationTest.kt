@@ -544,12 +544,12 @@ class SemanticIntegrationTest {
         if (errors.hasErrors()) {
             println(path)
             errors.printErrors()
-            return true;
+            return false
         }
 
         val asm = AssemblyGenerator(ast)
         println(asm.generate())
 
-        return false
+        return true
     }
 }
