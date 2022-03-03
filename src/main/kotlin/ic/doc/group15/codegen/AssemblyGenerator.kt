@@ -125,6 +125,51 @@ class AssemblyGenerator(private val ast: AST, private val st: SymbolTable) {
     }
 
     /**
+     * Sets up the environment for a function
+     */
+    private fun functionPrologue(node: FunctionDeclarationAST) {
+        addLines(Push(LR))
+    }
+
+    /**
+     * Restores the state so that the program can resume from where it left off before entering the function
+     */
+    private fun functionEpilogue(node: BlockAST) {
+        addLines(
+            Pop(PC),
+            LTORG
+        )
+    }
+
+    /**
+     * Sets up the stack with the necessary parameters before a function call.
+     */
+    private fun functionCallPrologue(node: FunctionDeclarationAST) {
+        node.formals.forEach {
+            // Load variable to resultRegister
+            translate(it)
+            addLines(
+                // Allocate space in stack
+                Sub(SP, SP, ImmediateOperand(it.type.sizeInBytes())),
+                // Move value from resultRegister to stack
+                StoreWord(resultRegister, ZeroOffset(SP))
+            )
+
+        }
+    }
+
+    /**
+     * Restores the state so that the program can resume from where it left off before the
+     * function sub-call was made
+     */
+    private fun functionCallEpilogue(node: FunctionDeclarationAST) {
+        // Increment the stack pointer back to where it was
+        val stackSpaceUsed = node.formals.sumOf { arg -> arg.type.sizeInBytes() }
+
+        addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
+    }
+
+    /**
      * Per WACC language specification, a program matches the grammar "begin func* stat end".
      * The AST representation decouples the statements from a SequenceAST to a mapping of lists of StatementAST
      * in the symbol table to avoid stack overflow from recursing a huge block of statements.
