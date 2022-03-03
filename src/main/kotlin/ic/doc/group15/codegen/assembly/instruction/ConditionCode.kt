@@ -38,6 +38,11 @@ enum class ConditionCode {
      * Overflow.
      **/
     V,
+
+    /**
+     * Carry.
+     **/
+    C
     ;
 
     override fun toString(): String {

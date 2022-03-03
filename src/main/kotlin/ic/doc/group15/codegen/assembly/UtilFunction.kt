@@ -54,6 +54,22 @@ enum class UtilFunction {
             )
         }
     },
+    P_CHECK_ARRAY_BOUNDS {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Compare(R0, ImmediateOperand(0)),
+                LoadWord(LT, R0, generateStringData
+                    ("ArrayIndexOutOfBoundsError: negative index\n")),
+                LoadWord(R1, R1),
+                Compare(R0, R1),
+                LoadWord(C, R0, generateStringData
+                    ("ArrayIndexOutOfBoundsError: index too large\n")),
+                BranchLink(C, P_THROW_RUNTIME_ERROR),
+                Pop(PC)
+            )
+        }
+    },
     P_PRINT_STRING {
         override val assembly by lazy {
             listOf(
