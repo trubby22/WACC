@@ -546,9 +546,6 @@ class SemanticIntegrationTest {
             errors.printErrors()
         }
 
-        val asm = AssemblyGenerator(ast, st)
-        println(asm.generate())
-
         return !errors.hasErrors()
     }
 }
