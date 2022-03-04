@@ -539,7 +539,7 @@ class AssemblyGenerator(private val ast: AST) {
     fun transNewPair(node: NewPairAST) {
         println("Translating NewPairAST")
 
-        // Allocate two registers for BinOp
+        // Allocate two registers for newPair
         var accumulatorState = false
         if (resultRegister == Register.maxReg()) {
             resultRegister = resultRegister.prevReg()
@@ -927,7 +927,6 @@ class AssemblyGenerator(private val ast: AST) {
         when (expr.operator) {
             PLUS, MINUS, MULT, DIV, MOD -> {
                 defineUtilFuncs(
-                    P_CHECK_DIVIDE_BY_ZERO,
                     P_THROW_RUNTIME_ERROR,
                     P_THROW_OVERFLOW_ERROR,
                     P_PRINT_STRING
@@ -951,6 +950,7 @@ class AssemblyGenerator(private val ast: AST) {
                         )
                     }
                     DIV -> {
+                        defineUtilFuncs(P_CHECK_DIVIDE_BY_ZERO)
                         addLines(
                             Move(R0, resultRegister),
                             Move(R1, resultRegister.nextReg()),
@@ -1129,7 +1129,7 @@ class AssemblyGenerator(private val ast: AST) {
     private fun transAssign(variable: Variable) {
         println("Calling transAssign")
         val size = variable.type.size()
-        val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, size) }
+        val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, variable.stackPosition) }
 
         addLines(
             if (size == BYTE) {
@@ -1146,7 +1146,7 @@ class AssemblyGenerator(private val ast: AST) {
         val addressOperand = if (variable.stackPosition == 0) {
             ZeroOffset(SP)
         } else {
-            ImmediateOffset(SP, size)
+            ImmediateOffset(SP, variable.stackPosition)
         }
 
         addLines(
