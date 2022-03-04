@@ -420,7 +420,10 @@ class AssemblyGenerator(
         addLines(
             Move(R0, resultRegister)
         )
-        when (node.expr.type) {
+
+        val expr = node.expr
+        val type = expr.type
+        when (type) {
             StringType -> {
                 defineUtilFuncs(P_PRINT_STRING)
                 addLines(BranchLink(P_PRINT_STRING))
@@ -441,8 +444,13 @@ class AssemblyGenerator(
                 addLines(BranchLink(P_PRINT_REFERENCE))
             }
             is ArrayType -> {
-                defineUtilFuncs(P_PRINT_REFERENCE)
-                addLines(BranchLink(P_PRINT_REFERENCE))
+                if (type.elementType == CharType) {
+                    defineUtilFuncs(P_PRINT_STRING)
+                    addLines(BranchLink(P_PRINT_STRING))
+                } else {
+                    defineUtilFuncs(P_PRINT_REFERENCE)
+                    addLines(BranchLink(P_PRINT_REFERENCE))
+                }
             }
         }
     }
