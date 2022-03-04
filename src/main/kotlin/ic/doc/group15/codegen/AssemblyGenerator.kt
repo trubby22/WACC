@@ -136,7 +136,12 @@ class AssemblyGenerator(private val ast: AST) {
      * Restores the state so that the program can resume from where it left off before entering the function
      */
     private fun functionEpilogue(node: FunctionDeclarationAST) {
-        println("Calling functionEpilogue")
+        println("Calling functionEpilogue for function: ${node.funcName}")
+        if (node.funcName == "main") {
+            // Add return statement (main function implicitly returns 0)
+            translate(ReturnStatementAST(node, node.symbolTable.subScope(),
+                IntLiteralAST(0)))
+        }
         addLines(
             LTORG
         )
@@ -209,9 +214,6 @@ class AssemblyGenerator(private val ast: AST) {
         mainAST.statements.addAll(statementASTs)
 
         translate(mainAST)
-
-        // Add return statement (main function implicitly returns 0)
-        translate(ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0)))
     }
 
     @TranslatorMethod(FunctionDeclarationAST::class)
