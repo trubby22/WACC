@@ -330,7 +330,7 @@ class AssemblyGenerator(private val ast: AST) {
             addLines(
                 LoadWord(
                     resultRegister.nextReg().nextReg(),
-                    resultRegister.nextReg().nextReg()
+                    ZeroOffset(resultRegister.nextReg().nextReg())
                 ),
                 LoadWord(
                     resultRegister.nextReg(),
@@ -945,7 +945,7 @@ class AssemblyGenerator(private val ast: AST) {
             }
             UnaryOp.LEN -> {
                 addLines(
-                    LoadWord(resultRegister, resultRegister)
+                    LoadWord(resultRegister, ZeroOffset(resultRegister))
                 )
             }
             UnaryOp.ORD -> {
@@ -995,7 +995,7 @@ class AssemblyGenerator(private val ast: AST) {
                 println("Adding util function: ${func.name}")
                 utilText[func.labelName] = func.labelBlock
                 func.dataBlocks.forEach {
-                    utilData[it.name] = it;
+                    utilData[it.name] = it
                 }
             }
         }

@@ -2,8 +2,6 @@ package ic.doc.group15.codegen.assembly.instruction
 
 import ic.doc.group15.codegen.assembly.* // ktlint-disable no-wildcard-imports
 import ic.doc.group15.codegen.assembly.operand.AddressOperand
-import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
-import ic.doc.group15.codegen.assembly.operand.Operand
 import ic.doc.group15.codegen.assembly.operand.Register
 
 /**
@@ -13,7 +11,7 @@ abstract class LoadInstruction protected constructor(
     instr: String,
     conditionCode: ConditionCode?,
     val dest: Register,
-    val addr: Operand
+    val addr: AddressOperand
 ) : Instruction(instr, conditionCode, dest, addr)
 
 /**
@@ -26,10 +24,10 @@ abstract class LoadInstruction protected constructor(
 class LoadWord(
     conditionCode: ConditionCode?,
     dest: Register,
-    addr: Operand
+    addr: AddressOperand
 ) : LoadInstruction("LDR", conditionCode, dest, addr) {
 
-    constructor(dest: Register, addr: Operand) : this(null, dest, addr)
+    constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
 }
 
 /**

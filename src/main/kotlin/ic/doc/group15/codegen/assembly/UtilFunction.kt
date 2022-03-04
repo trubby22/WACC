@@ -87,7 +87,7 @@ enum class UtilFunction {
                     LT, R0,
                     generateStringData("ArrayIndexOutOfBoundsError: negative index\n")
                 ),
-                LoadWord(R1, R1),
+                LoadWord(R1, ZeroOffset(R1)),
                 Compare(R0, R1),
                 LoadWord(
                     C, R0,
@@ -116,7 +116,7 @@ enum class UtilFunction {
         override val assembly by lazy {
             listOf(
                 Push(LR),
-                LoadWord(R1, R0),
+                LoadWord(R1, ZeroOffset(R0)),
                 Add(R2, R0, ImmediateOperand(4)),
                 LoadWord(R0, generateStringData("%.*s")),
                 Add(R0, R0, ImmediateOperand(4)),

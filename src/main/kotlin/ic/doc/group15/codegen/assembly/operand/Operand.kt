@@ -28,7 +28,7 @@ open class BranchLabelOperand : LabelOperand<BranchLabel> {
     constructor(labelName: String) : super(labelName)
 }
 
-class DataLabelOperand(label: DataLabel) : LabelOperand<DataLabel>(label, "=")
+class DataLabelOperand(label: DataLabel) : LabelOperand<DataLabel>(label, "="), AddressOperand
 
 class RegisterList(vararg regs: Register) : Operand {
 
@@ -78,7 +78,7 @@ class ImmediateOperand(val value: Int) : Operand {
  *
  * @param value
  */
-class PseudoImmediateOperand(val value: Int) : Operand {
+class PseudoImmediateOperand(val value: Int) : Operand, AddressOperand {
     override fun toString(): String {
         return "=$value"
     }
