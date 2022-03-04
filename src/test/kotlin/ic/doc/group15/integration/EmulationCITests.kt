@@ -449,11 +449,11 @@ class EmulationCITests {
             StandardCharsets.UTF_8.name()
         )
 
-        assertEquals(0, compilationExitStatus)
+        assertTrue(0 == compilationExitStatus, "./compile failed\n")
 
         val createExecutable = "arm-linux-gnueabi-gcc -o $fileName " +
             "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $fileName.s"
-        val execute = "qemu-arm -L /usr/arm-linux-gnueabi $fileName"
+        val execute = "echo '' | qemu-arm -L /usr/arm-linux-gnueabi $fileName"
         val echoExitCode = "echo \$?"
 
         val emulation = ProcessBuilder(
@@ -473,7 +473,7 @@ class EmulationCITests {
             StandardCharsets.UTF_8.name()
         ).trim()
 
-        assertEquals(0, emulationExitStatus)
+        assertTrue(0 == emulationExitStatus, "Emulating using qemu failed\n")
 
         val actualList = emulationOutput.split("\n")
 
