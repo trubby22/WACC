@@ -508,7 +508,6 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(IfBlockAST::class)
     private fun transIfBlock(stat: IfBlockAST) {
         println("Translating IfBlockAST")
-        val curLabel = currentLabel
 
         // Add instructions to currentLabel
         translate(stat.condExpr)
@@ -523,7 +522,7 @@ class AssemblyGenerator(private val ast: AST) {
         )
 
         // add sequence of instructions in THEN block under if label
-        translate(stat)
+        stat.statements.forEach { translate(it) }
 
         // add branch to fi label
         addLines(
@@ -531,8 +530,10 @@ class AssemblyGenerator(private val ast: AST) {
         )
 
         // add sequence of instructions in ELSE block under else label
+        text[currentLabel.name] = currentLabel
         currentLabel = elseLabel
         stat.elseBlock.statements.forEach { translate(it) }
+        text[currentLabel.name] = currentLabel
         currentLabel = fiLabel
     }
 
