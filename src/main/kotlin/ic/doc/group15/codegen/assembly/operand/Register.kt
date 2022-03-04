@@ -132,10 +132,22 @@ enum class Register : Operand {
     }
 
     fun nextReg(): Register {
+        if (this == maxReg()) {
+            throw InstantiationException("Max register limit reached!")
+        }
         return values()[this.ordinal + 1]
     }
 
     fun prevReg(): Register {
+        if (this == values()[0]) {
+            throw InstantiationException("Min register limit reached!")
+        }
         return values()[this.ordinal - 1]
+    }
+
+    companion object {
+        fun maxReg(): Register {
+            return R10
+        }
     }
 }

@@ -23,6 +23,7 @@ import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Variable
+import java.util.*
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
@@ -51,6 +52,14 @@ class AssemblyGenerator(private val ast: AST) {
      */
     private val text: MutableMap<String, BranchLabel> = mutableMapOf()
     private val utilText: MutableMap<String, BranchLabel> = mutableMapOf()
+
+    /**
+     * Store the total stack space used to store intermediate results of
+     * the current scope. Since we may encounter nested scopes, we want to
+     * store the offset when entering a sub-scope and restore it when we exit
+     * the sub-scope.
+     */
+    private val offsetStackStore = LinkedList<Int>()
 
     private val stringLabelGenerator = UniqueStringLabelGenerator()
     private val branchLabelGenerator = UniqueBranchLabelGenerator()
@@ -97,6 +106,10 @@ class AssemblyGenerator(private val ast: AST) {
      */
     private fun blockPrologue(node: BlockAST) {
         println("Calling blockPrologue")
+        // Push the value that tracks the stack space used by intermediate values
+        // by the current block
+        offsetStackStore.addFirst(0)
+
         // Calculate how much space to be allocated (and modify each variable to include its position on the stack)
         val stackSpaceUsed = node.symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
@@ -128,6 +141,10 @@ class AssemblyGenerator(private val ast: AST) {
      */
     private fun blockEpilogue(node: BlockAST) {
         println("Calling blockEpilogue")
+        // Pop the value that tracks the stack space used by intermediate values
+        // by the current block
+        offsetStackStore.removeFirst()
+
         // Unwind stack
         val stackSpaceUsed = node.symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
@@ -818,7 +835,18 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(BinaryOpExprAST::class)
     private fun transBinOp(expr: BinaryOpExprAST) {
         println("Translating BinaryOpExprAST")
+
+        // Allocate two registers for BinOp
+        var accumulatorState = false
+        if (resultRegister == Register.maxReg()) {
+            resultRegister = resultRegister.prevReg()
+            addLines(Push(resultRegister))
+            offsetStackStore[0] += WORD
+            accumulatorState = true
+        }
+
         translate(expr.expr1)
+
         resultRegister = resultRegister.nextReg()
         translate(expr.expr2)
         resultRegister = resultRegister.prevReg()
@@ -829,6 +857,7 @@ class AssemblyGenerator(private val ast: AST) {
                     P_THROW_RUNTIME_ERROR,
                     P_PRINT_STRING
                 )
+
                 when (expr.operator) {
                     MULT -> {
                         addLines(
@@ -927,6 +956,14 @@ class AssemblyGenerator(private val ast: AST) {
             OR -> {
                 addLines(Or(resultRegister, resultRegister, resultRegister.nextReg()))
             }
+        }
+
+        resultRegister = resultRegister.prevReg()
+
+        // Restore the value to MAX_REG - 1
+        if (accumulatorState) {
+            addLines(Pop(resultRegister))
+            offsetStackStore[0] -= WORD
         }
     }
 
