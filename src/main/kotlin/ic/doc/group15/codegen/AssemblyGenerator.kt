@@ -538,16 +538,26 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(NewPairAST::class)
     fun transNewPair(node: NewPairAST) {
         println("Translating NewPairAST")
+
+        // Allocate two registers for BinOp
+        var accumulatorState = false
+        if (resultRegister == Register.maxReg()) {
+            resultRegister = resultRegister.prevReg()
+            addLines(Push(resultRegister))
+            offsetStackStore[0] += WORD
+            accumulatorState = true
+        }
+
         addLines(
             LoadWord(R0, PseudoImmediateOperand(2 * WORD)),
             BranchLink(MALLOC),
-            Move(resultRegister, R0)
+            Move(resultRegister, R0) // R_n
         )
 
         listOf(node.fstExpr, node.sndExpr).forEachIndexed { index, expr ->
             // Translate the expression and store it in memory with malloc
-            resultRegister = resultRegister.nextReg()
-            translate(expr)
+            resultRegister = resultRegister.nextReg() // R_n+1
+            translate(expr) // result stored in // R_n+1
             addLines(
                 LoadWord(R0, PseudoImmediateOperand(expr.type.size())),
                 BranchLink(MALLOC)
@@ -556,8 +566,8 @@ class AssemblyGenerator(private val ast: AST) {
             // Store the value of the item of the pair in the address received from malloc
             addLines(
                 when (expr.type.size()) {
-                    WORD -> StoreWord(resultRegister.nextReg(), ZeroOffset(R0))
-                    else -> StoreByte(resultRegister.nextReg(), ZeroOffset(R0))
+                    WORD -> StoreWord(resultRegister, ZeroOffset(R0)) // R_n+1
+                    else -> StoreByte(resultRegister, ZeroOffset(R0))
                 }
             )
 
@@ -570,8 +580,21 @@ class AssemblyGenerator(private val ast: AST) {
                     } else {
                         ImmediateOffset(resultRegister, index * WORD)
                     }
-                )
+                ),
             )
+            // Change back to R_n
+            resultRegister = resultRegister.prevReg()
+        }
+
+        // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
+        // original value in MAX_REG - 1
+        if (accumulatorState) {
+            addLines(
+                Move(resultRegister.nextReg(), ZeroOffset(resultRegister)),
+                Pop(resultRegister)
+            )
+            resultRegister = resultRegister.nextReg()
+            offsetStackStore[0] -= WORD
         }
     }
 
