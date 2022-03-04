@@ -265,6 +265,7 @@ class AssemblyGenerator(
         mainAST.statements.addAll(statementASTs)
 
         translate(mainAST)
+        text[currentLabel.name] = currentLabel
     }
 
     @TranslatorMethod(FunctionDeclarationAST::class)
