@@ -593,9 +593,9 @@ class AssemblyGenerator(
                 StoreWord(
                     R0,
                     if (index == 0) {
-                        ZeroOffset(resultRegister)
+                        ZeroOffset(resultRegister.prevReg())
                     } else {
-                        ImmediateOffset(resultRegister, index * WORD)
+                        ImmediateOffset(resultRegister.prevReg(), index * WORD)
                     }
                 ),
             )
