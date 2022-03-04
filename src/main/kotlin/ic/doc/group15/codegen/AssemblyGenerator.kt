@@ -364,6 +364,7 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(FreeStatementAST::class)
     fun transFreeStatement(node: FreeStatementAST) {
         println("Translating FreeStatementAST")
+        defineUtilFuncs(P_FREE_PAIR)
         val variable = (node.expr as VariableIdentifierAST).ident
         transRetrieve(variable)
         addLines(
@@ -758,6 +759,9 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(FstPairElemAST::class)
     fun transFstPairElem(node: FstPairElemAST) {
         println("Translating FstPairElemAST")
+        defineUtilFuncs(
+            P_CHECK_NULL_POINTER
+        )
         val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
             LoadByte(
@@ -784,6 +788,9 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(SndPairElemAST::class)
     fun transSndPairElem(node: SndPairElemAST) {
         println("Translating SndPairElemAST")
+        defineUtilFuncs(
+            P_CHECK_NULL_POINTER
+        )
         val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
@@ -811,6 +818,9 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(AssignToPairElemAST::class)
     private fun transAssignToPairElem(node: AssignToPairElemAST) {
         println("Translating AssignToPairElemAST")
+        defineUtilFuncs(
+            P_CHECK_NULL_POINTER
+        )
         translate(node.rhs)
         val pairStackOffset = (node.lhs.expr as VariableIdentifierAST).ident.stackPosition
         val storeInstruction = when (node.rhs.type.size()) {
@@ -855,6 +865,7 @@ class AssemblyGenerator(private val ast: AST) {
                 defineUtilFuncs(
                     P_CHECK_DIVIDE_BY_ZERO,
                     P_THROW_RUNTIME_ERROR,
+                    P_THROW_OVERFLOW_ERROR,
                     P_PRINT_STRING
                 )
 
@@ -982,6 +993,7 @@ class AssemblyGenerator(private val ast: AST) {
                 defineUtilFuncs(
                     P_CHECK_DIVIDE_BY_ZERO,
                     P_THROW_RUNTIME_ERROR,
+                    P_THROW_OVERFLOW_ERROR,
                     P_PRINT_STRING
                 )
                 addLines(
