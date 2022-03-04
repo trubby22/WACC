@@ -289,131 +289,6 @@ class AssemblyGenerator(private val ast: AST) {
         transAssign(node.lhs.ident)
     }
 
-    @TranslatorMethod(AssignToPairElemAST::class)
-    private fun transAssignToPairElem(node: AssignToPairElemAST) {
-        println("Translating AssignToPairElemAST")
-        translate(node.rhs)
-        val pairStackOffset = (node.lhs.expr as VariableIdentifierAST).ident.stackPosition
-        val storeInstruction = when (node.rhs.type.size()) {
-            1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
-            else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
-        }
-        addLines(
-            LoadWord(resultRegister.nextReg(), ImmediateOffset(SP, pairStackOffset)),
-            Move(R0, resultRegister.nextReg()),
-            BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(
-                resultRegister.nextReg(),
-                ZeroOffset(
-                    resultRegister
-                        .nextReg()
-                )
-            ),
-            storeInstruction
-        )
-    }
-
-    @TranslatorMethod(AssignToArrayElemAST::class)
-    fun transAssignToArrayElem(node: AssignToArrayElemAST) {
-        println("Translating AssignToArrayElemAST")
-        translate(node.rhs)
-        val arrayElemAST = node.lhs
-//        TODO: calculate hardcodedNum's instead of
-//         hardcoding them
-        val arrayVariable = node.lhs.arrayVar
-        val stackPointerOffset = arrayVariable.ident.stackPosition
-        val hardcodedNum1 = 4
-        val hardcodedNum2 = 2
-        addLines(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
-        for (indexExpr in arrayElemAST.indexExpr) {
-            translate(indexExpr)
-            addLines(
-                LoadWord(
-                    resultRegister.nextReg().nextReg(),
-                    ZeroOffset(resultRegister.nextReg().nextReg())
-                ),
-                LoadWord(
-                    resultRegister.nextReg(),
-                    ZeroOffset(resultRegister.nextReg())
-                ),
-                Move(R0, resultRegister.nextReg().nextReg()),
-                Move(R1, resultRegister.nextReg().nextReg()),
-                BranchLink(P_CHECK_ARRAY_BOUNDS),
-                Add(
-                    resultRegister.nextReg(),
-                    resultRegister.nextReg(),
-                    ImmediateOperand
-                    (hardcodedNum1)
-                ),
-                Add(
-                    resultRegister.nextReg(),
-                    resultRegister.nextReg(),
-//                        Sometimes LSL is performed, sometimes not - I don't
-//                        know what it depends on
-//                        TODO: perform LSL only when needed
-                    LogicalShiftLeft
-                    (resultRegister.nextReg().nextReg(), hardcodedNum2)
-                )
-            )
-        }
-        addLines(
-            StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
-        )
-    }
-
-    @TranslatorMethod(FstPairElemAST::class)
-    fun transFstPairElem(node: FstPairElemAST) {
-        println("Translating FstPairElemAST")
-        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
-        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
-        } else {
-            LoadWord(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
-        }
-        addLines(
-            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
-            Move(R0, resultRegister),
-            BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(resultRegister, ZeroOffset(resultRegister)),
-            loadInstruction
-        )
-    }
-
-    @TranslatorMethod(SndPairElemAST::class)
-    fun transSndPairElem(node: SndPairElemAST) {
-        println("Translating SndPairElemAST")
-        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
-        val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
-        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
-        } else {
-            LoadWord(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
-        }
-        addLines(
-            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
-            Move(R0, resultRegister),
-            BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(resultRegister, ImmediateOffset(resultRegister, sizeOfFstElem)),
-            loadInstruction
-        )
-    }
-
     /**
      * Per WACC language spec, a while-block matches the grammar "while expr do stat done"
      * The while block follows the basic implementation as follows:
@@ -718,6 +593,12 @@ class AssemblyGenerator(private val ast: AST) {
         )
     }
 
+    @TranslatorMethod(VariableIdentifierAST::class)
+    private fun translateVariableIdentifier(node: VariableIdentifierAST) {
+        println("Translating VariableIdentifierAST")
+        transRetrieve(node.ident)
+    }
+
     @TranslatorMethod(ArrayLiteralAST::class)
     private fun transArrayLiteral(node: ArrayLiteralAST) {
         println("Translating ArrayLiteralAST")
@@ -757,15 +638,13 @@ class AssemblyGenerator(private val ast: AST) {
         )
     }
 
-    @TranslatorMethod(VariableIdentifierAST::class)
-    private fun translateVariableIdentifier(node: VariableIdentifierAST) {
-        println("Translating VariableIdentifierAST")
-        transRetrieve(node.ident)
-    }
-
     @TranslatorMethod(ArrayElemAST::class)
     private fun translateArrayElem(node: ArrayElemAST) {
         println("Translating ArrayElemAST")
+        defineUtilFuncs(
+            P_CHECK_ARRAY_BOUNDS,
+            P_THROW_RUNTIME_ERROR
+        )
         val variable = node.arrayVar.ident
         addLines(Add(resultRegister, SP, ImmediateOperand(variable.stackPosition)))
 
@@ -805,6 +684,135 @@ class AssemblyGenerator(private val ast: AST) {
                 )
             }
         }
+    }
+
+    @TranslatorMethod(AssignToArrayElemAST::class)
+    fun transAssignToArrayElem(node: AssignToArrayElemAST) {
+        println("Translating AssignToArrayElemAST")
+        defineUtilFuncs(
+            P_CHECK_ARRAY_BOUNDS,
+            P_THROW_RUNTIME_ERROR
+        )
+        translate(node.rhs)
+        val arrayElemAST = node.lhs
+//        TODO: calculate hardcodedNum's instead of
+//         hardcoding them
+        val arrayVariable = node.lhs.arrayVar
+        val stackPointerOffset = arrayVariable.ident.stackPosition
+        val hardcodedNum1 = 4
+        val hardcodedNum2 = 2
+        addLines(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
+        for (indexExpr in arrayElemAST.indexExpr) {
+            translate(indexExpr)
+            addLines(
+                LoadWord(
+                    resultRegister.nextReg().nextReg(),
+                    ZeroOffset(resultRegister.nextReg().nextReg())
+                ),
+                LoadWord(
+                    resultRegister.nextReg(),
+                    ZeroOffset(resultRegister.nextReg())
+                ),
+                Move(R0, resultRegister.nextReg().nextReg()),
+                Move(R1, resultRegister.nextReg().nextReg()),
+                BranchLink(P_CHECK_ARRAY_BOUNDS),
+                Add(
+                    resultRegister.nextReg(),
+                    resultRegister.nextReg(),
+                    ImmediateOperand
+                        (hardcodedNum1)
+                ),
+                Add(
+                    resultRegister.nextReg(),
+                    resultRegister.nextReg(),
+//                        Sometimes LSL is performed, sometimes not - I don't
+//                        know what it depends on
+//                        TODO: perform LSL only when needed
+                    LogicalShiftLeft
+                        (resultRegister.nextReg().nextReg(), hardcodedNum2)
+                )
+            )
+        }
+        addLines(
+            StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
+        )
+    }
+
+    @TranslatorMethod(FstPairElemAST::class)
+    fun transFstPairElem(node: FstPairElemAST) {
+        println("Translating FstPairElemAST")
+        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
+        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
+            LoadByte(
+                resultRegister,
+                ZeroOffset
+                    (resultRegister)
+            )
+        } else {
+            LoadWord(
+                resultRegister,
+                ZeroOffset
+                    (resultRegister)
+            )
+        }
+        addLines(
+            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
+            Move(R0, resultRegister),
+            BranchLink(P_CHECK_NULL_POINTER),
+            LoadWord(resultRegister, ZeroOffset(resultRegister)),
+            loadInstruction
+        )
+    }
+
+    @TranslatorMethod(SndPairElemAST::class)
+    fun transSndPairElem(node: SndPairElemAST) {
+        println("Translating SndPairElemAST")
+        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
+        val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
+        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
+            LoadByte(
+                resultRegister,
+                ZeroOffset
+                    (resultRegister)
+            )
+        } else {
+            LoadWord(
+                resultRegister,
+                ZeroOffset
+                    (resultRegister)
+            )
+        }
+        addLines(
+            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
+            Move(R0, resultRegister),
+            BranchLink(P_CHECK_NULL_POINTER),
+            LoadWord(resultRegister, ImmediateOffset(resultRegister, sizeOfFstElem)),
+            loadInstruction
+        )
+    }
+
+    @TranslatorMethod(AssignToPairElemAST::class)
+    private fun transAssignToPairElem(node: AssignToPairElemAST) {
+        println("Translating AssignToPairElemAST")
+        translate(node.rhs)
+        val pairStackOffset = (node.lhs.expr as VariableIdentifierAST).ident.stackPosition
+        val storeInstruction = when (node.rhs.type.size()) {
+            1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
+            else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
+        }
+        addLines(
+            LoadWord(resultRegister.nextReg(), ImmediateOffset(SP, pairStackOffset)),
+            Move(R0, resultRegister.nextReg()),
+            BranchLink(P_CHECK_NULL_POINTER),
+            LoadWord(
+                resultRegister.nextReg(),
+                ZeroOffset(
+                    resultRegister
+                        .nextReg()
+                )
+            ),
+            storeInstruction
+        )
     }
 
     @TranslatorMethod(BinaryOpExprAST::class)
