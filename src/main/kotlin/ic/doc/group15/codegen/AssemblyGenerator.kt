@@ -555,6 +555,7 @@ class AssemblyGenerator(private val ast: AST) {
         println("Translating PrintlnStatementAST")
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
         transPrintStatement(printStatementAST)
+        defineUtilFuncs(P_PRINT_LN)
         addLines(BranchLink(P_PRINT_LN))
     }
 
@@ -983,10 +984,11 @@ class AssemblyGenerator(private val ast: AST) {
     private fun defineUtilFuncs(vararg funcs: UtilFunction) {
         funcs.forEach { func ->
             if (!utilText.containsKey(func.labelName)) {
-                func.dataBlocks.forEach {
-                    utilData[it.name] = it
-                }
+                println("Adding util function: ${func.name}")
                 utilText[func.labelName] = func.labelBlock
+                func.dataBlocks.forEach {
+                    utilData[it.name] = it;
+                }
             }
         }
     }
