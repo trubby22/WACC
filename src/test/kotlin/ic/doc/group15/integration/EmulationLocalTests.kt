@@ -61,7 +61,7 @@ class EmulationLocalTests {
         checkAssemblyFolder("$validFolder/pairs")
     }
 
-    @Timeout(30)
+    @Timeout(60)
     @Test
     fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/runtimeErr")
@@ -112,7 +112,7 @@ class EmulationLocalTests {
 
     private fun checkAssembly(path: String): Boolean {
 
-//        println("testing path: $path")
+        println("testing: $path")
 
         val compilation = ProcessBuilder(
             "/bin/bash",
