@@ -1132,7 +1132,9 @@ class AssemblyGenerator(private val ast: AST) {
     private fun transAssign(variable: Variable) {
         println("Calling transAssign")
         val size = variable.type.size()
-        val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, variable.stackPosition) }
+        // Consider the case where intermediate results are pushed on the stack
+        val pos = variable.stackPosition + offsetStackStore[0]
+        val addressOperand = if (pos == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, pos) }
 
         addLines(
             if (size == BYTE) {
@@ -1146,11 +1148,9 @@ class AssemblyGenerator(private val ast: AST) {
     private fun transRetrieve(variable: Variable) {
         println("Calling transRetrieve")
         val size = variable.type.size()
-        val addressOperand = if (variable.stackPosition == 0) {
-            ZeroOffset(SP)
-        } else {
-            ImmediateOffset(SP, variable.stackPosition)
-        }
+        // Consider the case where intermediate results are pushed on the stack
+        val pos = variable.stackPosition + offsetStackStore[0]
+        val addressOperand = if (pos == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, pos) }
 
         addLines(
             if (size == BYTE) {
