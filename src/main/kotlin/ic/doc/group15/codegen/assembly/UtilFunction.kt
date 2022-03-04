@@ -34,9 +34,7 @@ enum class UtilFunction(vararg val dependencies: UtilFunction) {
             )
         }
     },
-    P_PRINT_LN(
-        P_PRINT_STRING
-    ) {
+    P_PRINT_LN {
         override val assembly by lazy {
             listOf(
                 Push(LR),
