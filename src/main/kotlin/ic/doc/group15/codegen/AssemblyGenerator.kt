@@ -123,7 +123,7 @@ class AssemblyGenerator(private val ast: AST) {
                 } else {
                     MAX_STACK_CHANGE
                 }
-                addLines(Sub(SP, SP, ImmediateOperand(subtractNow)))
+                addLines(Sub(SP, SP, IntImmediateOperand(subtractNow)))
                 subtractLeft -= subtractNow
             }
 
@@ -159,7 +159,7 @@ class AssemblyGenerator(private val ast: AST) {
                 } else {
                     MAX_STACK_CHANGE
                 }
-                subList.add(Add(SP, SP, ImmediateOperand(addNow)))
+                subList.add(Add(SP, SP, IntImmediateOperand(addNow)))
                 addLeft -= addNow
             }
 
@@ -205,7 +205,7 @@ class AssemblyGenerator(private val ast: AST) {
             val size = it.type.size()
             addLines(
                 // Allocate space in stack
-                Sub(SP, SP, ImmediateOperand(it.type.size())),
+                Sub(SP, SP, IntImmediateOperand(it.type.size())),
                 // Move value from resultRegister to stack
                 if (size == BYTE) {
                     StoreByte(resultRegister, ZeroOffset(SP))
@@ -225,7 +225,7 @@ class AssemblyGenerator(private val ast: AST) {
         // Increment the stack pointer back to where it was
         val stackSpaceUsed = node.actuals.sumOf { arg -> arg.type.size() }
 
-        addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
+        addLines(Add(SP, SP, IntImmediateOperand(stackSpaceUsed)))
     }
 
     /**
@@ -350,7 +350,7 @@ class AssemblyGenerator(private val ast: AST) {
 
         // Add compare and branch instruction
         addLines(
-            Compare(resultRegister, ImmediateOperand(1)),
+            Compare(resultRegister, IntImmediateOperand(1)),
             Branch(EQ, BranchLabelOperand(loopLabel))
         )
     }
@@ -517,7 +517,7 @@ class AssemblyGenerator(private val ast: AST) {
 
         // compare to set condition flags and branch (can be optimised)
         addLines(
-            Compare(resultRegister, ImmediateOperand(0)),
+            Compare(resultRegister, IntImmediateOperand(0)),
             Branch(EQ, BranchLabelOperand(elseLabel))
         )
 
@@ -614,7 +614,7 @@ class AssemblyGenerator(private val ast: AST) {
     private fun translateBoolLiteral(node: BoolLiteralAST) {
         println("Translating BoolLiteralAST")
         addLines(
-            Move(resultRegister, ImmediateOperand(node.boolValue))
+            Move(resultRegister, BoolImmediateOperand(node.boolValue))
         )
     }
 
@@ -622,7 +622,7 @@ class AssemblyGenerator(private val ast: AST) {
     private fun translateCharLiteral(node: CharLiteralAST) {
         println("Translating CharLiteralAST")
         addLines(
-            Move(resultRegister, ImmediateOperand(node.charValue))
+            Move(resultRegister, CharImmediateOperand(node.charValue))
         )
     }
 
@@ -721,7 +721,7 @@ class AssemblyGenerator(private val ast: AST) {
             accumulatorState = true
         }
 
-        addLines(Add(resultRegister, SP, ImmediateOperand(variable.stackPosition)))
+        addLines(Add(resultRegister, SP, IntImmediateOperand(variable.stackPosition)))
 
         for (i in node.indexExpr.indices) {
             val index = node.indexExpr[i]
@@ -733,7 +733,7 @@ class AssemblyGenerator(private val ast: AST) {
                 Move(R0, resultRegister.nextReg()), // this and next two lines just check bounds of array
                 Move(R1, resultRegister),
                 BranchLink(P_CHECK_ARRAY_BOUNDS),
-                Add(resultRegister, resultRegister, ImmediateOperand(WORD))
+                Add(resultRegister, resultRegister, IntImmediateOperand(WORD))
             ) // move past array size
             if (i == node.indexExpr.lastIndex) {
                 if (node.elemType.size() == WORD) {
@@ -786,7 +786,7 @@ class AssemblyGenerator(private val ast: AST) {
         val stackPointerOffset = arrayVariable.ident.stackPosition
         val hardcodedNum1 = 4
         val hardcodedNum2 = 2
-        addLines(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
+        addLines(Add(resultRegister.nextReg(), SP, IntImmediateOperand(stackPointerOffset)))
         for (indexExpr in arrayElemAST.indexExpr) {
             translate(indexExpr)
             addLines(
@@ -804,8 +804,7 @@ class AssemblyGenerator(private val ast: AST) {
                 Add(
                     resultRegister.nextReg(),
                     resultRegister.nextReg(),
-                    ImmediateOperand
-                        (hardcodedNum1)
+                    IntImmediateOperand(hardcodedNum1)
                 ),
                 Add(
                     resultRegister.nextReg(),
@@ -814,7 +813,7 @@ class AssemblyGenerator(private val ast: AST) {
 //                        know what it depends on
 //                        TODO: perform LSL only when needed
                     LogicalShiftLeft
-                        (resultRegister.nextReg().nextReg(), hardcodedNum2)
+                    (resultRegister.nextReg().nextReg(), hardcodedNum2)
                 )
             )
         }
@@ -833,14 +832,12 @@ class AssemblyGenerator(private val ast: AST) {
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
             LoadByte(
                 resultRegister,
-                ZeroOffset
-                    (resultRegister)
+                ZeroOffset(resultRegister)
             )
         } else {
             LoadWord(
                 resultRegister,
-                ZeroOffset
-                    (resultRegister)
+                ZeroOffset(resultRegister)
             )
         }
         addLines(
@@ -864,13 +861,13 @@ class AssemblyGenerator(private val ast: AST) {
             LoadByte(
                 resultRegister,
                 ZeroOffset
-                    (resultRegister)
+                (resultRegister)
             )
         } else {
             LoadWord(
                 resultRegister,
                 ZeroOffset
-                    (resultRegister)
+                (resultRegister)
             )
         }
         addLines(
@@ -992,38 +989,38 @@ class AssemblyGenerator(private val ast: AST) {
                 when (expr.operator) {
                     BinaryOp.GT -> {
                         addLines(
-                            Move(GT, resultRegister, ImmediateOperand(1)),
-                            Move(LE, resultRegister, ImmediateOperand(0))
+                            Move(GT, resultRegister, IntImmediateOperand(1)),
+                            Move(LE, resultRegister, IntImmediateOperand(0))
                         )
                     }
                     GTE -> {
                         addLines(
-                            Move(GE, resultRegister, ImmediateOperand(1)),
-                            Move(LT, resultRegister, ImmediateOperand(0))
+                            Move(GE, resultRegister, IntImmediateOperand(1)),
+                            Move(LT, resultRegister, IntImmediateOperand(0))
                         )
                     }
                     BinaryOp.LT -> {
                         addLines(
-                            Move(LT, resultRegister, ImmediateOperand(1)),
-                            Move(GE, resultRegister, ImmediateOperand(0))
+                            Move(LT, resultRegister, IntImmediateOperand(1)),
+                            Move(GE, resultRegister, IntImmediateOperand(0))
                         )
                     }
                     LTE -> {
                         addLines(
-                            Move(LE, resultRegister, ImmediateOperand(1)),
-                            Move(GT, resultRegister, ImmediateOperand(0))
+                            Move(LE, resultRegister, IntImmediateOperand(1)),
+                            Move(GT, resultRegister, IntImmediateOperand(0))
                         )
                     }
                     EQUALS -> {
                         addLines(
-                            Move(EQ, resultRegister, ImmediateOperand(1)),
-                            Move(NE, resultRegister, ImmediateOperand(0))
+                            Move(EQ, resultRegister, IntImmediateOperand(1)),
+                            Move(NE, resultRegister, IntImmediateOperand(0))
                         )
                     }
                     NOT_EQUALS -> {
                         addLines(
-                            Move(NE, resultRegister, ImmediateOperand(1)),
-                            Move(EQ, resultRegister, ImmediateOperand(0))
+                            Move(NE, resultRegister, IntImmediateOperand(1)),
+                            Move(EQ, resultRegister, IntImmediateOperand(0))
                         )
                     }
                 }
@@ -1056,7 +1053,7 @@ class AssemblyGenerator(private val ast: AST) {
         when (unOpExpr.operator) {
             UnaryOp.BANG -> {
                 addLines(
-                    Xor(resultRegister, resultRegister, ImmediateOperand(1))
+                    Xor(resultRegister, resultRegister, IntImmediateOperand(1))
                 )
             }
             UnaryOp.MINUS -> {
@@ -1067,7 +1064,7 @@ class AssemblyGenerator(private val ast: AST) {
                     P_PRINT_STRING
                 )
                 addLines(
-                    ReverseSub(resultRegister, resultRegister, ImmediateOperand(0)),
+                    ReverseSub(resultRegister, resultRegister, IntImmediateOperand(0)),
                     BranchLink(P_THROW_OVERFLOW_ERROR)
                 )
             }

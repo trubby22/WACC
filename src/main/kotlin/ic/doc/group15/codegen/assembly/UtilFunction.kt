@@ -10,7 +10,7 @@ import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
 import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
 import ic.doc.group15.codegen.assembly.operand.ImmediateOffset
-import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
+import ic.doc.group15.codegen.assembly.operand.IntImmediateOperand
 import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.codegen.assembly.operand.ZeroOffset
 import java.util.*
@@ -24,7 +24,7 @@ enum class UtilFunction {
                 Push(LR),
                 Move(R1, R0),
                 LoadWord(R0, generateStringData("%d")),
-                Add(R0, R0, ImmediateOperand(4)),
+                Add(R0, R0, IntImmediateOperand(4)),
                 BranchLink(SCANF),
                 Pop(PC)
             )
@@ -36,7 +36,7 @@ enum class UtilFunction {
                 Push(LR),
                 Move(R1, R0),
                 LoadWord(R0, generateStringData(" %c")),
-                Add(R0, R0, ImmediateOperand(4)),
+                Add(R0, R0, IntImmediateOperand(4)),
                 BranchLink(SCANF),
                 Pop(PC)
             )
@@ -46,7 +46,7 @@ enum class UtilFunction {
         override val assembly by lazy {
             listOf(
                 Push(LR),
-                Compare(R1, ImmediateOperand(0)),
+                Compare(R1, IntImmediateOperand(0)),
                 LoadWord(
                     EQ, R0, generateStringData("DivideByZeroError: divide or modulo by zero\n")
                 ),
@@ -59,7 +59,7 @@ enum class UtilFunction {
         override val assembly by lazy {
             listOf(
                 BranchLink(P_PRINT_STRING),
-                Move(R0, ImmediateOperand(-1)),
+                Move(R0, IntImmediateOperand(-1)),
                 BranchLink(EXIT)
             )
         }
@@ -82,7 +82,7 @@ enum class UtilFunction {
         override val assembly by lazy {
             listOf(
                 Push(LR),
-                Compare(R0, ImmediateOperand(0)),
+                Compare(R0, IntImmediateOperand(0)),
                 LoadWord(
                     LT, R0,
                     generateStringData("ArrayIndexOutOfBoundsError: negative index\n")
@@ -102,7 +102,7 @@ enum class UtilFunction {
         override val assembly by lazy {
             listOf(
                 Push(LR),
-                Compare(R0, ImmediateOperand(0)),
+                Compare(R0, IntImmediateOperand(0)),
                 LoadWord(
                     EQ, R0,
                     generateStringData("NullReferenceError: dereference a null reference\n")
@@ -117,11 +117,11 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 LoadWord(R1, ZeroOffset(R0)),
-                Add(R2, R0, ImmediateOperand(4)),
+                Add(R2, R0, IntImmediateOperand(4)),
                 LoadWord(R0, generateStringData("%.*s")),
-                Add(R0, R0, ImmediateOperand(4)),
+                Add(R0, R0, IntImmediateOperand(4)),
                 BranchLink(PRINTF),
-                Move(R0, ImmediateOperand(0)),
+                Move(R0, IntImmediateOperand(0)),
                 BranchLink(FFLUSH),
                 Pop(PC)
             )
@@ -133,9 +133,9 @@ enum class UtilFunction {
                 Push(LR),
                 Move(R1, R0),
                 LoadWord(R0, generateStringData("%d")),
-                Add(R0, R0, ImmediateOperand(4)),
+                Add(R0, R0, IntImmediateOperand(4)),
                 BranchLink(PRINTF),
-                Move(R0, ImmediateOperand(0)),
+                Move(R0, IntImmediateOperand(0)),
                 BranchLink(FFLUSH),
                 Pop(PC)
             )
@@ -145,12 +145,12 @@ enum class UtilFunction {
         override val assembly by lazy {
             listOf(
                 Push(LR),
-                Compare(R0, ImmediateOperand(0)),
+                Compare(R0, IntImmediateOperand(0)),
                 LoadWord(NE, R0, generateStringData("true")),
                 LoadWord(EQ, R0, generateStringData("false")),
-                Add(R0, R0, ImmediateOperand(4)),
+                Add(R0, R0, IntImmediateOperand(4)),
                 BranchLink(PRINTF),
-                Move(R0, ImmediateOperand(0)),
+                Move(R0, IntImmediateOperand(0)),
                 BranchLink(FFLUSH),
                 Pop(PC)
             )
@@ -162,9 +162,9 @@ enum class UtilFunction {
                 Push(LR),
                 Move(R1, R0),
                 LoadWord(R0, generateStringData("%p")),
-                Add(R0, R0, ImmediateOperand(4)),
+                Add(R0, R0, IntImmediateOperand(4)),
                 BranchLink(PRINTF),
-                Move(R0, ImmediateOperand(0)),
+                Move(R0, IntImmediateOperand(0)),
                 BranchLink(FFLUSH),
                 Pop(PC)
             )
@@ -175,9 +175,9 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 LoadWord(R0, generateStringData("")),
-                Add(R0, R0, ImmediateOperand(4)),
+                Add(R0, R0, IntImmediateOperand(4)),
                 BranchLink(PUTS),
-                Move(R0, ImmediateOperand(0)),
+                Move(R0, IntImmediateOperand(0)),
                 BranchLink(FFLUSH),
                 Pop(PC)
             )
@@ -187,7 +187,7 @@ enum class UtilFunction {
         override val assembly by lazy {
             listOf(
                 Push(LR),
-                Compare(R0, ImmediateOperand(0)),
+                Compare(R0, IntImmediateOperand(0)),
                 LoadWord(
                     EQ, R0,
                     generateStringData("NullReferenceError: dereference a null reference\n")

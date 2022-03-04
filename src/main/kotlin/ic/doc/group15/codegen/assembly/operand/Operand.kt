@@ -55,17 +55,29 @@ class RegisterList(vararg regs: Register) : Operand {
  * @param value
  * @exception IllegalArgumentException
  */
-class ImmediateOperand(val value: Int) : Operand {
+abstract class ImmediateOperand<T> protected constructor(val value: T) : Operand {
     init {
         // TODO(Check if value is valid by performing rotation checks)
     }
 
-    constructor(value: Boolean) : this(if (value) 1 else 0)
-
-    constructor(value: Char) : this(value.code.toByte().toInt())
-
     override fun toString(): String {
         return "#$value"
+    }
+}
+
+class IntImmediateOperand(value: Int) : ImmediateOperand<Int>(value)
+
+class CharImmediateOperand(value: Char) : ImmediateOperand<Char>(value) {
+
+    override fun toString(): String {
+        return "#\'$value\'"
+    }
+}
+
+class BoolImmediateOperand(value: Boolean) : ImmediateOperand<Boolean>(value) {
+
+    override fun toString(): String {
+        return "#${if (value) 1 else 0}"
     }
 }
 
