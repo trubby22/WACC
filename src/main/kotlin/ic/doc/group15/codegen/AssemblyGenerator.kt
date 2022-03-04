@@ -32,8 +32,6 @@ private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
 
 class AssemblyGenerator(private val ast: AST) {
 
-    val MAX_STACK_CHANGE = 1024
-
     private lateinit var currentLabel: BranchLabel
     private lateinit var resultRegister: Register
 
@@ -65,6 +63,9 @@ class AssemblyGenerator(private val ast: AST) {
     private val branchLabelGenerator = UniqueBranchLabelGenerator()
 
     companion object {
+
+        private const val MAX_STACK_CHANGE = 1024
+
         private val translators: TranslatorMap by lazy {
             AssemblyGenerator::class.members.filter {
                 it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
@@ -356,13 +357,13 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(BeginEndBlockAST::class)
-    fun transBeginEndBlock(node: BeginEndBlockAST) {
+    private fun transBeginEndBlock(node: BeginEndBlockAST) {
         println("Translating BeginEndBlockAST")
         node.statements.forEach { translate(it) }
     }
 
     @TranslatorMethod(FreeStatementAST::class)
-    fun transFreeStatement(node: FreeStatementAST) {
+    private fun transFreeStatement(node: FreeStatementAST) {
         println("Translating FreeStatementAST")
         defineUtilFuncs(P_FREE_PAIR)
         val variable = (node.expr as VariableIdentifierAST).ident
@@ -379,7 +380,7 @@ class AssemblyGenerator(private val ast: AST) {
      * that function.
      */
     @TranslatorMethod(ReturnStatementAST::class)
-    fun transReturnStatement(node: ReturnStatementAST) {
+    private fun transReturnStatement(node: ReturnStatementAST) {
         println("Translating ReturnStatementAST")
         if (node.expr is IntLiteralAST) {
             addLines(
@@ -400,7 +401,7 @@ class AssemblyGenerator(private val ast: AST) {
      * an exit code of type int in range [0, 255].
      */
     @TranslatorMethod(ExitStatementAST::class)
-    fun transExitStatement(node: ExitStatementAST) {
+    private fun transExitStatement(node: ExitStatementAST) {
         println("Translating ExitStatementAST")
         translate(node.expr)
         addLines(
@@ -410,7 +411,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(PrintStatementAST::class)
-    fun transPrintStatement(node: PrintStatementAST) {
+    private fun transPrintStatement(node: PrintStatementAST) {
         println("Translating PrintStatementAST")
         translate(node.expr)
         addLines(
@@ -444,7 +445,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(PrintlnStatementAST::class)
-    fun transPrintlnStatement(node: PrintlnStatementAST) {
+    private fun transPrintlnStatement(node: PrintlnStatementAST) {
         println("Translating PrintlnStatementAST")
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
         transPrintStatement(printStatementAST)
@@ -463,7 +464,7 @@ class AssemblyGenerator(private val ast: AST) {
      * the target's value unchanged.
      */
     @TranslatorMethod(ReadStatementAST::class)
-    fun transReadStatement(node: ReadStatementAST) {
+    private fun transReadStatement(node: ReadStatementAST) {
         println("Translating ReadStatementAST")
         when (node.target.type) {
             IntType -> {
@@ -505,7 +506,7 @@ class AssemblyGenerator(private val ast: AST) {
      * fi: ...
      */
     @TranslatorMethod(IfBlockAST::class)
-    fun transIfBlock(stat: IfBlockAST) {
+    private fun transIfBlock(stat: IfBlockAST) {
         println("Translating IfBlockAST")
         val curLabel = currentLabel
 
@@ -536,7 +537,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(NewPairAST::class)
-    fun transNewPair(node: NewPairAST) {
+    private fun transNewPair(node: NewPairAST) {
         println("Translating NewPairAST")
 
         // Allocate two registers for newPair
@@ -772,7 +773,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(AssignToArrayElemAST::class)
-    fun transAssignToArrayElem(node: AssignToArrayElemAST) {
+    private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
         println("Translating AssignToArrayElemAST")
         defineUtilFuncs(
             P_CHECK_ARRAY_BOUNDS,
@@ -823,7 +824,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(FstPairElemAST::class)
-    fun transFstPairElem(node: FstPairElemAST) {
+    private fun transFstPairElem(node: FstPairElemAST) {
         println("Translating FstPairElemAST")
         defineUtilFuncs(
             P_CHECK_NULL_POINTER
@@ -850,7 +851,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     @TranslatorMethod(SndPairElemAST::class)
-    fun transSndPairElem(node: SndPairElemAST) {
+    private fun transSndPairElem(node: SndPairElemAST) {
         println("Translating SndPairElemAST")
         defineUtilFuncs(
             P_CHECK_NULL_POINTER
