@@ -112,7 +112,7 @@ class EmulationLocalTests {
 
     private fun checkAssembly(path: String): Boolean {
 
-        println("testing path: $path")
+//        println("testing path: $path")
 
         val compilation = ProcessBuilder(
             "/bin/bash",
@@ -133,7 +133,7 @@ class EmulationLocalTests {
             StandardCharsets.UTF_8.name()
         )
 
-        println("compile completed")
+//        println("compile completed")
 
 //        println("Compilation output")
 //        println(compilationOutput)
@@ -164,7 +164,7 @@ class EmulationLocalTests {
             e.printStackTrace()
         }
 
-        println("Emulate completed")
+//        println("Emulate completed")
 
         val actual = IOUtils.toString(
             emulate.inputStream,
@@ -200,7 +200,7 @@ class EmulationLocalTests {
 
         assertTrue(0 == exitCode2, "refCompile failed\n")
 
-        println("ModelSolution completed")
+//        println("ModelSolution completed")
 
         val actualOutput = actual
             .split("-- Emulation Output:\n")[1]
