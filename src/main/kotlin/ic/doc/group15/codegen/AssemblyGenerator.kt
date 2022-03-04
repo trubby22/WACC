@@ -245,8 +245,7 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(AssignToPairElemAST::class)
     private fun transAssignToPairElem(node: AssignToPairElemAST) {
         translate(node.rhs)
-//        TODO: calculate pairStackOffset instead of assuming it's 0
-        val pairStackOffset = 0
+        val pairStackOffset = (node.lhs.expr as VariableIdentifierAST).ident.stackPosition
         val storeInstruction = when (node.rhs.type.size()) {
             1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
             else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
@@ -272,10 +271,10 @@ class AssemblyGenerator(private val ast: AST) {
         val arrayElemAST = node.lhs as ArrayElemAST
         val symbolTable = arrayElemAST.symbolTable
         val arrayName = arrayElemAST.arrayName
-//        TODO: calculate stack pointer offset of array pointer using values
-//         above and calculate hardcodedNum's instead of
+//        TODO: calculate hardcodedNum's instead of
 //         hardcoding them
-        val stackPointerOffset = 0
+        val stackPointerOffset = (node.symbolTable.lookup(node.lhs.arrayName)
+                as VariableIdentifierAST).ident.stackPosition
         val hardcodedNum1 = 4
         val hardcodedNum2 = 2
         addLines(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
@@ -317,14 +316,10 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(FstPairElemAST::class)
     fun transFstPairElem(node: FstPairElemAST) {
-//        TODO: calculate offset
-        val pairPointerOffset = 0
+        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
+            LoadByte(resultRegister, ZeroOffset
+                (resultRegister))
         } else {
             LoadWord(
                 resultRegister,
@@ -343,15 +338,11 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(SndPairElemAST::class)
     fun transSndPairElem(node: SndPairElemAST) {
-//        TODO: calculate offset
-        val pairPointerOffset = 0
+        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
+            LoadByte(resultRegister, ZeroOffset
+                (resultRegister))
         } else {
             LoadWord(
                 resultRegister,
@@ -647,15 +638,6 @@ class AssemblyGenerator(private val ast: AST) {
     private fun translateStringLiteral(node: StringLiteralAST) {
         addLines(
             LoadWord(resultRegister, DataLabelOperand(newStringLabel(node.stringValue)))
-        )
-    }
-
-    @TranslatorMethod(NullPairLiteralAST::class)
-    private fun translateNullPairLiteral(node: NullPairLiteralAST) {
-//        TODO: Calculate SP offset instead of assuming it's 0
-        val stackPointerOffset = 0
-        addLines(
-            LoadWord(resultRegister, ImmediateOffset(SP, stackPointerOffset))
         )
     }
 

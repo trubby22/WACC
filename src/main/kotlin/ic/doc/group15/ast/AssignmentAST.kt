@@ -46,18 +46,19 @@ class NewPairAST(
 
 abstract class PairElemAST protected constructor(
     symbolTable: SymbolTable,
-    val elemType: ReturnableType
+    val elemType: ReturnableType,
+    val expr: ExpressionAST
 ) : AssignRhsAST(symbolTable, elemType)
 
 class FstPairElemAST(
     symbolTable: SymbolTable,
     val pairExpr: ExpressionAST
-) : PairElemAST(symbolTable, (pairExpr.type as PairType).fstType)
+) : PairElemAST(symbolTable, (pairExpr.type as PairType).fstType, pairExpr)
 
 class SndPairElemAST(
     symbolTable: SymbolTable,
     val pairExpr: ExpressionAST
-) : PairElemAST(symbolTable, (pairExpr.type as PairType).sndType)
+) : PairElemAST(symbolTable, (pairExpr.type as PairType).sndType, pairExpr)
 
 class CallAST(
     symbolTable: SymbolTable,
