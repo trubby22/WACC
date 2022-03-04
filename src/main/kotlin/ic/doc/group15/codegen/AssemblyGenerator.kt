@@ -300,6 +300,7 @@ class AssemblyGenerator(
         // Parse the expression whose value is to be stored in the variable
         log("Translating VariableDeclarationAST")
         translate(node.rhs)
+        log("${node.varIdent.stackPosition}")
         transAssign(node.varIdent)
     }
 
@@ -363,7 +364,9 @@ class AssemblyGenerator(
     @TranslatorMethod(BeginEndBlockAST::class)
     private fun transBeginEndBlock(node: BeginEndBlockAST) {
         log("Translating BeginEndBlockAST")
+        blockPrologue(node)
         node.statements.forEach { translate(it) }
+        blockEpilogue(node)
     }
 
     @TranslatorMethod(FreeStatementAST::class)
@@ -1144,7 +1147,7 @@ class AssemblyGenerator(
     }
 
     private fun newBranchLabel(name: String, vararg lines: Instruction): BranchLabel {
-        println("Generation branch label: $name")
+        log("Generation branch label: $name")
         val label = BranchLabel(name, *lines)
         text[label.name] = label
         return label
