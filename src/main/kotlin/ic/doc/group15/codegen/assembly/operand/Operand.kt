@@ -84,6 +84,27 @@ class PseudoImmediateOperand(val value: Int) : Operand, AddressOperand {
     }
 }
 
+abstract class ShiftOperand protected constructor(
+    val opName: String,
+    val base: Register,
+    val bits: Int,
+    val minBits: Int = 1,
+    val maxBits: Int = 32
+) : Operand {
+
+    init {
+        if (!IntRange(minBits, maxBits).contains(bits)) {
+            throw IllegalArgumentException(
+                "$opName must be between $minBits and $maxBits bits. Actual: $bits"
+            )
+        }
+    }
+
+    override fun toString(): String {
+        return "$base, $opName #$bits"
+    }
+}
+
 /**
  * This form performs a logical shift left of specified bits on the value stored
  * in the base register with an immediate constant. The bit count must be a
@@ -99,19 +120,7 @@ class PseudoImmediateOperand(val value: Int) : Operand, AddressOperand {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class LogicalShiftLeft(val base: Register, val bits: Int) : Operand {
-    init {
-        if (!IntRange(1, 31).contains(bits)) {
-            throw IllegalArgumentException(
-                "Logical shift left must be between 1 and 31 bits. Actual: $bits"
-            )
-        }
-    }
-
-    override fun toString(): String {
-        return "[$base LSL #$bits]"
-    }
-}
+class LogicalShiftLeft(base: Register, bits: Int) : ShiftOperand("LSL", base, bits, maxBits = 31)
 
 /**
  * This form performs a logical shift right of specified bits on the value stored
@@ -128,19 +137,7 @@ class LogicalShiftLeft(val base: Register, val bits: Int) : Operand {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class LogicalShiftRight(val base: Register, val bits: Int) : Operand {
-    init {
-        if (!IntRange(1, 32).contains(bits)) {
-            throw IllegalArgumentException(
-                "Logical shift right must be between 1 and 32 bits. Actual: $bits"
-            )
-        }
-    }
-
-    override fun toString(): String {
-        return "[$base LSR #$bits]"
-    }
-}
+class LogicalShiftRight(base: Register, bits: Int) : ShiftOperand("LSR", base, bits)
 
 /**
  * This form performs an arithmetic shift right of specified bits on the value stored
@@ -157,19 +154,7 @@ class LogicalShiftRight(val base: Register, val bits: Int) : Operand {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class ArithmeticShiftRight(val base: Register, val bits: Int) : Operand {
-    init {
-        if (!IntRange(1, 32).contains(bits)) {
-            throw IllegalArgumentException(
-                "Arithmetic shift right must between 1 and 32 bits. Actual: $bits"
-            )
-        }
-    }
-
-    override fun toString(): String {
-        return "[$base ASR #$bits]"
-    }
-}
+class ArithmeticShiftRight(base: Register, bits: Int) : ShiftOperand("ASR", base, bits)
 
 /**
  * This form performs a rotate-right of specified bits on the value stored
@@ -186,16 +171,4 @@ class ArithmeticShiftRight(val base: Register, val bits: Int) : Operand {
  * @param bits Shift bit-count
  * @exception IllegalArgumentException
  */
-class RotateRight(val base: Register, val bits: Int) : Operand {
-    init {
-        if (!IntRange(1, 31).contains(bits)) {
-            throw IllegalArgumentException(
-                "Logical shift left between 1 and 31 bits. Actual: $bits"
-            )
-        }
-    }
-
-    override fun toString(): String {
-        return "[$base ROR #$bits]"
-    }
-}
+class RotateRight(base: Register, bits: Int) : ShiftOperand("ROR", base, bits, maxBits = 31)
