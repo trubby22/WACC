@@ -956,6 +956,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     private fun transAssign(variable: Variable) {
+        println("Calling transAssign")
         val size = variable.type.size()
         val addressOperand = if (variable.stackPosition == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, size) }
 
@@ -969,6 +970,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     private fun transRetrieve(variable: Variable) {
+        println("Calling transRetrieve")
         val size = variable.type.size()
         val addressOperand = if (variable.stackPosition == 0) {
             ZeroOffset(SP)
