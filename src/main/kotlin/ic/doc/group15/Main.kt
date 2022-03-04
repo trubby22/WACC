@@ -11,6 +11,8 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 
+private const val ENABLE_LOGGING = true
+
 fun main(args: Array<String>) {
     assert(args.size == 1)
     val input = CharStreams.fromStream(System.`in`)
@@ -29,12 +31,12 @@ fun main(args: Array<String>) {
     val st = SymbolTable.topLevel()
     val ast = AST(st)
     val semanticErrors = SemanticErrorList()
-    val visitor = Visitor(ast, st, semanticErrors, enableLogging = true)
+    val visitor = Visitor(ast, st, semanticErrors, enableLogging = ENABLE_LOGGING)
     visitor.visit(program)
 
     semanticErrors.checkErrors()
 
-    val assemblyGenerator = AssemblyGenerator(ast)
+    val assemblyGenerator = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
     val assemblyCode = assemblyGenerator.generate()
 
     // Create assembly file
