@@ -26,7 +26,7 @@ class Branch(
     constructor(labelOp: BranchLabelOperand) : this(null, labelOp)
 
     constructor(conditionCode: ConditionCode?, utilFunc: UtilFunction) :
-            this(null, BranchLabelOperand(utilFunc.labelBlock))
+            this(conditionCode, BranchLabelOperand(utilFunc.labelBlock))
     constructor(utilFunc: UtilFunction) : this(null, utilFunc)
 }
 
@@ -46,6 +46,6 @@ class BranchLink(
     constructor(labelOp: BranchLabelOperand) : this(null, labelOp)
 
     constructor(conditionCode: ConditionCode?, utilFunc: UtilFunction) :
-        this(null, BranchLabelOperand(utilFunc.labelBlock))
+        this(conditionCode, BranchLabelOperand(utilFunc.labelBlock))
     constructor(utilFunc: UtilFunction) : this(null, utilFunc)
 }
