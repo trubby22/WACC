@@ -1067,7 +1067,7 @@ class AssemblyGenerator(private val ast: AST) {
                 )
                 addLines(
                     ReverseSub(resultRegister, resultRegister, IntImmediateOperand(0)),
-                    BranchLink(P_THROW_OVERFLOW_ERROR)
+                    BranchLink(VS, P_THROW_OVERFLOW_ERROR)
                 )
             }
             UnaryOp.LEN -> {
