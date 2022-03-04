@@ -813,6 +813,7 @@ class AssemblyGenerator(private val ast: AST) {
         translate(expr.expr1)
         resultRegister = resultRegister.nextReg()
         translate(expr.expr2)
+        resultRegister = resultRegister.prevReg()
         when (expr.operator) {
             PLUS, MINUS, MULT, DIV, MOD -> {
                 defineUtilFuncs(

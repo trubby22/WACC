@@ -134,4 +134,8 @@ enum class Register : Operand {
     fun nextReg(): Register {
         return values()[this.ordinal + 1]
     }
+
+    fun prevReg(): Register {
+        return values()[this.ordinal - 1]
+    }
 }
