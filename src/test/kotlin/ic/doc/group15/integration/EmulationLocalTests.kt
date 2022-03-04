@@ -1,7 +1,5 @@
 package ic.doc.group15.integration
 
-import ic.doc.group15.error.SEMANTIC_ERROR_CODE
-import ic.doc.group15.error.SYNTACTIC_ERROR_CODE
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -122,7 +120,7 @@ class EmulationLocalTests {
 //        println("Compilation output")
 //        println(compilationOutput)
 
-        assertTrue(setOf(0, SYNTACTIC_ERROR_CODE, SEMANTIC_ERROR_CODE)
+        assertTrue(setOf(0, 100, 200)
             .contains(compilationExitStatus))
 
         val filename = path.split("/").last()

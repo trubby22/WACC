@@ -357,7 +357,7 @@ class Visitor(
             errors.addError(FreeTypeError(ctxExpr.start, expr.type))
         }
 
-        return FreeStatementAST(scopeAST, symbolTable, expr)
+        return addToScope(FreeStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitSkipStat(ctx: SkipStatContext?): ASTNode {
@@ -377,7 +377,7 @@ class Visitor(
 
         log("|| Target type: ${target.type}")
 
-        return ReadStatementAST(scopeAST, symbolTable, target)
+        return addToScope(ReadStatementAST(scopeAST, symbolTable, target))
     }
 
     //endregion
@@ -423,7 +423,7 @@ class Visitor(
         )
         symbolTable.add(varName, varDecl.varIdent)
 
-        return varDecl
+        return addToScope(varDecl)
     }
 
     override fun visitAssignmentStat(ctx: AssignmentStatContext): ASTNode {
@@ -439,7 +439,7 @@ class Visitor(
 
         assignLhs.rhs = assignRhs
 
-        return assignLhs
+        return addToScope(assignLhs)
     }
 
     override fun visitIdentAssignLhs(ctx: IdentAssignLhsContext): ASTNode {

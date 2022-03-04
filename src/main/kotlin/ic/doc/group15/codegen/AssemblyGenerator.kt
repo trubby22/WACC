@@ -67,6 +67,7 @@ class AssemblyGenerator(private val ast: AST) {
     }
 
     fun generate(): String {
+        println("Translating ast")
         translate(ast)
         var asm = ""
         if (data.isNotEmpty() || utilData.isNotEmpty()) {
@@ -93,6 +94,7 @@ class AssemblyGenerator(private val ast: AST) {
      * Sets up the environment for the block of statements, specifically by initialising the stack variables
      */
     private fun blockPrologue(node: BlockAST) {
+        println("Calling blockPrologue")
         // Calculate how much space to be allocated (and modify each variable to include its position on the stack)
         val stackSpaceUsed = node.symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
@@ -114,6 +116,7 @@ class AssemblyGenerator(private val ast: AST) {
      * Restores the state so that the program can resume from where it left off before entering the block
      */
     private fun blockEpilogue(node: BlockAST) {
+        println("Calling blockEpilogue")
         // Unwind stack
         val stackSpaceUsed = node.symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
@@ -125,6 +128,7 @@ class AssemblyGenerator(private val ast: AST) {
      * Sets up the environment for a function
      */
     private fun functionPrologue(node: FunctionDeclarationAST) {
+        println("Calling functionPrologue")
         addLines(Push(LR))
     }
 
@@ -132,6 +136,7 @@ class AssemblyGenerator(private val ast: AST) {
      * Restores the state so that the program can resume from where it left off before entering the function
      */
     private fun functionEpilogue(node: FunctionDeclarationAST) {
+        println("Calling functionEpilogue")
         addLines(
             LTORG
         )
@@ -141,6 +146,7 @@ class AssemblyGenerator(private val ast: AST) {
      * Sets up the stack with the necessary parameters before a function call.
      */
     private fun functionCallPrologue(node: CallAST) {
+        println("Calling functionCallPrologue")
         node.actuals.forEach {
             // Load variable to resultRegister
             translate(it)
@@ -163,6 +169,7 @@ class AssemblyGenerator(private val ast: AST) {
      * function sub-call was made
      */
     private fun functionCallEpilogue(node: CallAST) {
+        println("Calling functionCallEpilogue")
         // Increment the stack pointer back to where it was
         val stackSpaceUsed = node.actuals.sumOf { arg -> arg.type.size() }
 
@@ -180,6 +187,9 @@ class AssemblyGenerator(private val ast: AST) {
      */
     @TranslatorMethod(AST::class)
     private fun transProgram(program: AST) {
+        println("Translating program")
+        println("program.statements:")
+        program.statements.forEach { println(it) }
         resultRegister = R4
         val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
@@ -205,6 +215,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(FunctionDeclarationAST::class)
     private fun transFunctionDeclaration(node: FunctionDeclarationAST) {
+        println("Translating function declaration")
         // Define label
         val funcLabel = newBranchLabel(node.funcName)
         currentLabel = funcLabel
@@ -221,6 +232,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(CallAST::class)
     private fun transCall(node: CallAST) {
+        println("Translating call")
         functionCallPrologue(node)
         addLines(BranchLink(BranchLabelOperand("f_${node.funcName}")))
         functionCallEpilogue(node)
@@ -231,6 +243,7 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(VariableDeclarationAST::class)
     private fun transVariableDeclaration(node: VariableDeclarationAST) {
         // Parse the expression whose value is to be stored in the variable
+        println("Translating VariableDeclarationAST")
         translate(node.rhs)
         transAssign(node.varIdent)
     }
@@ -238,12 +251,14 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(AssignToIdentAST::class)
     private fun transAssignToIdent(node: AssignToIdentAST) {
         // Parse the expression whose value is to be stored in the variable
+        println("Translating AssignToIdentAST")
         translate(node.rhs)
         transAssign(node.lhs.ident)
     }
 
     @TranslatorMethod(AssignToPairElemAST::class)
     private fun transAssignToPairElem(node: AssignToPairElemAST) {
+        println("Translating AssignToPairElemAST")
         translate(node.rhs)
         val pairStackOffset = (node.lhs.expr as VariableIdentifierAST).ident.stackPosition
         val storeInstruction = when (node.rhs.type.size()) {
@@ -267,6 +282,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(AssignToArrayElemAST::class)
     fun transAssignToArrayElem(node: AssignToArrayElemAST) {
+        println("Translating AssignToArrayElemAST")
         translate(node.rhs)
         val arrayElemAST = node.lhs as ArrayElemAST
         val symbolTable = arrayElemAST.symbolTable
@@ -316,6 +332,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(FstPairElemAST::class)
     fun transFstPairElem(node: FstPairElemAST) {
+        println("Translating FstPairElemAST")
         val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
             LoadByte(resultRegister, ZeroOffset
@@ -338,6 +355,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(SndPairElemAST::class)
     fun transSndPairElem(node: SndPairElemAST) {
+        println("Translating SndPairElemAST")
         val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
@@ -378,6 +396,7 @@ class AssemblyGenerator(private val ast: AST) {
      */
     @TranslatorMethod(WhileBlockAST::class)
     private fun transWhileBlock(node: WhileBlockAST) {
+        println("Translating WhileBlockAST")
         // Define labels
         val loopLabel = BranchLabel(branchLabelGenerator.generate())
         val checkLabel = BranchLabel(branchLabelGenerator.generate())
@@ -409,11 +428,13 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(BeginEndBlockAST::class)
     fun transBeginEndBlock(node: BeginEndBlockAST) {
+        println("Translating BeginEndBlockAST")
         node.statements.forEach { translate(it) }
     }
 
     @TranslatorMethod(FreeStatementAST::class)
     fun transFreeStatement(node: FreeStatementAST) {
+        println("Translating FreeStatementAST")
         val variable = (node.expr as VariableIdentifierAST).ident
         transRetrieve(variable)
         addLines(
@@ -429,6 +450,7 @@ class AssemblyGenerator(private val ast: AST) {
      */
     @TranslatorMethod(ReturnStatementAST::class)
     fun transReturnStatement(node: ReturnStatementAST) {
+        println("Translating ReturnStatementAST")
         translate(node.expr)
         addLines(
             Move(R0, resultRegister),
@@ -442,6 +464,7 @@ class AssemblyGenerator(private val ast: AST) {
      */
     @TranslatorMethod(ExitStatementAST::class)
     fun transExitStatement(node: ExitStatementAST) {
+        println("Translating ExitStatementAST")
         translate(node.expr)
         addLines(
             Move(R0, resultRegister),
@@ -451,6 +474,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(PrintStatementAST::class)
     fun transPrintStatement(node: PrintStatementAST) {
+        println("Translating PrintStatementAST")
         translate(node.expr)
         addLines(
             Move(R0, resultRegister)
@@ -484,6 +508,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(PrintlnStatementAST::class)
     fun transPrintlnStatement(node: PrintlnStatementAST) {
+        println("Translating PrintlnStatementAST")
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
         transPrintStatement(printStatementAST)
         addLines(BranchLink(P_PRINT_LN))
@@ -501,6 +526,7 @@ class AssemblyGenerator(private val ast: AST) {
      */
     @TranslatorMethod(ReadStatementAST::class)
     fun transReadStatement(node: ReadStatementAST) {
+        println("Translating ReadStatementAST")
         when (node.target.type) {
             IntType -> {
                 defineUtilFuncs(P_READ_INT)
@@ -542,6 +568,7 @@ class AssemblyGenerator(private val ast: AST) {
      */
     @TranslatorMethod(IfBlockAST::class)
     fun transIfBlock(stat: IfBlockAST) {
+        println("Translating IfBlockAST")
         val curLabel = currentLabel
 
         // Add instructions to currentLabel
@@ -572,6 +599,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(NewPairAST::class)
     fun transNewPair(node: NewPairAST) {
+        println("Translating NewPairAST")
         addLines(
             LoadWord(R0, PseudoImmediateOperand(2 * WORD)),
             BranchLink(MALLOC),
@@ -615,6 +643,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(IntLiteralAST::class)
     private fun translateIntLiteral(node: IntLiteralAST) {
+        println("Translating IntLiteralAST")
         addLines(
             LoadWord(resultRegister, PseudoImmediateOperand(node.intValue))
         )
@@ -622,6 +651,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(BoolLiteralAST::class)
     private fun translateBoolLiteral(node: BoolLiteralAST) {
+        println("Translating BoolLiteralAST")
         addLines(
             Move(resultRegister, ImmediateOperand(node.boolValue))
         )
@@ -629,6 +659,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(CharLiteralAST::class)
     private fun translateCharLiteral(node: CharLiteralAST) {
+        println("Translating CharLiteralAST")
         addLines(
             Move(resultRegister, ImmediateOperand(node.charValue))
         )
@@ -636,6 +667,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(StringLiteralAST::class)
     private fun translateStringLiteral(node: StringLiteralAST) {
+        println("Translating StringLiteralAST")
         addLines(
             LoadWord(resultRegister, DataLabelOperand(newStringLabel(node.stringValue)))
         )
@@ -643,6 +675,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(ArrayLiteralAST::class)
     private fun transArrayLiteral(node: ArrayLiteralAST) {
+        println("Translating ArrayLiteralAST")
         val size = 4 + (node.elems.size * (node.elems[0].type.size())) // calculate bytes need to malloc
         currentLabel.addLines(
             LoadWord(R0, PseudoImmediateOperand(size)),
@@ -673,11 +706,13 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(VariableIdentifierAST::class)
     private fun translateVariableIdentifier(node: VariableIdentifierAST) {
+        println("Translating VariableIdentifierAST")
         transRetrieve(node.ident)
     }
 
     @TranslatorMethod(ArrayElemAST::class)
     private fun translateArrayElem(node: ArrayElemAST) {
+        println("Translating ArrayElemAST")
         val variable = node.symbolTable.lookup(node.arrayName) as Variable
         addLines(Add(resultRegister, SP, ImmediateOperand(variable.stackPosition)))
 
@@ -721,6 +756,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(BinaryOpExprAST::class)
     private fun transBinOp(expr: BinaryOpExprAST) {
+        println("Translating BinaryOpExprAST")
         translate(expr.expr1)
         resultRegister = resultRegister.nextReg()
         translate(expr.expr2)
@@ -834,6 +870,7 @@ class AssemblyGenerator(private val ast: AST) {
 
     @TranslatorMethod(UnaryOpExprAST::class)
     private fun transUnOp(unOpExpr: UnaryOpExprAST) {
+        println("Translating UnaryOpExprAST")
         translate(unOpExpr.expr)
 
         when (unOpExpr.operator) {
