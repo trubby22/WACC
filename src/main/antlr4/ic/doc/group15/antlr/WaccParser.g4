@@ -73,6 +73,11 @@ pair_elem_type: base_type
               | PAIR
 ;
 
+int_liter: int_liter_negative | int_liter_positive;
+
+int_liter_negative: MINUS NEGATIVE_INTEGER;
+int_liter_positive: PLUS? POSITIVE_INTEGER;
+
 expr: OPEN_PAREN expr CLOSE_PAREN               #bracketExpr
     | int_liter                                 #singleElemExpr
     | bool_liter                                #singleElemExpr
@@ -104,11 +109,6 @@ expr: OPEN_PAREN expr CLOSE_PAREN               #bracketExpr
 ident: IDENT;
 
 array_elem: ident (OPEN_BRACKETS expr CLOSE_BRACKETS)+;
-
-int_liter: int_liter_negative | int_liter_positive;
-
-int_liter_negative: MINUS NEGATIVE_INTEGER;
-int_liter_positive: PLUS? POSITIVE_INTEGER;
 
 bool_liter: TRUE                                #tBool
           | FALSE                               #fBool
