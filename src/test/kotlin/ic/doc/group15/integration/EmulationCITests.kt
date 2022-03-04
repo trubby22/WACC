@@ -449,7 +449,8 @@ class EmulationCITests {
             StandardCharsets.UTF_8.name()
         )
 
-        assertTrue(0 == compilationExitStatus, "./compile failed\n")
+        assertTrue(setOf(0, 100, 200)
+            .contains(compilationExitStatus), "./compile failed\n")
 
         val createExecutable = "arm-linux-gnueabi-gcc -o $fileName " +
             "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $fileName.s"
