@@ -596,7 +596,7 @@ class Visitor(
     }
 
     override fun visitStr_liter(ctx: Str_literContext): ASTNode {
-        return StringLiteralAST(ctx.text)
+        return StringLiteralAST(ctx.text.trim('\"'))
     }
 
     override fun visitPair_liter(ctx: Pair_literContext): ASTNode {

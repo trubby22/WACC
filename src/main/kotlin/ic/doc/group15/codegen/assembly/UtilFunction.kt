@@ -8,9 +8,14 @@ import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTS
 import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.SCANF
 import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
-import ic.doc.group15.codegen.assembly.operand.*
+import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
+import ic.doc.group15.codegen.assembly.operand.ImmediateOffset
+import ic.doc.group15.codegen.assembly.operand.ImmediateOperand
 import ic.doc.group15.codegen.assembly.operand.Register.*
+import ic.doc.group15.codegen.assembly.operand.ZeroOffset
 import java.util.*
+
+private const val NULL = '\u0000'
 
 enum class UtilFunction {
     P_READ_INT {
@@ -42,7 +47,9 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Compare(R1, ImmediateOperand(0)),
-                LoadWord(EQ, R0, generateStringData("DivideByZeroError: divide or modulo by zero\n")),
+                LoadWord(
+                    EQ, R0, generateStringData("DivideByZeroError: divide or modulo by zero\n")
+                ),
                 BranchLink(EQ, P_THROW_RUNTIME_ERROR),
                 Pop(PC)
             )
@@ -60,8 +67,13 @@ enum class UtilFunction {
     P_THROW_OVERFLOW_ERROR {
         override val assembly by lazy {
             listOf(
-                LoadWord(R0, generateStringData("OverflowError: the result is" +
-                        " too small/large to store in a 4-byte signed-integer.\\n")),
+                LoadWord(
+                    R0,
+                    generateStringData(
+                        "OverflowError: the result is" +
+                            " too small/large to store in a 4-byte signed-integer.\n"
+                    )
+                ),
                 BranchLink(P_THROW_RUNTIME_ERROR)
             )
         }
@@ -71,12 +83,16 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Compare(R0, ImmediateOperand(0)),
-                LoadWord(LT, R0, generateStringData
-                    ("ArrayIndexOutOfBoundsError: negative index\n")),
+                LoadWord(
+                    LT, R0,
+                    generateStringData("ArrayIndexOutOfBoundsError: negative index\n")
+                ),
                 LoadWord(R1, R1),
                 Compare(R0, R1),
-                LoadWord(C, R0, generateStringData
-                    ("ArrayIndexOutOfBoundsError: index too large\n")),
+                LoadWord(
+                    C, R0,
+                    generateStringData("ArrayIndexOutOfBoundsError: index too large\n")
+                ),
                 BranchLink(C, P_THROW_RUNTIME_ERROR),
                 Pop(PC)
             )
@@ -87,8 +103,10 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Compare(R0, ImmediateOperand(0)),
-                LoadWord(EQ, R0, generateStringData
-                    ("NullReferenceError: dereference a null reference\\n")),
+                LoadWord(
+                    EQ, R0,
+                    generateStringData("NullReferenceError: dereference a null reference\n")
+                ),
                 BranchLink(EQ, P_THROW_RUNTIME_ERROR),
                 Pop(PC)
             )
@@ -170,8 +188,10 @@ enum class UtilFunction {
             listOf(
                 Push(LR),
                 Compare(R0, ImmediateOperand(0)),
-                LoadWord(EQ, R0, generateStringData(
-                    "NullReferenceError: dereference a null reference\\n")),
+                LoadWord(
+                    EQ, R0,
+                    generateStringData("NullReferenceError: dereference a null reference\n")
+                ),
                 Branch(EQ, P_THROW_RUNTIME_ERROR),
                 Push(R0),
                 LoadWord(R0, ZeroOffset(R0)),
@@ -197,7 +217,7 @@ enum class UtilFunction {
     private val stringLabel: UniqueLabelGenerator = UniqueLabelGenerator(labelName + "_msg_")
 
     protected fun generateStringData(str: String): DataLabelOperand {
-        val label = StringData(stringLabel, str)
+        val label = StringData(stringLabel, str, nullTerminated = true)
         dataBlocks.add(label)
         return DataLabelOperand(label)
     }

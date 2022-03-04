@@ -48,9 +48,14 @@ abstract class DataLabel protected constructor(
         this(uniqueLabel.generate(), byteSize, *lines)
 }
 
-class StringData(name: String, val str: String) : DataLabel(name, str.length + 1, Ascii(str)) {
+class StringData(
+    name: String,
+    val str: String,
+    nullTerminated: Boolean = false
+) : DataLabel(name, str.length, Ascii(str, nullTerminated)) {
 
-    constructor(uniqueLabel: UniqueLabelGenerator, str: String) : this(uniqueLabel.generate(), str)
+    constructor(uniqueLabel: UniqueLabelGenerator, str: String, nullTerminated: Boolean = false) :
+        this(uniqueLabel.generate(), str, nullTerminated)
 }
 
 private class Word(val byteSize: Int) : DataLine() {
@@ -59,8 +64,24 @@ private class Word(val byteSize: Int) : DataLine() {
     }
 }
 
-private class Ascii(val str: String) : DataLine() {
+private class Ascii(val str: String, private val nullTerminated: Boolean = false) : DataLine() {
     override fun toString(): String {
-        return ".ascii".padEnd(ASM_TAB_SIZE) + str
+        return ".ascii".padEnd(ASM_TAB_SIZE) + convertStr(str)
+    }
+
+    private fun convertStr(str: String): String {
+        return "\"" + str.map {
+            when (it) {
+                '\b' -> "\\b"
+                '\t' -> "\\t"
+                '\n' -> "\\n"
+                '\u000c' -> "\\f"
+                '\r' -> "\\r"
+                '\"' -> "\\\""
+                '\'' -> "\\\'"
+                '\\' -> "\\\\"
+                else -> "$it"
+            }
+        }.joinToString(separator = "") + "${if (nullTerminated) "\\0" else ""}\""
     }
 }

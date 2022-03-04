@@ -75,7 +75,7 @@ class AssemblyGenerator(private val ast: AST) {
 
         asm += joinAsm(data.values) +
             joinAsm(utilData.values) +
-            ".text\n\n.global main\n" +
+            "\n.text\n\n.global main\n" +
             joinAsm(text.values) +
             joinAsm(utilText.values)
         return asm
