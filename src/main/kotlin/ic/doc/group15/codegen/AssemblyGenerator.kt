@@ -194,7 +194,7 @@ class AssemblyGenerator(private val ast: AST) {
         val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
         // translate all function blocks into assembly
-        functionASTs.forEach { f -> transFunctionDeclaration(f) }
+        functionASTs.forEach { f -> translate(f) }
 
         // Translate main instructions into assembly
         // We create a new FunctionDeclarationAST to store statements in the main function
@@ -207,10 +207,11 @@ class AssemblyGenerator(private val ast: AST) {
         // Add statements
         val statementASTs = program.statements.filter { s -> s !is FunctionDeclarationAST }
         mainAST.statements.addAll(statementASTs)
-        // Add return statement (main function implicitly returns 0)
-        mainAST.statements.add(ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0)))
 
-        transFunctionDeclaration(mainAST)
+        translate(mainAST)
+
+        // Add return statement (main function implicitly returns 0)
+        translate(ReturnStatementAST(mainAST, mainAST.symbolTable.subScope(), IntLiteralAST(0)))
     }
 
     @TranslatorMethod(FunctionDeclarationAST::class)
@@ -451,11 +452,18 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(ReturnStatementAST::class)
     fun transReturnStatement(node: ReturnStatementAST) {
         println("Translating ReturnStatementAST")
-        translate(node.expr)
-        addLines(
-            Move(R0, resultRegister),
-            Pop(PC)
-        )
+        if (node.expr is IntLiteralAST) {
+            addLines(
+                LoadWord(R0, PseudoImmediateOperand(node.expr.intValue)),
+                Pop(PC)
+            )
+        } else {
+            translate(node.expr)
+            addLines(
+                Move(R0, resultRegister),
+                Pop(PC)
+            )
+        }
     }
 
     /**
