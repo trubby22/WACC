@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Move to parent directory
+cd ../
+
+# Compile the jar binary
+make
+
+# Pattern match to obtain file name
+filepath=$1
+base=${filepath##*/}
+filename=${base%.*}
+
+# Compile the source code
+./compile "$filepath"
+
+# Assemble
+arm-linux-gnueabi-gcc -o "$filename" -mcpu=arm1176jzf-s -mtune=arm1176jzf-s "$filename".s
+
+# Emulate
+qemu-arm -L /usr/arm-linux-gnueabi "$filename"
+
+# Print exit code
+echo $? 2>&1
+
+# Housekeeping
+rm -f "$filename" "$filename".s
