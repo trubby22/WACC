@@ -285,7 +285,7 @@ class AssemblyGenerator(private val ast: AST) {
     private fun transCall(node: CallAST) {
         println("Translating call")
         functionCallPrologue(node)
-        addLines(BranchLink(BranchLabelOperand("f_${node.funcName}")))
+        addLines(BranchLink(BranchLabelOperand(node.funcName)))
         functionCallEpilogue(node)
         // Move the result from R0 to resultRegister
         addLines(Move(resultRegister, R0))
