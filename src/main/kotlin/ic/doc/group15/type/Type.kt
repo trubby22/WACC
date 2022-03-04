@@ -130,7 +130,7 @@ class ArrayType(elementType: ReturnableType, dimension: Int) : ReturnableType, H
         return elementType.compatible(type.elementType)
     }
 
-    override fun size(): Int = 2 * WORD
+    override fun size(): Int = WORD
 
     override fun toString(): String {
         return elementType.toString() + "[]".repeat(dimension)
@@ -157,7 +157,7 @@ class PairType(
             (sndType.compatible(type.sndType) || type.sndType == Type.ANY)
     }
 
-    override fun size(): Int = 2 * WORD
+    override fun size(): Int = WORD
 
     override fun toString(): String {
         return "pair($fstType, $sndType)"

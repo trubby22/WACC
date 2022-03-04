@@ -720,16 +720,24 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(ArrayLiteralAST::class)
     private fun transArrayLiteral(node: ArrayLiteralAST) {
         println("Translating ArrayLiteralAST")
-        val size = 4 + (node.elems.size * (node.elems[0].type.size())) // calculate bytes need to malloc
+        val oldReg = resultRegister
+        val elems = node.elems
+        val elemSize: Int = if (node.elems.isNotEmpty()) {
+            elems[0].type.size()
+        } else {
+            0
+        }
+        val size = 4 + elems.size * elemSize // calculate bytes need to malloc
         currentLabel.addLines(
             LoadWord(R0, PseudoImmediateOperand(size)),
             BranchLink(MALLOC),
             Move(resultRegister, R0)
         )
         var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
-        for (expr in node.elems) {
+        for (expr in elems) {
             resultRegister = resultRegister.nextReg()
             translate(expr)
+            resultRegister = oldReg
             if (expr.type.size() == 4) {
                 offset += 4
                 currentLabel.addLines(
@@ -743,7 +751,7 @@ class AssemblyGenerator(private val ast: AST) {
             }
         }
         currentLabel.addLines(
-            LoadWord(resultRegister.nextReg(), PseudoImmediateOperand(node.elems.size)),
+            LoadWord(resultRegister.nextReg(), PseudoImmediateOperand(elems.size)),
             StoreWord(resultRegister.nextReg(), ZeroOffset(resultRegister))
         )
     }
