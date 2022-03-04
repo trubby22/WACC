@@ -654,6 +654,14 @@ class AssemblyGenerator(
         transRetrieve(node.ident)
     }
 
+    @TranslatorMethod(NullPairLiteralAST::class)
+    private fun translateNullPairLiteralAST(node: NullPairLiteralAST) {
+        log("Translating NullPairLiteralAST")
+        addLines(
+            LoadWord(resultRegister, PseudoImmediateOperand(0))
+        )
+    }
+
     @TranslatorMethod(ArrayLiteralAST::class)
     private fun transArrayLiteral(node: ArrayLiteralAST) {
         log("Translating ArrayLiteralAST")
@@ -1123,6 +1131,7 @@ class AssemblyGenerator(
     }
 
     private fun newBranchLabel(name: String, vararg lines: Instruction): BranchLabel {
+        println("Generation branch label: $name")
         val label = BranchLabel(name, *lines)
         text[label.name] = label
         return label
