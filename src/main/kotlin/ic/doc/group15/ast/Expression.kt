@@ -22,7 +22,7 @@ open class VariableIdentifierAST(
 
 class ArrayElemAST(
     symbolTable: SymbolTable,
-    val arrayName: String,
+    val arrayVar: VariableIdentifierAST,
     val indexExpr: List<ExpressionAST>,
     val elemType: ReturnableType
 ) : ExpressionAST(symbolTable, elemType)

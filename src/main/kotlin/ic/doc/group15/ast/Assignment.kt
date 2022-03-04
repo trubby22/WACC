@@ -34,7 +34,7 @@ class AssignToPairElemAST(
 
 class ArrayLiteralAST(
     symbolTable: SymbolTable,
-    elemType: Type,
+    elemType: ReturnableType,
     val elems: List<ExpressionAST>
 ) : AssignRhsAST(symbolTable, ArrayType(elemType, 1))
 

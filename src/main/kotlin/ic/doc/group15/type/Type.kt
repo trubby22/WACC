@@ -91,9 +91,9 @@ enum class BasicType(private val size: Int) : ReturnableType {
     override fun size(): Int = this.size
 }
 
-class ArrayType(elementType: Type, dimension: Int) : ReturnableType, HeapAllocatedType {
+class ArrayType(elementType: ReturnableType, dimension: Int) : ReturnableType, HeapAllocatedType {
 
-    val elementType: Type
+    val elementType: ReturnableType
     val dimension: Int
 
     companion object {

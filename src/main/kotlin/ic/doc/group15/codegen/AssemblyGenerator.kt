@@ -320,15 +320,13 @@ class AssemblyGenerator(private val ast: AST) {
         val arrayElemAST = node.lhs
 //        TODO: calculate hardcodedNum's instead of
 //         hardcoding them
-        val stackPointerOffset = (
-            node.symbolTable.lookup(node.lhs.arrayName)
-                as VariableIdentifierAST
-            ).ident.stackPosition
+        val arrayVariable = node.lhs.arrayVar
+        val stackPointerOffset = arrayVariable.ident.stackPosition
         val hardcodedNum1 = 4
         val hardcodedNum2 = 2
         addLines(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
         for (indexExpr in arrayElemAST.indexExpr) {
-            addLines(translate(indexExpr) as List<Instruction>)
+            translate(indexExpr)
             addLines(
                 LoadWord(
                     resultRegister.nextReg().nextReg(),
@@ -759,7 +757,7 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(ArrayElemAST::class)
     private fun translateArrayElem(node: ArrayElemAST) {
         println("Translating ArrayElemAST")
-        val variable = node.symbolTable.lookup(node.arrayName) as Variable
+        val variable = node.arrayVar.ident
         addLines(Add(resultRegister, SP, ImmediateOperand(variable.stackPosition)))
 
         for (i in node.indexExpr.indices) {

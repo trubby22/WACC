@@ -488,10 +488,7 @@ class Visitor(
             indexList.add(indexExpr)
         }
 
-        return ArrayElemAST(
-            symbolTable, ctx.ident().text, indexList,
-            arr.elementType as ReturnableType
-        )
+        return ArrayElemAST(symbolTable, ident, indexList, arr.elementType)
     }
 
     override fun visitNewPairAssignRhs(ctx: NewPairAssignRhsContext): ASTNode {

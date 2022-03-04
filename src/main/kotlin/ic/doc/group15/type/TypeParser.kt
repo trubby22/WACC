@@ -58,7 +58,7 @@ class TypeParser {
                 assert(ctx.base_type() != null)
                 type = parse(symbolTable, ctx.base_type() as Base_typeContext)
             }
-            return ArrayType(type, ctx.array_brackets().size)
+            return ArrayType(type as ReturnableType, ctx.array_brackets().size)
         }
     }
 }
