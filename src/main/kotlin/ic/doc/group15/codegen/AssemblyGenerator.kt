@@ -643,14 +643,23 @@ class AssemblyGenerator(private val ast: AST) {
     @TranslatorMethod(ArrayLiteralAST::class)
     private fun transArrayLiteral(node: ArrayLiteralAST) {
         println("Translating ArrayLiteralAST")
-        val oldReg = resultRegister
         val elems = node.elems
         val elemSize: Int = if (node.elems.isNotEmpty()) {
             elems[0].type.size()
         } else {
             0
         }
-        val size = 4 + elems.size * elemSize // calculate bytes need to malloc
+        val size = WORD + elems.size * elemSize // calculate bytes need to malloc
+
+        // Allocate two registers for ArrayLiteral
+        var accumulatorState = false
+        if (resultRegister == Register.maxReg()) {
+            resultRegister = resultRegister.prevReg()
+            addLines(Push(resultRegister))
+            offsetStackStore[0] += WORD
+            accumulatorState = true
+        }
+
         currentLabel.addLines(
             LoadWord(R0, PseudoImmediateOperand(size)),
             BranchLink(MALLOC),
@@ -658,25 +667,40 @@ class AssemblyGenerator(private val ast: AST) {
         )
         var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
         for (expr in elems) {
-            resultRegister = resultRegister.nextReg()
+            val dest = resultRegister.nextReg()
+            val src = resultRegister
+            resultRegister = dest // R_n+1
             translate(expr)
-            resultRegister = oldReg
-            if (expr.type.size() == 4) {
-                offset += 4
+            resultRegister = src // R_n
+            if (expr.type.size() == WORD) {
+                offset += WORD
                 currentLabel.addLines(
-                    StoreWord(resultRegister.nextReg(), ImmediateOffset(resultRegister, offset))
+                    StoreWord(dest, ImmediateOffset(src, offset))
                 )
             } else {
-                offset += 1
+                offset += BYTE
                 currentLabel.addLines(
-                    StoreByte(resultRegister.nextReg(), ImmediateOffset(resultRegister, offset))
+                    StoreByte(dest, ImmediateOffset(src, offset))
                 )
             }
         }
+
+        val dest = resultRegister.nextReg() // R_n+1
         currentLabel.addLines(
-            LoadWord(resultRegister.nextReg(), PseudoImmediateOperand(elems.size)),
-            StoreWord(resultRegister.nextReg(), ZeroOffset(resultRegister))
+            LoadWord(dest, PseudoImmediateOperand(elems.size)),
+            StoreWord(dest, ZeroOffset(resultRegister))
         )
+
+        // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
+        // original value in MAX_REG - 1
+        if (accumulatorState) {
+            addLines(
+                Move(dest, ZeroOffset(resultRegister)),
+                Pop(resultRegister)
+            )
+            resultRegister = dest
+            offsetStackStore[0] -= WORD
+        }
     }
 
     @TranslatorMethod(ArrayElemAST::class)
