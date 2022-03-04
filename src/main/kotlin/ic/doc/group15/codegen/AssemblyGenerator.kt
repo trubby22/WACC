@@ -664,14 +664,23 @@ class AssemblyGenerator(private val ast: AST) {
             P_THROW_RUNTIME_ERROR
         )
         val variable = node.arrayVar.ident
+
+        // Allocate two registers for arrayElem
+        var accumulatorState = false
+        if (resultRegister == Register.maxReg()) { // R10
+            resultRegister = resultRegister.prevReg() // R9
+            addLines(Push(resultRegister)) // Spare R9
+            offsetStackStore[0] += WORD
+            accumulatorState = true
+        }
+
         addLines(Add(resultRegister, SP, ImmediateOperand(variable.stackPosition)))
 
         for (i in node.indexExpr.indices) {
             val index = node.indexExpr[i]
-            val currReg = resultRegister
-            resultRegister = currReg.nextReg()
+            resultRegister = resultRegister.nextReg()
             translate(index) // translating the index of the array
-            resultRegister = currReg
+            resultRegister = resultRegister.prevReg()
             addLines(
                 LoadWord(resultRegister, ZeroOffset(resultRegister)),
                 Move(R0, resultRegister.nextReg()), // this and next two lines just check bounds of array
@@ -701,6 +710,17 @@ class AssemblyGenerator(private val ast: AST) {
                     LoadWord(resultRegister, ZeroOffset(resultRegister))
                 )
             }
+        }
+
+        // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
+        // original value in MAX_REG - 1
+        if (accumulatorState) {
+            addLines(
+                Move(resultRegister.nextReg(), ZeroOffset(resultRegister)),
+                Pop(resultRegister)
+            )
+            resultRegister = resultRegister.nextReg()
+            offsetStackStore[0] -= WORD
         }
     }
 
@@ -969,11 +989,14 @@ class AssemblyGenerator(private val ast: AST) {
             }
         }
 
-        resultRegister = resultRegister.prevReg()
-
-        // Restore the value to MAX_REG - 1
+        // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
+        // original value in MAX_REG - 1
         if (accumulatorState) {
-            addLines(Pop(resultRegister))
+            addLines(
+                Move(resultRegister.nextReg(), ZeroOffset(resultRegister)),
+                Pop(resultRegister)
+            )
+            resultRegister = resultRegister.nextReg()
             offsetStackStore[0] -= WORD
         }
     }
