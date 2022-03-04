@@ -568,7 +568,7 @@ class AssemblyGenerator(private val ast: AST) {
         when (node.target.type) {
             IntType -> {
                 defineUtilFuncs(P_READ_INT)
-                translate(node.target)
+                translate(node.target.lhs)
                 addLines(
                     Move(R0, resultRegister),
                     BranchLink(P_READ_INT)
@@ -576,7 +576,7 @@ class AssemblyGenerator(private val ast: AST) {
             }
             CharType -> {
                 defineUtilFuncs(P_READ_CHAR)
-                translate(node.target)
+                translate(node.target.lhs)
                 addLines(
                     Move(R0, resultRegister),
                     BranchLink(P_READ_CHAR)
