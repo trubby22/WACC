@@ -172,10 +172,10 @@ enum class UtilFunction(vararg val dependencies: UtilFunction) {
                 LoadWord(R1, ZeroOffset(R1)),
                 Compare(R0, R1),
                 LoadWord(
-                    C, R0,
+                    CS, R0,
                     generateStringData("ArrayIndexOutOfBoundsError: index too large\n")
                 ),
-                BranchLink(C, P_THROW_RUNTIME_ERROR),
+                BranchLink(CS, P_THROW_RUNTIME_ERROR),
                 Pop(PC)
             )
         }

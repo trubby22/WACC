@@ -52,7 +52,7 @@ class StringData(
     name: String,
     val str: String,
     nullTerminated: Boolean = false
-) : DataLabel(name, str.length, Ascii(str, nullTerminated)) {
+) : DataLabel(name, str.length + 1, Ascii(str, nullTerminated)) {
 
     constructor(uniqueLabel: UniqueLabelGenerator, str: String, nullTerminated: Boolean = false) :
         this(uniqueLabel.generate(), str, nullTerminated)

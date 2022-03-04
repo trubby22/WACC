@@ -37,12 +37,12 @@ enum class ConditionCode {
     /**
      * Overflow.
      **/
-    V,
+    VS,
 
     /**
      * Carry.
      **/
-    C
+    CS
     ;
 
     override fun toString(): String {

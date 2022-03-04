@@ -971,13 +971,13 @@ class AssemblyGenerator(private val ast: AST) {
                     PLUS -> {
                         addLines(
                             Add(true, resultRegister, resultRegister, resultRegister.nextReg()),
-                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
+                            BranchLink(VS, P_THROW_OVERFLOW_ERROR)
                         )
                     }
                     MINUS -> {
                         addLines(
                             Sub(true, resultRegister, resultRegister, resultRegister.nextReg()),
-                            BranchLink(V, P_THROW_OVERFLOW_ERROR)
+                            BranchLink(VS, P_THROW_OVERFLOW_ERROR)
                         )
                     }
                 }

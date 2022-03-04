@@ -22,7 +22,7 @@ abstract class UpdateFlagsInstruction protected constructor(
     ) : this(instr, conditionCode, updateFlags, *operands.toTypedArray())
 
     override fun toString(): String {
-        return "$instr${conditionCode ?: ""}${if (updateFlags) "s" else ""} " + params
+        return "$instr${conditionCode ?: ""}${if (updateFlags) "S" else ""} " + params
             .joinToString(separator = ", ")
     }
 }
