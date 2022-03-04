@@ -4,6 +4,7 @@ import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -12,66 +13,79 @@ class EmulationLocalTests {
 
     private val validFolder = "wacc_examples/valid"
 
+    @Timeout(30)
     @Test
     fun advancedExceptTicTacToeAndHashTableEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/advanced")
     }
 
+    @Timeout(30)
     @Test
     fun arrayEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/array")
     }
 
+    @Timeout(30)
     @Test
     fun basicEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/basic")
     }
 
+    @Timeout(30)
     @Test
     fun expressionsEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/expressions")
     }
 
+    @Timeout(30)
     @Test
     fun functionEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/function")
     }
 
+    @Timeout(30)
     @Test
     fun ifEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/if")
     }
 
+    @Timeout(30)
     @Test
     fun ioExceptIOLoopEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/IO")
     }
 
+    @Timeout(30)
     @Test
     fun pairsEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/pairs")
     }
 
+    @Timeout(30)
     @Test
     fun runtimeErrEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/runtimeErr")
     }
 
+    @Timeout(30)
     @Test
     fun scopeEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/scope")
     }
 
+    @Timeout(30)
     @Test
     fun sequenceEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/sequence")
     }
 
+    @Timeout(30)
     @Test
     fun variablesEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/variables")
     }
 
+    @Timeout(30)
     @Test
     fun whileEmulationProducesRightExitCodesAndOutput() {
         checkAssemblyFolder("$validFolder/while")
@@ -97,6 +111,8 @@ class EmulationLocalTests {
     }
 
     private fun checkAssembly(path: String): Boolean {
+
+        println("testing path: $path")
 
         val compilation = ProcessBuilder(
             "/bin/bash",

@@ -21,7 +21,7 @@ class EmulationCITests {
         private val arrayFolderPath = "$validFolderPath/array"
         private val arrayResultFolderPath = "$validModelOutputFolderPath/array"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(
             strings = [
@@ -48,7 +48,7 @@ class EmulationCITests {
             private val exitFolderPath = "$basicFolderPath/exit"
             private val exitResultFolderPath = "$basicResultFolderPath/exit"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(strings = ["exit-1", "exitBasic", "exitBasic2", "exitWrap"])
             fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
@@ -64,7 +64,7 @@ class EmulationCITests {
             private val skipFolderPath = "$basicFolderPath/skip"
             private val skipResultFolderPath = "$basicResultFolderPath/skip"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(strings = ["comment", "commentInLine", "skip"])
             fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
@@ -83,7 +83,7 @@ class EmulationCITests {
         private val expressionsResultFolderPath =
             "$validModelOutputFolderPath/expressions"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(
             strings = [
@@ -118,7 +118,7 @@ class EmulationCITests {
             private val nestedFunctionsResultFolderPath =
                 "$functionsResultFolderPath/nested_functions"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(
                 strings = [
@@ -142,7 +142,7 @@ class EmulationCITests {
             private val simpleFunctionsResultFolderPath =
                 "$functionsResultFolderPath/simple_functions"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(
                 strings = [
@@ -167,7 +167,7 @@ class EmulationCITests {
         private val ifFolderPath = "$validFolderPath/if"
         private val ifResultFolderPath = "$validModelOutputFolderPath/if"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(strings = ["if1", "if2", "if3", "if4", "if5", "if6", "ifBasic", "ifFalse", "ifTrue", "whitespace"])
         fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
@@ -186,7 +186,7 @@ class EmulationCITests {
 
         // Note: IOLoop is left out until a separate function is written to
         // handle interactive input using "echo input | refCompile/command"
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(strings = ["IOSequence"])
         fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
@@ -201,7 +201,7 @@ class EmulationCITests {
             private val printFolderPath = "$ioFolderPath/print"
             private val printResultFolderPath = "$ioResultFolderPath/print"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(
                 strings = [
@@ -223,7 +223,7 @@ class EmulationCITests {
             private val readFolderPath = "$ioFolderPath/read"
             private val readResultFolderPath = "$ioResultFolderPath/read"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(
                 strings = [
@@ -246,7 +246,7 @@ class EmulationCITests {
         private val pairsFolderPath = "$validFolderPath/pairs"
         private val pairsResultFolderPah = "$validModelOutputFolderPath/pairs"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(
             strings = [
@@ -277,7 +277,7 @@ class EmulationCITests {
             private val arrayOutOfBoundsResultFolderPath =
                 "$runtimeErrorResultFolderPath/arrayOutOfBounds"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(strings = ["arrayNegBounds", "arrayOutOfBounds", "arrayOutOfBoundsWrite"])
             fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
@@ -295,7 +295,7 @@ class EmulationCITests {
             private val divideByZeroResultFolderPath =
                 "$runtimeErrorResultFolderPath/divideByZero"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(strings = ["divideByZero", "divZero", "modByZero"])
             fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
@@ -313,7 +313,7 @@ class EmulationCITests {
             private val integerOverflowResultFolderPath =
                 "$runtimeErrorResultFolderPath/integerOverflow"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(
                 strings = [
@@ -336,7 +336,7 @@ class EmulationCITests {
             private val nullDereferenceResultFolderPath =
                 "$runtimeErrorResultFolderPath/nullDereference"
 
-            @Timeout(5000)
+            @Timeout(2)
             @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
             @ValueSource(strings = ["freeNull", "readNull1", "readNull2", "setNull1", "setNull2", "useNull1", "useNull2"])
             fun testExecutionProducesExpectedExitCodeAndOutput(fileName: String) {
@@ -354,7 +354,7 @@ class EmulationCITests {
         private val scopeFolderPath = "$validFolderPath/scope"
         private val scopeResultFolderPath = "$validModelOutputFolderPath/scope"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(
             strings = [
@@ -378,7 +378,7 @@ class EmulationCITests {
         private val sequenceResultFolderPath =
             "$validModelOutputFolderPath/sequence"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(
             strings = [
@@ -400,7 +400,7 @@ class EmulationCITests {
         private val variablesResultFolderPath =
             "$validModelOutputFolderPath/variables"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(
             strings = [
@@ -423,7 +423,7 @@ class EmulationCITests {
         private val whileFolderPath = "$validFolderPath/while"
         private val whileResultFolderPath = "$validModelOutputFolderPath/while"
 
-        @Timeout(5000)
+        @Timeout(2)
         @ParameterizedTest(name = "execution of assembly code generated from {0} source code produces expected exit code and output")
         @ValueSource(
             strings = [
