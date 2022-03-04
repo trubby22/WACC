@@ -1,4 +1,4 @@
-package ic.doc.group15
+package ic.doc.group15.integration
 
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Assertions.assertEquals
