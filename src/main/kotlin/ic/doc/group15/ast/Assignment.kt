@@ -19,12 +19,12 @@ abstract class AssignmentAST<T : ASTNode> protected constructor(
 
 class AssignToIdentAST(
     parent: BlockAST,
-    lhs: VariableIdentifierAST,
+    lhs: VariableIdentifierAST
 ) : AssignmentAST<VariableIdentifierAST>(parent, lhs, lhs.type)
 
 class AssignToArrayElemAST(
     parent: BlockAST,
-    lhs: ArrayElemAST,
+    lhs: ArrayElemAST
 ) : AssignmentAST<ArrayElemAST>(parent, lhs, lhs.type)
 
 class AssignToPairElemAST(

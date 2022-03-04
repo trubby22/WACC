@@ -104,8 +104,7 @@ class AssemblyGenerator(private val ast: AST) {
             var subtractLeft = stackSpaceUsed
 
             // Setup stack
-            while (subtractLeft > 0)
-            {
+            while (subtractLeft > 0) {
                 val subtractNow = if (subtractLeft <= MAX_STACK_CHANGE) {
                     subtractLeft
                 } else {
@@ -137,8 +136,7 @@ class AssemblyGenerator(private val ast: AST) {
             val subList = mutableListOf<Instruction>()
 
             // Setup stack
-            while (addLeft > 0)
-            {
+            while (addLeft > 0) {
                 val addNow = if (addLeft <= MAX_STACK_CHANGE) {
                     addLeft
                 } else {
@@ -167,8 +165,12 @@ class AssemblyGenerator(private val ast: AST) {
         println("Calling functionEpilogue for function: ${node.funcName}")
         if (node.funcName == "main") {
             // Add return statement (main function implicitly returns 0)
-            translate(ReturnStatementAST(node, node.symbolTable.subScope(),
-                IntLiteralAST(0)))
+            translate(
+                ReturnStatementAST(
+                    node, node.symbolTable.subScope(),
+                    IntLiteralAST(0)
+                )
+            )
         }
         addLines(
             LTORG
@@ -315,13 +317,13 @@ class AssemblyGenerator(private val ast: AST) {
     fun transAssignToArrayElem(node: AssignToArrayElemAST) {
         println("Translating AssignToArrayElemAST")
         translate(node.rhs)
-        val arrayElemAST = node.lhs as ArrayElemAST
-        val symbolTable = arrayElemAST.symbolTable
-        val arrayName = arrayElemAST.arrayName
+        val arrayElemAST = node.lhs
 //        TODO: calculate hardcodedNum's instead of
 //         hardcoding them
-        val stackPointerOffset = (node.symbolTable.lookup(node.lhs.arrayName)
-                as VariableIdentifierAST).ident.stackPosition
+        val stackPointerOffset = (
+            node.symbolTable.lookup(node.lhs.arrayName)
+                as VariableIdentifierAST
+            ).ident.stackPosition
         val hardcodedNum1 = 4
         val hardcodedNum2 = 2
         addLines(Add(resultRegister.nextReg(), SP, ImmediateOperand(stackPointerOffset)))
@@ -366,8 +368,11 @@ class AssemblyGenerator(private val ast: AST) {
         println("Translating FstPairElemAST")
         val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(resultRegister, ZeroOffset
-                (resultRegister))
+            LoadByte(
+                resultRegister,
+                ZeroOffset
+                (resultRegister)
+            )
         } else {
             LoadWord(
                 resultRegister,
@@ -390,8 +395,11 @@ class AssemblyGenerator(private val ast: AST) {
         val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
         val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
         val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(resultRegister, ZeroOffset
-                (resultRegister))
+            LoadByte(
+                resultRegister,
+                ZeroOffset
+                (resultRegister)
+            )
         } else {
             LoadWord(
                 resultRegister,

@@ -186,7 +186,7 @@ class Visitor(
         scopeAST = ifBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting then block")
-        val thenStat = visit(ctx.stat(0)) as StatementAST
+        visit(ctx.stat(0))
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -195,7 +195,7 @@ class Visitor(
         scopeAST = elseBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting else block")
-        val elseStat = visit(ctx.stat(1)) as StatementAST
+        visit(ctx.stat(1))
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -290,8 +290,7 @@ class Visitor(
         return addToScope(returnStat)
     }
 
-    override fun visitSequenceRecursiveReturn1(ctx: WaccParser
-    .SequenceRecursiveReturn1Context): ASTNode? {
+    override fun visitSequenceRecursiveReturn1(ctx: SequenceRecursiveReturn1Context): ASTNode? {
         addToScope(visit(ctx.return_stat()) as StatementAST)
         if (ctx.valid_return_stat() != null) {
             visit(ctx.valid_return_stat())
@@ -299,15 +298,14 @@ class Visitor(
         return null
     }
 
-    override fun visitSequenceRecursiveReturn2(ctx: WaccParser
-    .SequenceRecursiveReturn2Context): ASTNode? {
+    override fun visitSequenceRecursiveReturn2(ctx: SequenceRecursiveReturn2Context): ASTNode? {
         addToScope(visit(ctx.stat()) as StatementAST)
         visit(ctx.valid_return_stat())
         return null
     }
 
     override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext):
-            ASTNode? {
+        ASTNode? {
         symbolTable = symbolTable.subScope()
         val node = visit(ctx.valid_return_stat())
         symbolTable = symbolTable.parentScope()!!
@@ -428,8 +426,8 @@ class Visitor(
 
     override fun visitAssignmentStat(ctx: AssignmentStatContext): ASTNode {
         val exprRhs = ctx.assign_rhs()
-        val assignRhs = visit(exprRhs) as AssignRhsAST
         val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST<*>
+        val assignRhs = visit(exprRhs) as AssignRhsAST
 
         log("Visiting variable assignment ${ctx.assign_lhs().text}")
 
