@@ -1097,7 +1097,8 @@ class AssemblyGenerator(
                     P_PRINT_STRING
                 )
                 addLines(
-                    ReverseSub(resultRegister, resultRegister, IntImmediateOperand(0)),
+                    ReverseSub(updateFlags = true, resultRegister, resultRegister,
+                        IntImmediateOperand(0)),
                     BranchLink(VS, P_THROW_OVERFLOW_ERROR)
                 )
             }
