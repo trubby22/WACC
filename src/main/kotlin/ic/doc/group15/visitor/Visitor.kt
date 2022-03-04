@@ -172,6 +172,7 @@ class Visitor(
     }
 
     override fun visitIfStat(ctx: IfStatContext): ASTNode {
+        val oldScope = scopeAST
         log("Visiting if statement")
 
         log("Visiting if statement condition expression")
@@ -188,7 +189,7 @@ class Visitor(
         log("|| Visiting then block")
         visit(ctx.stat(0))
         symbolTable = symbolTable.parentScope()!!
-        scopeAST = scopeAST.parent!!
+        scopeAST = oldScope
 
         val elseBlock = ElseBlockAST(ifBlock, symbolTable)
 
@@ -197,7 +198,7 @@ class Visitor(
         log("|| Visiting else block")
         visit(ctx.stat(1))
         symbolTable = symbolTable.parentScope()!!
-        scopeAST = scopeAST.parent!!
+        scopeAST = oldScope
 
         ifBlock.elseBlock = elseBlock
 

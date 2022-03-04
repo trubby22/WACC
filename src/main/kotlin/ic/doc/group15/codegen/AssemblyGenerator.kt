@@ -522,7 +522,7 @@ class AssemblyGenerator(private val ast: AST) {
         )
 
         // add sequence of instructions in THEN block under if label
-        stat.statements.forEach { translate(it) }
+        stat.statements.forEach(::translate)
 
         // add branch to fi label
         addLines(
@@ -532,7 +532,7 @@ class AssemblyGenerator(private val ast: AST) {
         // add sequence of instructions in ELSE block under else label
         text[currentLabel.name] = currentLabel
         currentLabel = elseLabel
-        stat.elseBlock.statements.forEach { translate(it) }
+        stat.elseBlock.statements.forEach(::translate)
         text[currentLabel.name] = currentLabel
         currentLabel = fiLabel
     }
