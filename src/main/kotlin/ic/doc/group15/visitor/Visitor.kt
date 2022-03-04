@@ -172,8 +172,10 @@ class Visitor(
     }
 
     override fun visitIfStat(ctx: IfStatContext): ASTNode {
-        val oldScope = scopeAST
         log("Visiting if statement")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
 
         log("Visiting if statement condition expression")
         val condExpr = visit(ctx.expr()) as ExpressionAST
@@ -188,7 +190,7 @@ class Visitor(
         symbolTable = symbolTable.subScope()
         log("|| Visiting then block")
         visit(ctx.stat(0))
-        symbolTable = symbolTable.parentScope()!!
+        symbolTable = oldSt
         scopeAST = oldScope
 
         val elseBlock = ElseBlockAST(ifBlock, symbolTable)
@@ -197,7 +199,7 @@ class Visitor(
         symbolTable = symbolTable.subScope()
         log("|| Visiting else block")
         visit(ctx.stat(1))
-        symbolTable = symbolTable.parentScope()!!
+        symbolTable = oldSt
         scopeAST = oldScope
 
         ifBlock.elseBlock = elseBlock
@@ -207,6 +209,9 @@ class Visitor(
 
     override fun visitWhileStat(ctx: WhileStatContext): ASTNode {
         log("Visiting while statement")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
 
         log("|| Visiting while condition expression")
         val condExpr = visit(ctx.expr()) as ExpressionAST
@@ -221,8 +226,8 @@ class Visitor(
         symbolTable = symbolTable.subScope()
         log("|| Visiting while block")
         visit(ctx.stat()) as StatementAST
-        symbolTable = symbolTable.parentScope()!!
-        scopeAST = scopeAST.parent!!
+        symbolTable = oldSt
+        scopeAST = oldScope
 
         return addToScope(whileBlock)
     }
@@ -317,6 +322,9 @@ class Visitor(
     override fun visitIfReturn(ctx: WaccParser.IfReturnContext): ASTNode {
         log("Visiting if statement")
 
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
         log("Visiting if statement condition expression")
         val condExpr = visit(ctx.expr()) as ExpressionAST
 
@@ -330,8 +338,8 @@ class Visitor(
         symbolTable = symbolTable.subScope()
         log("|| Visiting then block")
         visit(ctx.valid_return_stat(0))
-        symbolTable = symbolTable.parentScope()!!
-        scopeAST = scopeAST.parent!!
+        symbolTable = oldSt
+        scopeAST = oldScope
 
         val elseBlock = ElseBlockAST(ifBlock, symbolTable)
 
@@ -339,8 +347,8 @@ class Visitor(
         symbolTable = symbolTable.subScope()
         log("|| Visiting else block")
         visit(ctx.valid_return_stat(1))
-        symbolTable = symbolTable.parentScope()!!
-        scopeAST = scopeAST.parent!!
+        symbolTable = oldSt
+        scopeAST = oldScope
 
         ifBlock.elseBlock = elseBlock
 
