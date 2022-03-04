@@ -81,7 +81,7 @@ private class Ascii(val str: String, private val nullTerminated: Boolean = false
                 '\n' -> "\\n"
                 '\u000c' -> "\\f"
                 '\r' -> "\\r"
-                '\"' -> "\\\""
+                '\"' -> "\""
                 '\'' -> "\\\'"
                 '\\' -> "\\"
                 else -> "$it"
