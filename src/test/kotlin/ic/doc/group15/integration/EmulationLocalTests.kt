@@ -117,11 +117,13 @@ class EmulationLocalTests {
             StandardCharsets.UTF_8.name()
         )
 
+        println("compile completed")
+
 //        println("Compilation output")
 //        println(compilationOutput)
 
         assertTrue(setOf(0, 100, 200)
-            .contains(compilationExitStatus))
+            .contains(compilationExitStatus), "./compile $path failed\n")
 
         val filename = path.split("/").last()
         val executable = filename.substring(0, filename.length - 4)
@@ -146,7 +148,7 @@ class EmulationLocalTests {
             e.printStackTrace()
         }
 
-//        println("Emulate completed")
+        println("Emulate completed")
 
         val actual = IOUtils.toString(
             emulate.inputStream,
@@ -156,7 +158,7 @@ class EmulationLocalTests {
 //        println("actual:")
 //        println(actual)
 
-        assertEquals(0, exitCode1)
+        assertTrue(0 == exitCode1, "refEmulate failed\n")
 
         val modelSolution =
             ProcessBuilder(
@@ -180,9 +182,9 @@ class EmulationLocalTests {
 //        println("expected:")
 //        println(expected)
 
-        assertEquals(0, exitCode2)
+        assertTrue(0 == exitCode2, "refCompile failed\n")
 
-//        println("ModelSolution completed")
+        println("ModelSolution completed")
 
         val actualOutput = actual
             .split("-- Emulation Output:\n")[1]
