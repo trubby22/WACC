@@ -728,6 +728,9 @@ class AssemblyGenerator(
     @TranslatorMethod(ArrayElemAST::class)
     private fun translateArrayElem(node: ArrayElemAST) {
         log("Translating ArrayElemAST")
+
+        val oldReg = resultRegister
+
         defineUtilFuncs(
             P_CHECK_ARRAY_BOUNDS,
             P_THROW_RUNTIME_ERROR
@@ -796,11 +799,14 @@ class AssemblyGenerator(
     @TranslatorMethod(AssignToArrayElemAST::class)
     private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
         log("Translating AssignToArrayElemAST")
+
+        val oldReg = resultRegister
+
         defineUtilFuncs(
             P_CHECK_ARRAY_BOUNDS,
             P_THROW_RUNTIME_ERROR
         )
-        translate(node.rhs)
+
         val arrayElemAST = node.lhs
 //        TODO: calculate hardcodedNum's instead of
 //         hardcoding them
@@ -808,37 +814,42 @@ class AssemblyGenerator(
         val stackPointerOffset = arrayVariable.ident.stackPosition
         val hardcodedNum1 = 4
         val hardcodedNum2 = 2
-        addLines(Add(resultRegister.nextReg(), SP, IntImmediateOperand(stackPointerOffset)))
+
+        addLines(
+            Add(resultRegister.nextReg(), SP, IntImmediateOperand(stackPointerOffset))
+        )
+
+        translate(node.rhs)
+
+        resultRegister = resultRegister.nextReg()
         for (indexExpr in arrayElemAST.indexExpr) {
+            resultRegister = resultRegister.nextReg()
             translate(indexExpr)
+            resultRegister = resultRegister.prevReg()
             addLines(
                 LoadWord(
-                    resultRegister.nextReg().nextReg(),
-                    ZeroOffset(resultRegister.nextReg().nextReg())
+                    resultRegister,
+                    ZeroOffset(resultRegister)
                 ),
-                LoadWord(
-                    resultRegister.nextReg(),
-                    ZeroOffset(resultRegister.nextReg())
-                ),
-                Move(R0, resultRegister.nextReg().nextReg()),
-                Move(R1, resultRegister.nextReg().nextReg()),
+                Move(R0, resultRegister.nextReg()),
+                Move(R1, resultRegister),
                 BranchLink(P_CHECK_ARRAY_BOUNDS),
                 Add(
-                    resultRegister.nextReg(),
-                    resultRegister.nextReg(),
+                    resultRegister,
+                    resultRegister,
                     IntImmediateOperand(hardcodedNum1)
                 ),
                 Add(
-                    resultRegister.nextReg(),
-                    resultRegister.nextReg(),
+                    resultRegister,
+                    resultRegister,
 //                        Sometimes LSL is performed, sometimes not - I don't
 //                        know what it depends on
 //                        TODO: perform LSL only when needed
-                    LogicalShiftLeft
-                    (resultRegister.nextReg().nextReg(), hardcodedNum2)
+                    LogicalShiftLeft(resultRegister.nextReg(), hardcodedNum2)
                 )
             )
         }
+        resultRegister = oldReg
         addLines(
             StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
         )
