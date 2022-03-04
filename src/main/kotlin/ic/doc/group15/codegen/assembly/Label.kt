@@ -83,7 +83,7 @@ private class Ascii(val str: String, private val nullTerminated: Boolean = false
                 '\r' -> "\\r"
                 '\"' -> "\\\""
                 '\'' -> "\\\'"
-                '\\' -> "\\\\"
+                '\\' -> "\\"
                 else -> "$it"
             }
         }.joinToString(separator = "") + "${if (nullTerminated) "\\0" else ""}\""
