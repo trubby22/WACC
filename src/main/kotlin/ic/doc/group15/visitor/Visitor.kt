@@ -437,6 +437,8 @@ class Visitor(
             errors.addError(AssignTypeError(exprRhs.start, assignLhs.type, assignRhs.type))
         }
 
+        println("assignRhs: $assignRhs")
+
         assignLhs.rhs = assignRhs
 
         return addToScope(assignLhs)
@@ -446,6 +448,18 @@ class Visitor(
         val ident = visitIdent(ctx.ident()) as VariableIdentifierAST
 
         return AssignToIdentAST(scopeAST, ident)
+    }
+
+    override fun visitExprAssignRhs(ctx: ExprAssignRhsContext): ASTNode {
+        return visit(ctx.expr())
+    }
+
+    override fun visitArrayLiterAssignRhs(ctx: ArrayLiterAssignRhsContext): ASTNode {
+        return visit(ctx.array_liter())
+    }
+
+    override fun visitPairElemAssignRhs(ctx: PairElemAssignRhsContext): ASTNode {
+        return visit(ctx.pair_elem())
     }
 
     override fun visitArrayElemAssignLhs(ctx: ArrayElemAssignLhsContext): ASTNode {
