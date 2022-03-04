@@ -1117,6 +1117,7 @@ class AssemblyGenerator(private val ast: AST) {
     private fun defineUtilFuncs(vararg funcs: UtilFunction) {
         funcs.forEach { func ->
             if (!utilText.containsKey(func.labelName)) {
+                defineUtilFuncs(*func.dependencies)
                 println("Adding util function: ${func.name}")
                 utilText[func.labelName] = func.labelBlock
                 func.dataBlocks.forEach {
