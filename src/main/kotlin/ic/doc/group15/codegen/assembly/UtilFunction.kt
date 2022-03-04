@@ -167,6 +167,7 @@ enum class UtilFunction(vararg val dependencies: UtilFunction) {
                     LT, R0,
                     generateStringData("ArrayIndexOutOfBoundsError: negative index\n")
                 ),
+                BranchLink(LT, P_THROW_RUNTIME_ERROR),
                 LoadWord(R1, ZeroOffset(R1)),
                 Compare(R0, R1),
                 LoadWord(
