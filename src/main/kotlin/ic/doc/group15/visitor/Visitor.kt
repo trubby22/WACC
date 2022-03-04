@@ -302,12 +302,12 @@ class Visitor(
     override fun visitSequenceRecursiveReturn2(ctx: WaccParser
     .SequenceRecursiveReturn2Context): ASTNode? {
         addToScope(visit(ctx.stat()) as StatementAST)
-        visit(ctx.valid_return_stat()) as StatementAST
+        visit(ctx.valid_return_stat())
         return null
     }
 
-
-    override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext): ASTNode {
+    override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext):
+            ASTNode? {
         symbolTable = symbolTable.subScope()
         val node = visit(ctx.valid_return_stat())
         symbolTable = symbolTable.parentScope()!!
@@ -330,6 +330,7 @@ class Visitor(
         scopeAST = ifBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting then block")
+        visit(ctx.valid_return_stat(0))
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -338,7 +339,7 @@ class Visitor(
         scopeAST = elseBlock
         symbolTable = symbolTable.subScope()
         log("|| Visiting else block")
-        val elseStat = visit(ctx.valid_return_stat(1)) as StatementAST
+        visit(ctx.valid_return_stat(1))
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
 
@@ -587,7 +588,7 @@ class Visitor(
     }
 
     override fun visitInt_liter_positive(ctx: Int_liter_positiveContext): ASTNode {
-        val i = Integer.parseInt(ctx.POSITIVE_INTEGER().text)
+        val i = Integer.parseInt(ctx.POSITIVE_OR_NEGATIVE_INTEGER().text)
         assert(i in 0..INT_MAX)
 
         return IntLiteralAST(i)

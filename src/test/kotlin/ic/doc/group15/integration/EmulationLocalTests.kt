@@ -1,7 +1,10 @@
 package ic.doc.group15.integration
 
+import ic.doc.group15.error.SEMANTIC_ERROR_CODE
+import ic.doc.group15.error.SYNTACTIC_ERROR_CODE
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -97,27 +100,30 @@ class EmulationLocalTests {
 
     private fun checkAssembly(path: String): Boolean {
 
-//        Compile and emulate a wacc program and check against model solution
-//        coming from refCompile -x
+        val compilation = ProcessBuilder(
+            "/bin/bash",
+            "-c",
+            "./compile $path"
+        ).start()
 
-//        println("Testing $path")
-
-        val compile =
-            ProcessBuilder(
-                "/bin/bash", "-c",
-                "java -jar " +
-                    "target/WACC-1.0-SNAPSHOT-jar-with-dependencies.jar " +
-                    "$path < $path"
-            ).start()
+        var compilationExitStatus = -1
 
         try {
-            val exitCode = compile.waitFor()
-            assertEquals(0, exitCode)
+            compilationExitStatus = compilation.waitFor()
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
 
-//        println("Compile completed")
+        val compilationOutput = IOUtils.toString(
+            compilation.inputStream,
+            StandardCharsets.UTF_8.name()
+        )
+
+//        println("Compilation output")
+//        println(compilationOutput)
+
+        assertTrue(setOf(0, SYNTACTIC_ERROR_CODE, SEMANTIC_ERROR_CODE)
+            .contains(compilationExitStatus))
 
         val filename = path.split("/").last()
         val executable = filename.substring(0, filename.length - 4)
