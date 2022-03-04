@@ -37,7 +37,7 @@ class And(
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("and", conditionCode, updateFlags, dest, base, op) {
+) : LogicalInstruction("AND", conditionCode, updateFlags, dest, base, op) {
 
     constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(conditionCode, false, dest, base, op)
     constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(null, updateFlags, dest, base, op)
@@ -50,7 +50,7 @@ class Or(
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("orr", conditionCode, updateFlags, dest, base, op) {
+) : LogicalInstruction("ORR", conditionCode, updateFlags, dest, base, op) {
 
     constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(conditionCode, false, dest, base, op)
     constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(null, updateFlags, dest, base, op)
@@ -63,7 +63,7 @@ class Xor(
     dest: Register,
     base: Register,
     op: Operand
-) : LogicalInstruction("eor", conditionCode, updateFlags, dest, base, op) {
+) : LogicalInstruction("EOR", conditionCode, updateFlags, dest, base, op) {
 
     constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(conditionCode, false, dest, base, op)
     constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(null, updateFlags, dest, base, op)

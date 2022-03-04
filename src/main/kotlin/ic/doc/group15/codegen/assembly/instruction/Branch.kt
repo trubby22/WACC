@@ -21,7 +21,7 @@ abstract class BranchInstruction protected constructor(
 class Branch(
     conditionCode: ConditionCode?,
     labelOp: BranchLabelOperand
-) : BranchInstruction("b", conditionCode, labelOp) {
+) : BranchInstruction("B", conditionCode, labelOp) {
 
     constructor(labelOp: BranchLabelOperand) : this(null, labelOp)
 
@@ -41,7 +41,7 @@ class Branch(
 class BranchLink(
     conditionCode: ConditionCode?,
     labelOp: BranchLabelOperand
-) : BranchInstruction("bl", conditionCode, labelOp) {
+) : BranchInstruction("BL", conditionCode, labelOp) {
 
     constructor(labelOp: BranchLabelOperand) : this(null, labelOp)
 

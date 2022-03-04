@@ -28,7 +28,7 @@ class Compare(
     conditionCode: ConditionCode?,
     base: Register,
     op: Operand
-) : CompareInstruction("cmp", conditionCode, base, op) {
+) : CompareInstruction("CMP", conditionCode, base, op) {
 
     constructor(base: Register, op: Operand) : this(null, base, op)
 }

@@ -46,6 +46,6 @@ enum class ConditionCode {
     ;
 
     override fun toString(): String {
-        return name.lowercase()
+        return name.uppercase()
     }
 }

@@ -27,7 +27,7 @@ class LoadWord(
     conditionCode: ConditionCode?,
     dest: Register,
     addr: Operand
-) : LoadInstruction("ldr", conditionCode, dest, addr) {
+) : LoadInstruction("LDR", conditionCode, dest, addr) {
 
     constructor(dest: Register, addr: Operand) : this(null, dest, addr)
 }
@@ -44,7 +44,7 @@ class LoadByte(
     conditionCode: ConditionCode?,
     dest: Register,
     addr: AddressOperand
-) : LoadInstruction("ldrb", conditionCode, dest, addr) {
+) : LoadInstruction("LDRB", conditionCode, dest, addr) {
 
     constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
 }
