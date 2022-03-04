@@ -993,6 +993,7 @@ class AssemblyGenerator(
                         )
                     }
                     MOD -> {
+                        defineUtilFuncs(P_CHECK_DIVIDE_BY_ZERO)
                         addLines(
                             Move(R0, resultRegister),
                             Move(R1, resultRegister.nextReg()),
