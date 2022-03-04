@@ -290,6 +290,23 @@ class Visitor(
         return addToScope(returnStat)
     }
 
+    override fun visitSequenceRecursiveReturn1(ctx: WaccParser
+    .SequenceRecursiveReturn1Context): ASTNode? {
+        addToScope(visit(ctx.return_stat()) as StatementAST)
+        if (ctx.valid_return_stat() != null) {
+            visit(ctx.valid_return_stat())
+        }
+        return null
+    }
+
+    override fun visitSequenceRecursiveReturn2(ctx: WaccParser
+    .SequenceRecursiveReturn2Context): ASTNode? {
+        addToScope(visit(ctx.stat()) as StatementAST)
+        visit(ctx.valid_return_stat()) as StatementAST
+        return null
+    }
+
+
     override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext): ASTNode {
         symbolTable = symbolTable.subScope()
         val node = visit(ctx.valid_return_stat())
