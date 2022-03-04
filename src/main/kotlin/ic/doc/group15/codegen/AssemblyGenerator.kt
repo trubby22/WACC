@@ -31,6 +31,8 @@ private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
 
 class AssemblyGenerator(private val ast: AST) {
 
+    val MAX_STACK_CHANGE = 1024
+
     private lateinit var currentLabel: BranchLabel
     private lateinit var resultRegister: Register
 
@@ -99,9 +101,19 @@ class AssemblyGenerator(private val ast: AST) {
         val stackSpaceUsed = node.symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
             var currentStackPosition = stackSpaceUsed
+            var subtractLeft = stackSpaceUsed
 
             // Setup stack
-            addLines(Sub(SP, SP, ImmediateOperand(currentStackPosition)))
+            while (subtractLeft > 0)
+            {
+                val subtractNow = if (subtractLeft <= MAX_STACK_CHANGE) {
+                    subtractLeft
+                } else {
+                    MAX_STACK_CHANGE
+                }
+                addLines(Sub(SP, SP, ImmediateOperand(subtractNow)))
+                subtractLeft -= subtractNow
+            }
 
             // Calculate the stack position for each variable
             val variables = node.symbolTable.getValuesByType(Variable::class)
@@ -120,7 +132,23 @@ class AssemblyGenerator(private val ast: AST) {
         // Unwind stack
         val stackSpaceUsed = node.symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
-            addLines(Add(SP, SP, ImmediateOperand(stackSpaceUsed)))
+            var addLeft = stackSpaceUsed
+
+            val subList = mutableListOf<Instruction>()
+
+            // Setup stack
+            while (addLeft > 0)
+            {
+                val addNow = if (addLeft <= MAX_STACK_CHANGE) {
+                    addLeft
+                } else {
+                    MAX_STACK_CHANGE
+                }
+                subList.add(Add(SP, SP, ImmediateOperand(addNow)))
+                addLeft -= addNow
+            }
+
+            addLines(subList.reversed())
         }
     }
 
