@@ -38,8 +38,7 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
 
     fun add(name: String, ident: Identifier) {
         if (ident is Variable) {
-            assert(ident.type is ReturnableType)
-            stackSize += (ident.type as ReturnableType).size()
+            stackSize += ident.type.size()
         }
         map[name] = ident
     }

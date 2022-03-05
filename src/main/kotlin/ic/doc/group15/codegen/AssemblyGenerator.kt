@@ -426,8 +426,7 @@ class AssemblyGenerator(
         )
 
         val expr = node.expr
-        val type = expr.type
-        when (type) {
+        when (val type = expr.type) {
             StringType -> {
                 defineUtilFuncs(P_PRINT_STRING)
                 addLines(BranchLink(P_PRINT_STRING))
@@ -1101,8 +1100,10 @@ class AssemblyGenerator(
                     P_PRINT_STRING
                 )
                 addLines(
-                    ReverseSub(updateFlags = true, resultRegister, resultRegister,
-                        IntImmediateOperand(0)),
+                    ReverseSub(
+                        updateFlags = true, resultRegister, resultRegister,
+                        IntImmediateOperand(0)
+                    ),
                     BranchLink(VS, P_THROW_OVERFLOW_ERROR)
                 )
             }
@@ -1111,12 +1112,7 @@ class AssemblyGenerator(
                     LoadWord(resultRegister, ZeroOffset(resultRegister))
                 )
             }
-            UnaryOp.ORD -> {
-//                No actions needed since int ~ char
-            }
-            UnaryOp.CHR -> {
-//                No actions needed since int ~ char
-            }
+            else -> { }
         }
     }
 

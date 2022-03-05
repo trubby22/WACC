@@ -10,6 +10,7 @@ import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.semantic.*
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.IntType
+import ic.doc.group15.util.EscapeChar
 import java.util.*
 
 class Visitor(
@@ -628,7 +629,12 @@ class Visitor(
     }
 
     override fun visitChar_liter(ctx: Char_literContext): ASTNode {
-        return CharLiteralAST(ctx.text.substring(1, ctx.text.length - 1)[0])
+        val char: Char = if (ctx.CHAR_LITER_TOKEN() != null) {
+            ctx.CHAR_LITER_TOKEN().text[1]
+        } else {
+            EscapeChar.fromLetter(ctx.ESC_CHAR_LITER().text[2])!!.char
+        }
+        return CharLiteralAST(char)
     }
 
     override fun visitStr_liter(ctx: Str_literContext): ASTNode {
