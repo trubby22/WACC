@@ -497,7 +497,9 @@ class AssemblyGenerator(
                     BranchLink(P_READ_CHAR)
                 )
             }
-            else -> throw IllegalArgumentException("Read does not support input of type ${node.target.type}")
+            else -> throw IllegalArgumentException(
+                "Read does not support input of type ${node.target.type}"
+            )
         }
     }
 
@@ -752,21 +754,30 @@ class AssemblyGenerator(
 
         for (i in node.indexExpr.indices) {
             val index = node.indexExpr[i]
+
             resultRegister = resultRegister.nextReg()
-            translate(index) // translating the index of the array
+            translate(index)
             resultRegister = resultRegister.prevReg()
+
             addLines(
                 LoadWord(resultRegister, ZeroOffset(resultRegister)),
-                Move(R0, resultRegister.nextReg()), // this and next two lines just check bounds of array
+                // check bounds of array
+                Move(R0, resultRegister.nextReg()),
                 Move(R1, resultRegister),
                 BranchLink(P_CHECK_ARRAY_BOUNDS),
                 Add(resultRegister, resultRegister, IntImmediateOperand(WORD))
-            ) // move past array size
+            )
+
+            val addLSL = Add(
+                resultRegister,
+                resultRegister,
+                LogicalShiftLeft(resultRegister.nextReg(), 2)
+            )
             if (i == node.indexExpr.lastIndex) {
                 if (node.elemType.size() == WORD) {
                     addLines(
                         // get address of desired index into result reg
-                        Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2)),
+                        addLSL,
                         // put whats at that index into result reg
                         LoadWord(resultRegister, ZeroOffset(resultRegister))
                     )
@@ -779,9 +790,7 @@ class AssemblyGenerator(
             } else {
                 addLines(
                     // get address of desired index into result reg
-                    Add(resultRegister, resultRegister, LogicalShiftLeft(resultRegister.nextReg(), 2)),
-                    // put whats at that index into result reg
-                    LoadWord(resultRegister, ZeroOffset(resultRegister))
+                    addLSL
                 )
             }
         }
