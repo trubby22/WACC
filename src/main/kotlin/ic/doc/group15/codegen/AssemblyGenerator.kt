@@ -691,24 +691,19 @@ class AssemblyGenerator(
             BranchLink(MALLOC),
             Move(resultRegister, R0)
         )
-        var offset = 0 // now we go in this for loop to put all the items of the array into the memory of the array
+        // offset (in bytes) from the malloc'ed address to store the value at
+        // starts at addr + 4 because the first 4 bytes are dedicated to storing tha array's length
+        var offset = WORD
         for (expr in elems) {
             val dest = resultRegister.nextReg()
             val src = resultRegister
             resultRegister = dest // R_n+1
             translate(expr)
             resultRegister = src // R_n
-            if (expr.type.size() == WORD) {
-                offset += WORD
-                currentLabel.addLines(
-                    StoreWord(dest, ImmediateOffset(src, offset))
-                )
-            } else {
-                offset += BYTE
-                currentLabel.addLines(
-                    StoreByte(dest, ImmediateOffset(src, offset))
-                )
-            }
+            currentLabel.addLines(
+                StoreByte(dest, ImmediateOffset(src, offset))
+            )
+            offset += expr.type.size()
         }
 
         val dest = resultRegister.nextReg() // R_n+1
@@ -805,6 +800,8 @@ class AssemblyGenerator(
             resultRegister = resultRegister.nextReg()
             offsetStackStore[0] -= WORD
         }
+
+        resultRegister = oldReg
     }
 
     @TranslatorMethod(AssignToArrayElemAST::class)
@@ -819,12 +816,9 @@ class AssemblyGenerator(
         )
 
         val arrayElemAST = node.lhs
-//        TODO: calculate hardcodedNum's instead of
-//         hardcoding them
         val arrayVariable = node.lhs.arrayVar
+        val typeSize = (arrayVariable.type as ArrayType).elementType.size()
         val stackPointerOffset = arrayVariable.ident.stackPosition
-        val hardcodedNum1 = 4
-        val hardcodedNum2 = 2
 
         addLines(
             Add(resultRegister.nextReg(), SP, IntImmediateOperand(stackPointerOffset))
@@ -848,21 +842,27 @@ class AssemblyGenerator(
                 Add(
                     resultRegister,
                     resultRegister,
-                    IntImmediateOperand(hardcodedNum1)
+                    IntImmediateOperand(4)
                 ),
-                Add(
-                    resultRegister,
-                    resultRegister,
-//                        Sometimes LSL is performed, sometimes not - I don't
-//                        know what it depends on
-//                        TODO: perform LSL only when needed
-                    LogicalShiftLeft(resultRegister.nextReg(), hardcodedNum2)
-                )
+                if (typeSize == WORD) {
+                    Add(
+                        resultRegister,
+                        resultRegister,
+                        LogicalShiftLeft(resultRegister.nextReg(), 2)
+                    )
+                } else {
+                    Add(resultRegister, resultRegister, resultRegister.nextReg())
+                }
             )
         }
         resultRegister = oldReg
+        val dest = ZeroOffset(resultRegister.nextReg())
         addLines(
-            StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
+            if (typeSize == WORD) {
+                StoreWord(resultRegister, dest)
+            } else {
+                StoreByte(resultRegister, dest)
+            }
         )
     }
 
