@@ -52,12 +52,12 @@ abstract class PairElemAST protected constructor(
 
 class FstPairElemAST(
     symbolTable: SymbolTable,
-    val pairExpr: ExpressionAST
+    pairExpr: ExpressionAST
 ) : PairElemAST(symbolTable, (pairExpr.type as PairType).fstType, pairExpr)
 
 class SndPairElemAST(
     symbolTable: SymbolTable,
-    val pairExpr: ExpressionAST
+    pairExpr: ExpressionAST
 ) : PairElemAST(symbolTable, (pairExpr.type as PairType).sndType, pairExpr)
 
 class CallAST(

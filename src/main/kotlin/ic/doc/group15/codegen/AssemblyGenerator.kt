@@ -23,6 +23,8 @@ import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Variable
+import java.lang.IllegalArgumentException
+import java.lang.IllegalStateException
 import java.util.*
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
@@ -480,27 +482,27 @@ class AssemblyGenerator(
     @TranslatorMethod(ReadStatementAST::class)
     private fun transReadStatement(node: ReadStatementAST) {
         log("Translating ReadStatementAST")
-        when (node.target.type) {
-            IntType -> {
-                defineUtilFuncs(P_READ_INT)
-                translate(node.target.lhs)
-                addLines(
-                    Move(R0, resultRegister),
-                    BranchLink(P_READ_INT)
-                )
+
+        val assignTo = node.target.lhs
+        val readFunc = if (node.target.type == IntType) P_READ_INT else P_READ_CHAR
+
+        defineUtilFuncs(readFunc)
+        when (assignTo) {
+            is VariableIdentifierAST -> {
+                getAddress(assignTo)
             }
-            CharType -> {
-                defineUtilFuncs(P_READ_CHAR)
-                translate(node.target.lhs)
-                addLines(
-                    Move(R0, resultRegister),
-                    BranchLink(P_READ_CHAR)
-                )
+            is ArrayElemAST -> {
+                getAddress(assignTo)
             }
-            else -> throw IllegalArgumentException(
-                "Read does not support input of type ${node.target.type}"
-            )
+            is PairElemAST -> {
+                getAddress(assignTo)
+            }
+            else -> { throw IllegalArgumentException("cannot read into expression of this type") }
         }
+        addLines(
+            Move(R0, resultRegister),
+            BranchLink(P_READ_CHAR)
+        )
     }
 
     /**
@@ -701,7 +703,11 @@ class AssemblyGenerator(
             translate(expr)
             resultRegister = src // R_n
             currentLabel.addLines(
-                StoreByte(dest, ImmediateOffset(src, offset))
+                if (expr.type.size() == WORD) {
+                    StoreWord(dest, ImmediateOffset(src, offset))
+                } else {
+                    StoreByte(dest, ImmediateOffset(src, offset))
+                }
             )
             offset += expr.type.size()
         }
@@ -725,7 +731,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(ArrayElemAST::class)
-    private fun translateArrayElem(node: ArrayElemAST) {
+    private fun transArrayElem(node: ArrayElemAST) {
         log("Translating ArrayElemAST")
 
         val oldReg = resultRegister
@@ -745,49 +751,18 @@ class AssemblyGenerator(
             accumulatorState = true
         }
 
-        addLines(Add(resultRegister, SP, IntImmediateOperand(variable.stackPosition)))
+        // load address of value into resultRegister
+        getAddress(node)
 
-        for (i in node.indexExpr.indices) {
-            val index = node.indexExpr[i]
-
-            resultRegister = resultRegister.nextReg()
-            translate(index)
-            resultRegister = resultRegister.prevReg()
-
+        if (node.elemType.size() == WORD) {
             addLines(
-                LoadWord(resultRegister, ZeroOffset(resultRegister)),
-                // check bounds of array
-                Move(R0, resultRegister.nextReg()),
-                Move(R1, resultRegister),
-                BranchLink(P_CHECK_ARRAY_BOUNDS),
-                Add(resultRegister, resultRegister, IntImmediateOperand(WORD))
+                // put whats at that index into result reg
+                LoadWord(resultRegister, ZeroOffset(resultRegister))
             )
-
-            val addLSL = Add(
-                resultRegister,
-                resultRegister,
-                LogicalShiftLeft(resultRegister.nextReg(), 2)
+        } else {
+            addLines(
+                LoadByte(resultRegister, ZeroOffset(resultRegister))
             )
-            if (i == node.indexExpr.lastIndex) {
-                if (node.elemType.size() == WORD) {
-                    addLines(
-                        // get address of desired index into result reg
-                        addLSL,
-                        // put whats at that index into result reg
-                        LoadWord(resultRegister, ZeroOffset(resultRegister))
-                    )
-                } else {
-                    addLines(
-                        Add(resultRegister, resultRegister, resultRegister.nextReg()),
-                        LoadByte(resultRegister, ZeroOffset(resultRegister))
-                    )
-                }
-            } else {
-                addLines(
-                    // get address of desired index into result reg
-                    addLSL
-                )
-            }
         }
 
         // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
@@ -869,58 +844,19 @@ class AssemblyGenerator(
     @TranslatorMethod(FstPairElemAST::class)
     private fun transFstPairElem(node: FstPairElemAST) {
         log("Translating FstPairElemAST")
-        defineUtilFuncs(
-            P_CHECK_NULL_POINTER
-        )
-        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
-        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(
-                resultRegister,
-                ZeroOffset(resultRegister)
-            )
-        } else {
-            LoadWord(
-                resultRegister,
-                ZeroOffset(resultRegister)
-            )
-        }
-        addLines(
-            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
-            Move(R0, resultRegister),
-            BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(resultRegister, ZeroOffset(resultRegister)),
-            loadInstruction
-        )
+        transPairElem(node)
     }
 
     @TranslatorMethod(SndPairElemAST::class)
     private fun transSndPairElem(node: SndPairElemAST) {
         log("Translating SndPairElemAST")
-        defineUtilFuncs(
-            P_CHECK_NULL_POINTER
-        )
-        val pairPointerOffset = (node.expr as VariableIdentifierAST).ident.stackPosition
-        val sizeOfFstElem = (node.pairExpr.type as PairType).sndType.size()
-        val loadInstruction = if (node.pairExpr.type.size() == BYTE) {
-            LoadByte(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
-        } else {
-            LoadWord(
-                resultRegister,
-                ZeroOffset
-                (resultRegister)
-            )
-        }
-        addLines(
-            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
-            Move(R0, resultRegister),
-            BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(resultRegister, ImmediateOffset(resultRegister, sizeOfFstElem)),
-            loadInstruction
-        )
+        transPairElem(node)
+    }
+
+    private fun transPairElem(node: PairElemAST) {
+        getAddress(node)
+        assert(node.expr.type.size() == WORD)
+        addLines(LoadWord(resultRegister, ZeroOffset(resultRegister)))
     }
 
     @TranslatorMethod(AssignToPairElemAST::class)
@@ -1200,6 +1136,79 @@ class AssemblyGenerator(
             } else {
                 LoadWord(resultRegister, addressOperand)
             }
+        )
+    }
+
+    private fun getAddress(variable: VariableIdentifierAST) {
+        addLines(
+            Add(resultRegister, SP, IntImmediateOperand(variable.ident.stackPosition))
+        )
+    }
+
+    private fun getAddress(arrayElem: ArrayElemAST) {
+        val variable = arrayElem.arrayVar.ident
+
+        addLines(Add(resultRegister, SP, IntImmediateOperand(variable.stackPosition)))
+
+        for (i in arrayElem.indexExpr.indices) {
+            val index = arrayElem.indexExpr[i]
+
+            resultRegister = resultRegister.nextReg()
+            translate(index)
+            resultRegister = resultRegister.prevReg()
+
+            addLines(
+                LoadWord(resultRegister, ZeroOffset(resultRegister)),
+                // check bounds of array
+                Move(R0, resultRegister.nextReg()),
+                Move(R1, resultRegister),
+                BranchLink(P_CHECK_ARRAY_BOUNDS),
+                Add(resultRegister, resultRegister, IntImmediateOperand(WORD))
+            )
+            addLines(
+                // get address of desired index into result reg
+                Add(
+                    resultRegister,
+                    resultRegister,
+                    LogicalShiftLeft(resultRegister.nextReg(), 2)
+                )
+            )
+        }
+        if (arrayElem.elemType.size() == WORD) {
+            addLines(
+                // get address of desired index into result reg
+                Add(
+                    resultRegister,
+                    resultRegister,
+                    LogicalShiftLeft(resultRegister.nextReg(), 2)
+                )
+            )
+        } else {
+            addLines(
+                Add(resultRegister, resultRegister, resultRegister.nextReg())
+            )
+        }
+    }
+
+    private fun getAddress(pairElemAST: PairElemAST) {
+        defineUtilFuncs(
+            P_CHECK_NULL_POINTER
+        )
+        // TODO: Fix. pairElemAST.expr is not always VariableIdentifierAST
+        val pairPointerOffset = (pairElemAST.expr as VariableIdentifierAST).ident.stackPosition
+        val sizeOfFstElem = (pairElemAST.expr.type as PairType).fstType.size()
+        addLines(
+            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
+            Move(R0, resultRegister),
+            BranchLink(P_CHECK_NULL_POINTER),
+            LoadWord(
+                resultRegister,
+                if (pairElemAST is FstPairElemAST) {
+                    ZeroOffset(resultRegister)
+                } else {
+                    ImmediateOffset(resultRegister, sizeOfFstElem)
+                }
+            )
         )
     }
 

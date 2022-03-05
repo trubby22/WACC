@@ -55,4 +55,11 @@ class LoadByte(
 // * @param dest The destination register
 // * @param addr The source address
 // */
-//class LoadSignedByte(dest: Register, addr: AddressMode3) : LoadInstruction("ldrsb", dest, addr)
+//class LoadSignedByte(
+//    conditionCode: ConditionCode?,
+//    dest: Register,
+//    addr: AddressOperand
+//) : LoadInstruction("LDRSB", conditionCode, dest, addr) {
+//
+//    constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
+//}
