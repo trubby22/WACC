@@ -334,8 +334,8 @@ class AssemblyGenerator(
     private fun transWhileBlock(node: WhileBlockAST) {
         log("Translating WhileBlockAST")
         // Define labels
-        val loopLabel = BranchLabel(branchLabelGenerator.generate())
         val checkLabel = BranchLabel(branchLabelGenerator.generate())
+        val loopLabel = BranchLabel(branchLabelGenerator.generate())
 
         // Add branch instruction
         addLines(
@@ -497,7 +497,7 @@ class AssemblyGenerator(
         }
         addLines(
             Move(R0, resultRegister),
-            BranchLink(P_READ_CHAR)
+            BranchLink(readFunc)
         )
     }
 
