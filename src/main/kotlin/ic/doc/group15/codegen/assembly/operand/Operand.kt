@@ -4,6 +4,7 @@ import ic.doc.group15.codegen.assembly.Assembly
 import ic.doc.group15.codegen.assembly.BranchLabel
 import ic.doc.group15.codegen.assembly.DataLabel
 import ic.doc.group15.codegen.assembly.Label
+import ic.doc.group15.util.EscapeChar
 
 /**
  * Operand2 adopted in ARM1176JZF-S. Register controlled shift is not implemented.
@@ -69,8 +70,10 @@ class IntImmediateOperand(value: Int) : ImmediateOperand<Int>(value)
 
 class CharImmediateOperand(value: Char) : ImmediateOperand<Char>(value) {
 
+    val string = EscapeChar.fromChar(value) ?: "$value"
+
     override fun toString(): String {
-        return "#\'$value\'"
+        return "#\'$string\'"
     }
 }
 

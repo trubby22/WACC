@@ -1,5 +1,6 @@
 package ic.doc.group15.codegen.assembly
 
+import ic.doc.group15.util.EscapeChar
 import java.util.*
 
 abstract class Label<L : Line> protected constructor(val name: String) : Assembly {
@@ -75,17 +76,7 @@ private class Ascii(val str: String, private val nullTerminated: Boolean = false
 
     private fun convertStr(str: String): String {
         return "\"" + str.map {
-            when (it) {
-                '\b' -> "\\b"
-                '\t' -> "\\t"
-                '\n' -> "\\n"
-                '\u000c' -> "\\f"
-                '\r' -> "\\r"
-                '\"' -> "\""
-                '\'' -> "\\\'"
-                '\\' -> "\\"
-                else -> "$it"
-            }
+            EscapeChar.fromChar(it) ?: "$it"
         }.joinToString(separator = "") + "${if (nullTerminated) "\\0" else ""}\""
     }
 }

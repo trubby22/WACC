@@ -458,11 +458,11 @@ class EmulationCITests {
 
         var compilationExitStatus = -1
 
-        try {
-            compilationExitStatus = compilation.waitFor()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+//        try {
+        compilationExitStatus = compilation.waitFor()
+//        } catch (e: InterruptedException) {
+//            e.printStackTrace()
+//        }
 
         val compilationOutput = IOUtils.toString(
             compilation.inputStream,
@@ -483,11 +483,11 @@ class EmulationCITests {
         ).start()
 
         var emulationExitStatus = -1
-        try {
-            emulationExitStatus = emulation.waitFor()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+//        try {
+        emulationExitStatus = emulation.waitFor()
+//        } catch (e: InterruptedException) {
+//            e.printStackTrace()
+//        }
 
         val emulationOutput = IOUtils.toString(
             emulation.inputStream,

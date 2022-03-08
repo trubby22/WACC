@@ -15,8 +15,6 @@ import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.codegen.assembly.operand.ZeroOffset
 import java.util.*
 
-private const val NULL = '\u0000'
-
 enum class UtilFunction(vararg val dependencies: UtilFunction) {
 
     P_PRINT_STRING {
