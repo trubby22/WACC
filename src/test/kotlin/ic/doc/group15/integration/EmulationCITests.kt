@@ -417,7 +417,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    @Disabled
     @Nested
     inner class WhileValidFiles {
         private val whileFolderPath = "$validFolderPath/while"
