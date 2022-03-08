@@ -302,7 +302,6 @@ class AssemblyGenerator(
         // Parse the expression whose value is to be stored in the variable
         log("Translating VariableDeclarationAST")
         translate(node.rhs)
-        log("${node.varIdent.stackPosition}")
         transAssign(node.varIdent)
     }
 
@@ -1172,20 +1171,6 @@ class AssemblyGenerator(
                     resultRegister,
                     LogicalShiftLeft(resultRegister.nextReg(), 2)
                 )
-            )
-        }
-        if (arrayElem.elemType.size() == WORD) {
-            addLines(
-                // get address of desired index into result reg
-                Add(
-                    resultRegister,
-                    resultRegister,
-                    LogicalShiftLeft(resultRegister.nextReg(), 2)
-                )
-            )
-        } else {
-            addLines(
-                Add(resultRegister, resultRegister, resultRegister.nextReg())
             )
         }
     }
