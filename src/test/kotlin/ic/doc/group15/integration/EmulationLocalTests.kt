@@ -158,11 +158,11 @@ class EmulationLocalTests {
 
         var exitCode1 = -1
 
-        try {
-            exitCode1 = emulate.waitFor()
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
+//        try {
+        exitCode1 = emulate.waitFor()
+//        } catch (e: InterruptedException) {
+//            e.printStackTrace()
+//        }
 
 //        println("Emulate completed")
 
