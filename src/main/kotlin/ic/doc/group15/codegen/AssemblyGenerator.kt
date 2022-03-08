@@ -344,11 +344,8 @@ class AssemblyGenerator(
         text[currentLabel.name] = currentLabel
 
         // Translate block statements and add to loop label
-        // TODO: issue - interdependence of statements to be addressed
         currentLabel = loopLabel
-        blockPrologue(node)
         node.statements.forEach { translate(it) }
-        blockEpilogue(node)
         text[currentLabel.name] = currentLabel
 
         // Translate condition statements and add to check label
