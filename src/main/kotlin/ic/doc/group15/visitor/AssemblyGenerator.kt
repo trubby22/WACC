@@ -1,7 +1,6 @@
 package ic.doc.group15.visitor
 
-import ic.doc.group15.util.BYTE
-import ic.doc.group15.util.WORD
+import ic.doc.group15.SymbolTable
 import ic.doc.group15.assembly.*
 import ic.doc.group15.assembly.LibraryFunction.Companion.AEABI_IDIV
 import ic.doc.group15.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
@@ -23,6 +22,8 @@ import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Variable
+import ic.doc.group15.util.BYTE
+import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.reflect.KCallable
@@ -109,13 +110,17 @@ class AssemblyGenerator(
      * Sets up the environment for the block of statements, specifically by initialising the stack variables
      */
     private fun blockPrologue(node: BlockAST) {
+        blockPrologue(node.symbolTable)
+    }
+
+    private fun blockPrologue(symbolTable: SymbolTable) {
         log("Calling blockPrologue")
         // Push the value that tracks the stack space used by intermediate values
         // by the current block
         offsetStackStore.addFirst(0)
 
         // Calculate how much space to be allocated (and modify each variable to include its position on the stack)
-        val stackSpaceUsed = node.symbolTable.getStackSize()
+        val stackSpaceUsed = symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
             var currentStackPosition = stackSpaceUsed
             var subtractLeft = stackSpaceUsed
@@ -132,7 +137,7 @@ class AssemblyGenerator(
             }
 
             // Calculate the stack position for each variable
-            val variables = node.symbolTable.getValuesByType(Variable::class)
+            val variables = symbolTable.getValuesByType(Variable::class)
             for (v in variables) {
                 currentStackPosition -= v.type.size()
                 v.stackPosition = currentStackPosition
@@ -144,13 +149,17 @@ class AssemblyGenerator(
      * Restores the state so that the program can resume from where it left off before entering the block
      */
     private fun blockEpilogue(node: BlockAST) {
+        blockEpilogue(node.symbolTable)
+    }
+
+    private fun blockEpilogue(symbolTable: SymbolTable) {
         log("Calling blockEpilogue")
         // Pop the value that tracks the stack space used by intermediate values
         // by the current block
         offsetStackStore.removeFirst()
 
         // Unwind stack
-        val stackSpaceUsed = node.symbolTable.getStackSize()
+        val stackSpaceUsed = symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
             var addLeft = stackSpaceUsed
 
@@ -189,28 +198,43 @@ class AssemblyGenerator(
         val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
         // translate all function blocks into assembly
-        functionASTs.forEach { f -> translate(f) }
+        functionASTs.forEach { translate(it) }
 
         // Translate main instructions into assembly
         // We create a new FunctionDeclarationAST to store statements in the main function
         // and let transFunction add the entries to the text attribute
 
         // The symbol table contains the statements AND the FunctionDeclarationAST
-        val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
-        mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
+//        val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
+//        mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
+//
+//        // Add statements
+//        val statementASTs = program.statements.filter { it !is FunctionDeclarationAST }
+//        mainAST.statements.addAll(statementASTs)
+//        mainAST.statements.add(
+//            ReturnStatementAST(
+//                mainAST, mainAST.symbolTable,
+//                IntLiteralAST(0)
+//            )
+//        )
+//
+//        translate(mainAST)
 
-        // Add statements
-        val statementASTs = program.statements.filter { it !is FunctionDeclarationAST }
-        mainAST.statements.addAll(statementASTs)
-        mainAST.statements.add(
-            ReturnStatementAST(
-                mainAST, mainAST.symbolTable,
-                IntLiteralAST(0)
-            )
+        val mainLabel = newBranchLabel("main")
+        currentLabel = mainLabel
+
+        blockPrologue(ast.symbolTable)
+        addLines(
+            Push(LR)
         )
-
-        translate(mainAST)
-        text[currentLabel.name] = currentLabel
+        val statementASTs = program.statements.filter { it !is FunctionDeclarationAST }
+        statementASTs.forEach { translate(it) }
+        blockEpilogue(ast.symbolTable)
+        addLines(
+            LoadWord(resultRegister, PseudoImmediateOperand(0)),
+            Pop(PC),
+            LTORG
+        )
     }
 
     @TranslatorMethod(FunctionDeclarationAST::class)
@@ -269,7 +293,9 @@ class AssemblyGenerator(
         addLines(BranchLink(BranchLabelOperand(node.funcName)))
 
         // Increment the stack pointer back to where it was
-        addLines(Add(SP, SP, IntImmediateOperand(callStackSize)))
+        if (callStackSize > 0) {
+            addLines(Add(SP, SP, IntImmediateOperand(callStackSize)))
+        }
 
         // Move the result from R0 to resultRegister
         addLines(Move(resultRegister, R0))
@@ -319,12 +345,10 @@ class AssemblyGenerator(
         addLines(
             Branch(BranchLabelOperand(checkLabel))
         )
-        text[currentLabel.name] = currentLabel
 
         // Translate block statements and add to loop label
         currentLabel = loopLabel
         node.statements.forEach { translate(it) }
-        text[currentLabel.name] = currentLabel
 
         // Translate condition statements and add to check label
         currentLabel = checkLabel
