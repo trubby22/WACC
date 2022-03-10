@@ -537,7 +537,7 @@ class SemanticIntegrationTest {
         val st = SymbolTable.topLevel()
         val ast = AST(st)
         val errors = SemanticErrorList()
-        val visitor = Visitor(ast, st, errors)
+        val visitor = Visitor(ast, st, errors, enableLogging = true)
 
         visitor.visit(program)
 

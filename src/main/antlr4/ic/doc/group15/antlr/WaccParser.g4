@@ -34,6 +34,7 @@ return_stat: (RETURN | EXIT) expr;
 valid_return_stat: return_stat (END_STAT valid_return_stat)? #sequenceRecursiveReturn1
 | stat END_STAT valid_return_stat                            #sequenceRecursiveReturn2
 | IF expr THEN valid_return_stat ELSE valid_return_stat FI   #ifReturn
+| WHILE expr DO valid_return_stat DONE                       #whileReturn
 | BEGIN valid_return_stat END                                #beginEndReturn
 ;
 

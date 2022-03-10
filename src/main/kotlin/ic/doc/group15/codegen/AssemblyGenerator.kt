@@ -24,7 +24,6 @@ import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Variable
 import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
 import java.util.*
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
@@ -174,67 +173,6 @@ class AssemblyGenerator(
     }
 
     /**
-     * Sets up the environment for a function
-     */
-    private fun functionPrologue(node: FunctionDeclarationAST) {
-        log("Calling functionPrologue")
-        addLines(Push(LR))
-    }
-
-    /**
-     * Restores the state so that the program can resume from where it left off before entering the function
-     */
-    private fun functionEpilogue(node: FunctionDeclarationAST) {
-        log("Calling functionEpilogue for function: ${node.funcName}")
-        if (node.funcName == "main") {
-            // Add return statement (main function implicitly returns 0)
-            translate(
-                ReturnStatementAST(
-                    node, node.symbolTable.subScope(),
-                    IntLiteralAST(0)
-                )
-            )
-        }
-        addLines(
-            LTORG
-        )
-    }
-
-    /**
-     * Sets up the stack with the necessary parameters before a function call.
-     */
-    private fun functionCallPrologue(node: CallAST) {
-        log("Calling functionCallPrologue")
-        node.actuals.forEach {
-            // Load variable to resultRegister
-            translate(it)
-            val size = it.type.size()
-            addLines(
-                // Allocate space in stack
-                Sub(SP, SP, IntImmediateOperand(it.type.size())),
-                // Move value from resultRegister to stack
-                if (size == BYTE) {
-                    StoreByte(resultRegister, ZeroOffset(SP))
-                } else {
-                    StoreWord(resultRegister, ZeroOffset(SP))
-                }
-            )
-        }
-    }
-
-    /**
-     * Restores the state so that the program can resume from where it left off before the
-     * function sub-call was made
-     */
-    private fun functionCallEpilogue(node: CallAST) {
-        log("Calling functionCallEpilogue")
-        // Increment the stack pointer back to where it was
-        val stackSpaceUsed = node.actuals.sumOf { arg -> arg.type.size() }
-
-        addLines(Add(SP, SP, IntImmediateOperand(stackSpaceUsed)))
-    }
-
-    /**
      * Per WACC language specification, a program matches the grammar "begin func* stat end".
      * The AST representation decouples the statements from a SequenceAST to a mapping of lists of StatementAST
      * in the symbol table to avoid stack overflow from recursing a huge block of statements.
@@ -263,8 +201,14 @@ class AssemblyGenerator(
         mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
 
         // Add statements
-        val statementASTs = program.statements.filter { s -> s !is FunctionDeclarationAST }
+        val statementASTs = program.statements.filter { it !is FunctionDeclarationAST }
         mainAST.statements.addAll(statementASTs)
+        mainAST.statements.add(
+            ReturnStatementAST(
+                mainAST, mainAST.symbolTable,
+                IntLiteralAST(0)
+            )
+        )
 
         translate(mainAST)
         text[currentLabel.name] = currentLabel
@@ -279,20 +223,55 @@ class AssemblyGenerator(
 
         // Translate block statements and add to loop label - we start from register R4
         resultRegister = R4
+
         // TODO: issue - interdependence of statements to be addressed
-        functionPrologue(node)
+
+        // Sets up the environment for a function
+        addLines(
+            Push(LR)
+        )
+
         blockPrologue(node)
         node.statements.map { s -> translate(s) }
         blockEpilogue(node)
-        functionEpilogue(node)
+
+        // Restore the state so that the program can resume from where it left off
+        addLines(
+            Pop(PC),
+            LTORG
+        )
     }
 
     @TranslatorMethod(CallAST::class)
     private fun transCall(node: CallAST) {
         log("Translating call")
-        functionCallPrologue(node)
+
+        var callStackSize = 0
+
+        // Set up the stack with the necessary parameters before a function call.
+        node.actuals.forEach {
+            // Load variable to resultRegister
+            translate(it)
+            val size = it.type.size()
+            callStackSize += size
+            addLines(
+                // Allocate space in stack
+                Sub(SP, SP, IntImmediateOperand(size)),
+                // Move value from resultRegister to stack
+                if (size == BYTE) {
+                    StoreByte(resultRegister, ZeroOffset(SP))
+                } else {
+                    StoreWord(resultRegister, ZeroOffset(SP))
+                }
+            )
+        }
+
+        // Perform the call
         addLines(BranchLink(BranchLabelOperand(node.funcName)))
-        functionCallEpilogue(node)
+
+        // Increment the stack pointer back to where it was
+        addLines(Add(SP, SP, IntImmediateOperand(callStackSize)))
+
         // Move the result from R0 to resultRegister
         addLines(Move(resultRegister, R0))
     }
@@ -387,18 +366,11 @@ class AssemblyGenerator(
     @TranslatorMethod(ReturnStatementAST::class)
     private fun transReturnStatement(node: ReturnStatementAST) {
         log("Translating ReturnStatementAST")
-        if (node.expr is IntLiteralAST) {
-            addLines(
-                LoadWord(R0, PseudoImmediateOperand(node.expr.intValue)),
-                Pop(PC)
-            )
-        } else {
-            translate(node.expr)
-            addLines(
-                Move(R0, resultRegister),
-                Pop(PC)
-            )
-        }
+        translate(node.expr)
+        addLines(
+            Move(R0, resultRegister),
+            Pop(PC)
+        )
     }
 
     /**

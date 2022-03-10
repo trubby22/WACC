@@ -1,7 +1,6 @@
 package ic.doc.group15.visitor
 
 import ic.doc.group15.SymbolTable
-import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.antlr.WaccParser.*
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.ast.* // ktlint-disable no-unused-imports
@@ -11,6 +10,7 @@ import ic.doc.group15.error.semantic.*
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.IntType
 import ic.doc.group15.util.EscapeChar
+import org.antlr.v4.runtime.ParserRuleContext
 import java.util.*
 
 class Visitor(
@@ -25,14 +25,6 @@ class Visitor(
 
     private val functionsToVisit: MutableMap<String, FuncContext> = mutableMapOf()
     private val declaredFunctions: MutableMap<String, FunctionDeclarationAST> = mutableMapOf()
-
-    override fun visitBeginEndStat(ctx: BeginEndStatContext): ASTNode {
-        symbolTable = symbolTable.subScope()
-        val node = visit(ctx.stat())
-        symbolTable = symbolTable.parentScope()!!
-
-        return node
-    }
 
     //region statements_and_blocks
 
@@ -75,8 +67,12 @@ class Visitor(
         val funcName = ident.text
 
         if (!symbolTable.isTopLevel()) {
-            errors.addError(FunctionDeclarationInWrongScopeError(ident.start))
+            addError(FunctionDeclarationInWrongScopeError(ident.start))
         }
+
+        val oldScope = symbolTable
+
+        val funcScope = symbolTable.subScope()
 
         if (!functionsToVisit.containsKey(funcName)) {
             assert(declaredFunctions.containsKey(funcName))
@@ -94,19 +90,19 @@ class Visitor(
 
         log(""" || Return type: $returnTypeName""")
 
-        val t = TypeParser.parse(symbolTable, ctx.type())
-        val f = symbolTable.lookup(funcName)
+        val t = TypeParser.parse(funcScope, ctx.type())
+        val f = oldScope.lookupAll(funcName)
 
         when {
             t !is ReturnableType -> {
-                errors.addError(NotReturnableError(ctx.type().start, t))
+                addError(NotReturnableError(ctx.type().start, t))
             }
             f != null -> {
-                errors.addError(FunctionAlreadyDeclaredError(ident.start, funcName))
+                addError(FunctionAlreadyDeclaredError(ident.start, funcName))
             }
         }
 
-        val func = FunctionDeclarationAST(scopeAST, symbolTable, t, funcName)
+        val func = FunctionDeclarationAST(scopeAST, funcScope, t, funcName)
         declaredFunctions[funcName] = func
 
         log(
@@ -115,9 +111,7 @@ class Visitor(
 
         // Add function identifier to symbol table so that it can be recursively accessed
 
-        val parentScope = symbolTable
-
-        symbolTable = symbolTable.subScope()
+        symbolTable = funcScope.subScope()
         scopeAST = func
         for (param in ctx.param()) {
             func.formals.add(visitParam(param) as ParameterAST)
@@ -127,11 +121,13 @@ class Visitor(
             func.formals.map { p -> p.ident },
             symbolTable
         )
-        parentScope.add(funcName, func.funcIdent)
+        oldScope.add(funcName, func.funcIdent)
         log("|| Visiting $funcName function body")
         visit(ctx.valid_return_stat())
         symbolTable = symbolTable.parentScope()!!
         scopeAST = scopeAST.parent!!
+
+        symbolTable = oldScope
 
         return func
     }
@@ -156,11 +152,11 @@ class Visitor(
 
         when {
             t !is ReturnableType -> {
-                errors.addError(CannotBeParameterError(type.start, t))
+                addError(CannotBeParameterError(type.start, t))
             }
             p != null -> {
                 if (p is Param) {
-                    errors.addError(ParameterAlreadyDeclaredError(param.start, paramName))
+                    addError(ParameterAlreadyDeclaredError(param.start, paramName))
                 }
             }
         }
@@ -170,67 +166,6 @@ class Visitor(
         symbolTable.add(paramName, parameterAST.ident)
 
         return parameterAST
-    }
-
-    override fun visitIfStat(ctx: IfStatContext): ASTNode {
-        log("Visiting if statement")
-
-        val oldScope = scopeAST
-        val oldSt = symbolTable
-
-        log("Visiting if statement condition expression")
-        val condExpr = visit(ctx.expr()) as ExpressionAST
-
-        if (condExpr.type != BasicType.BoolType) {
-            errors.addError(CondTypeError(ctx.expr().start, condExpr.type))
-        }
-
-        val ifBlock = IfBlockAST(scopeAST, symbolTable, condExpr)
-
-        scopeAST = ifBlock
-        symbolTable = symbolTable.subScope()
-        log("|| Visiting then block")
-        visit(ctx.stat(0))
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        val elseBlock = ElseBlockAST(ifBlock, symbolTable)
-
-        scopeAST = elseBlock
-        symbolTable = symbolTable.subScope()
-        log("|| Visiting else block")
-        visit(ctx.stat(1))
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        ifBlock.elseBlock = elseBlock
-
-        return addToScope(ifBlock)
-    }
-
-    override fun visitWhileStat(ctx: WhileStatContext): ASTNode {
-        log("Visiting while statement")
-
-        val oldScope = scopeAST
-        val oldSt = symbolTable
-
-        log("|| Visiting while condition expression")
-        val condExpr = visit(ctx.expr()) as ExpressionAST
-
-        if (condExpr.type != BasicType.BoolType) {
-            errors.addError(CondTypeError(ctx.expr().start, condExpr.type))
-        }
-
-        val whileBlock = WhileBlockAST(scopeAST, symbolTable, condExpr)
-
-        scopeAST = whileBlock
-        symbolTable = symbolTable.subScope()
-        log("|| Visiting while block")
-        visit(ctx.stat()) as StatementAST
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        return addToScope(whileBlock)
     }
 
     override fun visitPrintStat(ctx: PrintStatContext): ASTNode {
@@ -254,106 +189,10 @@ class Visitor(
 
         val expr = visit(ctx.expr()) as ExpressionAST
         if (expr.type != IntType) {
-            errors.addError(ExitTypeError(ctx.expr().start, expr.type))
+            addError(ExitTypeError(ctx.expr().start, expr.type))
         }
 
         return addToScope(ExitStatementAST(scopeAST, expr))
-    }
-
-    override fun visitReturn_stat(ctx: Return_statContext): ASTNode? {
-        log("Visiting return statement")
-
-        var enclosingAST: BlockAST? = scopeAST
-
-        while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
-            enclosingAST = enclosingAST.parent
-        }
-
-        if (enclosingAST == null) {
-            errors.addError(IllegalReturnStatementError(ctx.start))
-            return null
-        }
-
-        val func = enclosingAST as FunctionDeclarationAST
-        val returnType = func.returnType
-
-        log(" || return statement is under function ${func.funcName}")
-
-        val expr = visit(ctx.expr()) as ExpressionAST
-
-        log("we're in return stat")
-        log("asserted return type: $returnType")
-        log("actual return type: ${expr.type}")
-
-        when {
-            ctx.RETURN() != null && !returnType.compatible(expr.type) -> {
-                errors.addError(ReturnTypeError(ctx.expr().start, returnType, expr.type))
-            }
-        }
-
-        val returnStat = ReturnStatementAST(func, symbolTable, expr)
-        func.returnStat = returnStat
-
-        return addToScope(returnStat)
-    }
-
-    override fun visitSequenceRecursiveReturn1(ctx: SequenceRecursiveReturn1Context): ASTNode? {
-        addToScope(visit(ctx.return_stat()) as StatementAST)
-        if (ctx.valid_return_stat() != null) {
-            visit(ctx.valid_return_stat())
-        }
-        return null
-    }
-
-    override fun visitSequenceRecursiveReturn2(ctx: SequenceRecursiveReturn2Context): ASTNode? {
-        addToScope(visit(ctx.stat()) as StatementAST)
-        visit(ctx.valid_return_stat())
-        return null
-    }
-
-    override fun visitBeginEndReturn(ctx: WaccParser.BeginEndReturnContext):
-        ASTNode? {
-        symbolTable = symbolTable.subScope()
-        val node = visit(ctx.valid_return_stat())
-        symbolTable = symbolTable.parentScope()!!
-
-        return node
-    }
-
-    override fun visitIfReturn(ctx: WaccParser.IfReturnContext): ASTNode {
-        log("Visiting if statement")
-
-        val oldScope = scopeAST
-        val oldSt = symbolTable
-
-        log("Visiting if statement condition expression")
-        val condExpr = visit(ctx.expr()) as ExpressionAST
-
-        if (condExpr.type != BasicType.BoolType) {
-            errors.addError(CondTypeError(ctx.expr().start, condExpr.type))
-        }
-
-        val ifBlock = IfBlockAST(scopeAST, symbolTable, condExpr)
-
-        scopeAST = ifBlock
-        symbolTable = symbolTable.subScope()
-        log("|| Visiting then block")
-        visit(ctx.valid_return_stat(0))
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        val elseBlock = ElseBlockAST(ifBlock, symbolTable)
-
-        scopeAST = elseBlock
-        symbolTable = symbolTable.subScope()
-        log("|| Visiting else block")
-        visit(ctx.valid_return_stat(1))
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        ifBlock.elseBlock = elseBlock
-
-        return addToScope(ifBlock)
     }
 
     override fun visitFreeStat(ctx: FreeStatContext): ASTNode {
@@ -362,7 +201,7 @@ class Visitor(
         val ctxExpr = ctx.expr()
         val expr = visit(ctxExpr) as ExpressionAST
         if (expr.type !is HeapAllocatedType) {
-            errors.addError(FreeTypeError(ctxExpr.start, expr.type))
+            addError(FreeTypeError(ctxExpr.start, expr.type))
         }
 
         return addToScope(FreeStatementAST(scopeAST, symbolTable, expr))
@@ -380,12 +219,167 @@ class Visitor(
         val assignLhs = ctx.assign_lhs()
         val target = visit(assignLhs) as AssignmentAST<*>
         if (target.type !is BasicType || target.type == BasicType.BoolType) {
-            errors.addError(ReadTypeError(assignLhs.start, target.type))
+            addError(ReadTypeError(assignLhs.start, target.type))
         }
 
         log("|| Target type: ${target.type}")
 
         return addToScope(ReadStatementAST(scopeAST, symbolTable, target))
+    }
+
+    override fun visitReturn_stat(ctx: Return_statContext): ASTNode? {
+        log("Visiting return statement")
+
+        var enclosingAST: BlockAST? = scopeAST
+
+        while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
+            enclosingAST = enclosingAST.parent
+        }
+
+        if (enclosingAST == null) {
+            addError(IllegalReturnStatementError(ctx.start))
+            return null
+        }
+
+        val func = enclosingAST as FunctionDeclarationAST
+        val returnType = func.returnType
+
+        log(" || return statement is under function ${func.funcName}")
+
+        val expr = visit(ctx.expr()) as ExpressionAST
+
+        log("we're in return stat")
+        log("asserted return type: $returnType")
+        log("actual return type: ${expr.type}")
+
+        when {
+            ctx.RETURN() != null && !returnType.compatible(expr.type) -> {
+                addError(ReturnTypeError(ctx.expr().start, returnType, expr.type))
+            }
+        }
+
+        val returnStat = ReturnStatementAST(func, symbolTable, expr)
+        func.returnStat = returnStat
+
+        return addToScope(returnStat)
+    }
+
+    override fun visitSequenceRecursiveReturn1(ctx: SequenceRecursiveReturn1Context): ASTNode? {
+        visitSequence(ctx.return_stat(), ctx.valid_return_stat())
+        return null
+    }
+
+    override fun visitSequenceRecursiveReturn2(ctx: SequenceRecursiveReturn2Context): ASTNode? {
+        visitSequence(ctx.stat(), ctx.valid_return_stat())
+        return null
+    }
+
+    private fun visitSequence(statCtx: ParserRuleContext, validReturnCtx: Valid_return_statContext?) {
+        visit(statCtx)
+        if (validReturnCtx != null) {
+            visit(validReturnCtx)
+        }
+    }
+
+    override fun visitBeginEndReturn(ctx: BeginEndReturnContext): ASTNode {
+        return visitBeginEnd(ctx.valid_return_stat())
+    }
+
+    override fun visitBeginEndStat(ctx: BeginEndStatContext): ASTNode {
+        return visitBeginEnd(ctx.stat())
+    }
+
+    private fun visitBeginEnd(statCtx: ParserRuleContext): ASTNode {
+        val node = BeginEndBlockAST(scopeAST, symbolTable)
+        symbolTable = symbolTable.subScope()
+        visit(statCtx)
+        symbolTable = symbolTable.parentScope()!!
+
+        return node
+    }
+
+    override fun visitIfReturn(ctx: IfReturnContext): ASTNode {
+        return visitIf(ctx.expr(), ctx.valid_return_stat(0), ctx.valid_return_stat(1))
+    }
+
+    override fun visitIfStat(ctx: IfStatContext): ASTNode {
+        return visitIf(ctx.expr(), ctx.stat(0), ctx.stat(1))
+    }
+
+    private fun visitIf(
+        ifExpr: ExprContext,
+        thenStat: ParserRuleContext,
+        elseStat: ParserRuleContext
+    ): ASTNode {
+        log("Visiting if statement")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
+        log("Visiting if statement condition expression")
+        val condExpr = visit(ifExpr) as ExpressionAST
+
+        if (condExpr.type != BasicType.BoolType) {
+            addError(CondTypeError(ifExpr.start, condExpr.type))
+        }
+
+        val ifBlock = IfBlockAST(scopeAST, symbolTable, condExpr)
+
+        scopeAST = ifBlock
+        symbolTable = symbolTable.subScope()
+        log("|| Visiting then block")
+        visit(thenStat)
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        val elseBlock = ElseBlockAST(ifBlock, symbolTable)
+
+        scopeAST = elseBlock
+        symbolTable = symbolTable.subScope()
+        log("|| Visiting else block")
+        visit(elseStat)
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        ifBlock.elseBlock = elseBlock
+
+        return addToScope(ifBlock)
+    }
+
+    override fun visitWhileStat(ctx: WhileStatContext): ASTNode {
+        return visitWhile(ctx.expr(), ctx.stat())
+    }
+
+    override fun visitWhileReturn(ctx: WhileReturnContext): ASTNode {
+        return visitWhile(ctx.expr(), ctx.valid_return_stat())
+    }
+
+    private fun visitWhile(
+        exprCtx: ExprContext,
+        statCtx: ParserRuleContext
+    ): ASTNode {
+        log("Visiting while statement")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
+        log("|| Visiting while condition expression")
+        val condExpr = visit(exprCtx) as ExpressionAST
+
+        if (condExpr.type != BasicType.BoolType) {
+            addError(CondTypeError(exprCtx.start, condExpr.type))
+        }
+
+        val whileBlock = WhileBlockAST(scopeAST, symbolTable, condExpr)
+
+        scopeAST = whileBlock
+        symbolTable = symbolTable.subScope()
+        log("|| Visiting while block")
+        visit(statCtx) as StatementAST
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        return addToScope(whileBlock)
     }
 
     //endregion
@@ -414,11 +408,11 @@ class Visitor(
         when {
             v != null -> {
                 if (v !is FunctionType) {
-                    errors.addError(IdentifierAlreadyDeclaredError(ident.start, varName))
+                    addError(IdentifierAlreadyDeclaredError(ident.start, varName))
                 }
             }
             !t.compatible(assignRhs.type) -> {
-                errors.addError(AssignTypeError(exprRhs.start, t, assignRhs.type))
+                addError(AssignTypeError(exprRhs.start, t, assignRhs.type))
             }
         }
 
@@ -442,7 +436,7 @@ class Visitor(
         log("Visiting variable assignment ${ctx.assign_lhs().text}")
 
         if (!assignLhs.type.compatible(assignRhs.type)) {
-            errors.addError(AssignTypeError(exprRhs.start, assignLhs.type, assignRhs.type))
+            addError(AssignTypeError(exprRhs.start, assignLhs.type, assignRhs.type))
         }
 
         println("assignRhs: $assignRhs")
@@ -483,7 +477,7 @@ class Visitor(
         val ident = visitIdent(identCtx) as VariableIdentifierAST
         val arr: ArrayType
         if (ident.type !is ArrayType) {
-            errors.addError(IndexingNonArrayTypeError(identCtx.start, ident.type))
+            addError(IndexingNonArrayTypeError(identCtx.start, ident.type))
             arr = ArrayType.ANY_ARRAY
         } else {
             arr = (symbolTable.lookupAll(ident.varName) as Variable).type as ArrayType
@@ -493,7 +487,7 @@ class Visitor(
         for (expr in ctx.expr()) {
             val indexExpr = visit(expr) as ExpressionAST
             if (indexExpr.type != IntType) {
-                errors.addError(ArrayIndexTypeError(expr.start, indexExpr.type))
+                addError(ArrayIndexTypeError(expr.start, indexExpr.type))
             }
             indexList.add(indexExpr)
         }
@@ -511,7 +505,7 @@ class Visitor(
         val exprCtx = ctx.expr()
         val expr = visit(exprCtx) as ExpressionAST
         if (expr.type !is PairType) {
-            errors.addError(FstTypeError(exprCtx.start, expr.type))
+            addError(FstTypeError(exprCtx.start, expr.type))
         }
 
         return FstPairElemAST(symbolTable, expr)
@@ -521,7 +515,7 @@ class Visitor(
         val exprCtx = ctx.expr()
         val expr = visit(exprCtx) as ExpressionAST
         if (expr.type !is PairType) {
-            errors.addError(SndTypeError(exprCtx.start, expr.type))
+            addError(SndTypeError(exprCtx.start, expr.type))
         }
 
         return SndPairElemAST(symbolTable, expr)
@@ -550,19 +544,19 @@ class Visitor(
                 symbolTable = oldSt
                 functionsToVisit.remove(funcName)
             } else {
-                errors.addError(IdentifierNotDefinedError(ident.start, funcName))
+                addError(IdentifierNotDefinedError(ident.start, funcName))
             }
         }
 
         if (f !is FunctionType) {
-            errors.addError(NotAFunctionError(ident.start, funcName))
+            addError(NotAFunctionError(ident.start, funcName))
         }
         f = f as FunctionType
 
         val actuals: MutableList<ExpressionAST> = LinkedList()
 
         if (f.formals.size != args.size) {
-            errors.addError(
+            addError(
                 NumArgumentsError(ctx.arg_list().start, funcName, f.formals.size, args.size)
             )
         }
@@ -574,7 +568,7 @@ class Visitor(
             val arg = args[k]
             val argExpr = visit(arg) as ExpressionAST
             if (!f.formals[k].type.compatible(argExpr.type)) {
-                errors.addError(
+                addError(
                     ParameterTypeError(arg.start, funcName, k, f.formals[k].type, argExpr.type)
                 )
             }
@@ -592,10 +586,10 @@ class Visitor(
         log("Visiting identifier with name ${ctx.text}")
         var ident = symbolTable.lookupAll(ctx.text)
         if (ident == null) {
-            errors.addError(IdentifierNotDefinedError(ctx.start, ctx.text))
+            addError(IdentifierNotDefinedError(ctx.start, ctx.text))
             ident = Variable.ANY_VAR
         } else if (ident !is Variable) {
-            errors.addError(IdentifierNotAVariableError(ctx.start, ctx.text))
+            addError(IdentifierNotAVariableError(ctx.start, ctx.text))
             ident = Variable.ANY_VAR
         }
         log("Identifier is variable with type ${ident.type}")
@@ -653,7 +647,7 @@ class Visitor(
         for (expr in ctx.expr()) {
             val elem = visit(expr) as ExpressionAST
             if (!elemType.compatible(elem.type)) {
-                errors.addError(ArrayLiteralElemsTypeError(expr.start, elemType, elem.type))
+                addError(ArrayLiteralElemsTypeError(expr.start, elemType, elem.type))
             }
             elemType = elem.type
             elems.add(elem)
@@ -678,7 +672,7 @@ class Visitor(
         val expr = visit(ctx.expr()) as ExpressionAST
 
         if (!unOp.expectedType.compatible(expr.type)) {
-            errors.addError(UnaryOpTypeError(ctx.start, unOp, expr.type))
+            addError(UnaryOpTypeError(ctx.start, unOp, expr.type))
         }
 
         return UnaryOpExprAST(symbolTable, expr, unOp)
@@ -708,15 +702,15 @@ class Visitor(
 
         if (binOp.allowedTypes != null) {
             if (!binOp.allowedTypes.contains(expr1.type)) {
-                errors.addError(BinaryOpTypeError(ctx.start, binOp, expr1.type))
+                addError(BinaryOpTypeError(ctx.start, binOp, expr1.type))
             }
             if (!binOp.allowedTypes.contains(expr1.type)) {
-                errors.addError(BinaryOpTypeError(ctx.start, binOp, expr1.type))
+                addError(BinaryOpTypeError(ctx.start, binOp, expr1.type))
             }
         }
 
         if (!expr1.type.compatible(expr2.type)) {
-            errors.addError(BinaryOpDifferentTypesError(ctx.start, expr1.type, expr2.type))
+            addError(BinaryOpDifferentTypesError(ctx.start, expr1.type, expr2.type))
         }
 
 //        if (arrayOf(BinaryOp.AND, BinaryOp.OR).any { it == node.operator }) {
@@ -756,6 +750,13 @@ class Visitor(
     private fun log(message: String) {
         if (enableLogging) {
             println(message.trimMargin())
+        }
+    }
+
+    private fun addError(error: SemanticError) {
+        errors.addError(error)
+        if (enableLogging) {
+            println(error.toString())
         }
     }
 
