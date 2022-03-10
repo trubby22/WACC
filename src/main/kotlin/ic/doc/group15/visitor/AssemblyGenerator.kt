@@ -396,8 +396,8 @@ class AssemblyGenerator(
     private fun translateWhileBlock(node: WhileBlockAST) {
         log("Translating WhileBlockAST")
         // Define labels
-        val checkLabel = newBranchLabel()
         val loopLabel = newBranchLabel()
+        val checkLabel = newBranchLabel()
 
         // Add branch instruction
         addLines(
@@ -410,7 +410,11 @@ class AssemblyGenerator(
 
         // Translate block statements and add to loop label
         currentLabel = loopLabel
+//        blockPrologue(node)
         node.statements.forEach { translate(it) }
+//        blockEpilogue(node)
+
+        currentLabel = checkLabel
 
         // Add compare and branch instruction
         addLines(
@@ -1077,7 +1081,7 @@ class AssemblyGenerator(
     }
 
     private fun newBranchLabel(name: String, vararg lines: Instruction): BranchLabel {
-        log("Generation branch label: $name")
+        log("Generating branch label: $name")
         val label = BranchLabel(name, *lines)
         text[label.name] = label
         return label

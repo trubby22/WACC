@@ -290,12 +290,19 @@ class ParseTreeVisitor(
     }
 
     private fun visitBeginEnd(statCtx: ParserRuleContext): ASTNode {
-        val node = BeginEndBlockAST(scopeAST, symbolTable)
-        symbolTable = symbolTable.subScope()
-        visit(statCtx)
-        symbolTable = symbolTable.parentScope()!!
+        val oldScope = scopeAST
+        val oldSt = symbolTable
 
-        return node
+        val beginEndSt = symbolTable.subScope()
+        val node = BeginEndBlockAST(scopeAST, beginEndSt)
+
+        scopeAST = node
+        symbolTable = beginEndSt
+        visit(statCtx)
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        return addToScope(node)
     }
 
     override fun visitIfReturn(ctx: IfReturnContext): ASTNode {
@@ -316,6 +323,9 @@ class ParseTreeVisitor(
         val oldScope = scopeAST
         val oldSt = symbolTable
 
+        val thenSt = oldSt.subScope()
+        val elseSt = oldSt.subScope()
+
         log("Visiting if statement condition expression")
         val condExpr = visit(ifExpr) as ExpressionAST
 
@@ -323,19 +333,19 @@ class ParseTreeVisitor(
             addError(CondTypeError(ifExpr.start, condExpr.type))
         }
 
-        val ifBlock = IfBlockAST(scopeAST, symbolTable, condExpr)
+        val ifBlock = IfBlockAST(scopeAST, thenSt, condExpr)
 
         scopeAST = ifBlock
-        symbolTable = symbolTable.subScope()
+        symbolTable = thenSt
         log("|| Visiting then block")
         visit(thenStat)
         symbolTable = oldSt
         scopeAST = oldScope
 
-        val elseBlock = ElseBlockAST(ifBlock, symbolTable)
+        val elseBlock = ElseBlockAST(ifBlock, elseSt)
 
         scopeAST = elseBlock
-        symbolTable = symbolTable.subScope()
+        symbolTable = elseSt
         log("|| Visiting else block")
         visit(elseStat)
         symbolTable = oldSt
@@ -363,6 +373,8 @@ class ParseTreeVisitor(
         val oldScope = scopeAST
         val oldSt = symbolTable
 
+        val whileSt = oldSt.subScope()
+
         log("|| Visiting while condition expression")
         val condExpr = visit(exprCtx) as ExpressionAST
 
@@ -370,10 +382,10 @@ class ParseTreeVisitor(
             addError(CondTypeError(exprCtx.start, condExpr.type))
         }
 
-        val whileBlock = WhileBlockAST(scopeAST, symbolTable, condExpr)
+        val whileBlock = WhileBlockAST(scopeAST, whileSt, condExpr)
 
         scopeAST = whileBlock
-        symbolTable = symbolTable.subScope()
+        symbolTable = whileSt
         log("|| Visiting while block")
         visit(statCtx) as StatementAST
         symbolTable = oldSt
