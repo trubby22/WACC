@@ -131,7 +131,7 @@ class AssemblyGenerator(
     private fun translateFunctionDeclaration(node: FunctionDeclarationAST) {
         log("Translating function declaration")
         // Define label
-        val funcLabel = newBranchLabel(node.funcName)
+        val funcLabel = newFunctionLabel(node.funcName)
         currentLabel = funcLabel
 
         // Translate block statements and add to loop label - we start from register R4
@@ -1085,6 +1085,10 @@ class AssemblyGenerator(
         val label = BranchLabel(name, *lines)
         text[label.name] = label
         return label
+    }
+
+    private fun newFunctionLabel(funcName: String, vararg lines: Instruction): BranchLabel {
+        return newBranchLabel("f_$funcName", *lines)
     }
 
     private fun defineUtilFuncs(vararg funcs: UtilFunction) {
