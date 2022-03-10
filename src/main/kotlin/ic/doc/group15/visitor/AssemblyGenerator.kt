@@ -200,58 +200,6 @@ class AssemblyGenerator(
         transAssign(node.lhs.ident)
     }
 
-    /**
-     * Per WACC language spec, a while-block matches the grammar "while expr do stat done"
-     * The while block follows the basic implementation as follows:
-     *
-     * B check
-     *
-     * loop:
-     *
-     * {Sequence of instructions in WHILE block}
-     *
-     * check:
-     *
-     * {Sequence of instructions to test WHILE condition}
-     *
-     * CMP resultReg, 1
-     * BEQ loop
-     */
-    @TranslatorMethod(WhileBlockAST::class)
-    private fun translateWhileBlock(node: WhileBlockAST) {
-        log("Translating WhileBlockAST")
-        // Define labels
-        val checkLabel = BranchLabel(branchLabelGenerator.generate())
-        val loopLabel = BranchLabel(branchLabelGenerator.generate())
-
-        // Add branch instruction
-        addLines(
-            Branch(BranchLabelOperand(checkLabel))
-        )
-
-        // Translate block statements and add to loop label
-        currentLabel = loopLabel
-        node.statements.forEach { translate(it) }
-
-        // Translate condition statements and add to check label
-        currentLabel = checkLabel
-        translate(node.condExpr)
-
-        // Add compare and branch instruction
-        addLines(
-            Compare(resultRegister, IntImmediateOperand(1)),
-            Branch(EQ, BranchLabelOperand(loopLabel))
-        )
-    }
-
-    @TranslatorMethod(BeginEndBlockAST::class)
-    private fun translateBeginEndBlock(node: BeginEndBlockAST) {
-        log("Translating BeginEndBlockAST")
-        blockPrologue(node)
-        node.statements.forEach { translate(it) }
-        blockEpilogue(node)
-    }
-
     @TranslatorMethod(FreeStatementAST::class)
     private fun translateFreeStatement(node: FreeStatementAST) {
         log("Translating FreeStatementAST")
@@ -422,11 +370,61 @@ class AssemblyGenerator(
         )
 
         // add sequence of instructions in ELSE block under else label
-        text[currentLabel.name] = currentLabel
         currentLabel = elseLabel
         stat.elseBlock.statements.forEach(::translate)
-        text[currentLabel.name] = currentLabel
         currentLabel = fiLabel
+    }
+
+    /**
+     * Per WACC language spec, a while-block matches the grammar "while expr do stat done"
+     * The while block follows the basic implementation as follows:
+     *
+     * B check
+     *
+     * loop:
+     *
+     * {Sequence of instructions in WHILE block}
+     *
+     * check:
+     *
+     * {Sequence of instructions to test WHILE condition}
+     *
+     * CMP resultReg, 1
+     * BEQ loop
+     */
+    @TranslatorMethod(WhileBlockAST::class)
+    private fun translateWhileBlock(node: WhileBlockAST) {
+        log("Translating WhileBlockAST")
+        // Define labels
+        val checkLabel = newBranchLabel()
+        val loopLabel = newBranchLabel()
+
+        // Add branch instruction
+        addLines(
+            Branch(BranchLabelOperand(checkLabel))
+        )
+
+        // Translate condition statements and add to check label
+        currentLabel = checkLabel
+        translate(node.condExpr)
+
+        // Translate block statements and add to loop label
+        currentLabel = loopLabel
+        node.statements.forEach { translate(it) }
+
+        // Add compare and branch instruction
+        addLines(
+            Compare(resultRegister, IntImmediateOperand(1)),
+            Branch(EQ, BranchLabelOperand(loopLabel))
+        )
+    }
+
+    @TranslatorMethod(BeginEndBlockAST::class)
+    private fun translateBeginEndBlock(node: BeginEndBlockAST) {
+        log("Translating BeginEndBlockAST")
+        blockPrologue(node)
+        node.statements.forEach { translate(it) }
+        blockEpilogue(node)
     }
 
     @TranslatorMethod(NewPairAST::class)
