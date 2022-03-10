@@ -19,7 +19,6 @@ import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
 import ic.doc.group15.type.ArrayType
 import ic.doc.group15.type.BasicType.*
-import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Variable
 import ic.doc.group15.util.BYTE
@@ -107,138 +106,29 @@ class AssemblyGenerator(
     }
 
     /**
-     * Sets up the environment for the block of statements, specifically by initialising the stack variables
-     */
-    private fun blockPrologue(node: BlockAST) {
-        blockPrologue(node.symbolTable)
-    }
-
-    private fun blockPrologue(symbolTable: SymbolTable) {
-        log("Calling blockPrologue")
-        // Push the value that tracks the stack space used by intermediate values
-        // by the current block
-        offsetStackStore.addFirst(0)
-
-        // Calculate how much space to be allocated (and modify each variable to include its position on the stack)
-        val stackSpaceUsed = symbolTable.getStackSize()
-        if (stackSpaceUsed > 0) {
-            var currentStackPosition = stackSpaceUsed
-            var subtractLeft = stackSpaceUsed
-
-            // Setup stack
-            while (subtractLeft > 0) {
-                val subtractNow = if (subtractLeft <= MAX_STACK_CHANGE) {
-                    subtractLeft
-                } else {
-                    MAX_STACK_CHANGE
-                }
-                addLines(Sub(SP, SP, IntImmediateOperand(subtractNow)))
-                subtractLeft -= subtractNow
-            }
-
-            // Calculate the stack position for each variable
-            val variables = symbolTable.getValuesByType(Variable::class)
-            for (v in variables) {
-                currentStackPosition -= v.type.size()
-                v.stackPosition = currentStackPosition
-            }
-        }
-    }
-
-    /**
-     * Restores the state so that the program can resume from where it left off before entering the block
-     */
-    private fun blockEpilogue(node: BlockAST) {
-        blockEpilogue(node.symbolTable)
-    }
-
-    private fun blockEpilogue(symbolTable: SymbolTable) {
-        log("Calling blockEpilogue")
-        // Pop the value that tracks the stack space used by intermediate values
-        // by the current block
-        offsetStackStore.removeFirst()
-
-        // Unwind stack
-        val stackSpaceUsed = symbolTable.getStackSize()
-        if (stackSpaceUsed > 0) {
-            var addLeft = stackSpaceUsed
-
-            val subList = mutableListOf<Instruction>()
-
-            // Setup stack
-            while (addLeft > 0) {
-                val addNow = if (addLeft <= MAX_STACK_CHANGE) {
-                    addLeft
-                } else {
-                    MAX_STACK_CHANGE
-                }
-                subList.add(Add(SP, SP, IntImmediateOperand(addNow)))
-                addLeft -= addNow
-            }
-
-            addLines(subList.reversed())
-        }
-    }
-
-    /**
      * Per WACC language specification, a program matches the grammar "begin func* stat end".
-     * The AST representation decouples the statements from a SequenceAST to a mapping of lists of StatementAST
-     * in the symbol table to avoid stack overflow from recursing a huge block of statements.
-     *
-     * transProgram dissolves the program into a list of functions, pass the FunctionDeclarationAST
-     * into transFunction, and add the list of statements of the main program into a FunctionDeclarationAST,
-     * thereby processing it via transFunction as well.
+     * The AST representation decouples the statements from a SequenceAST to a mapping of lists of
+     * StatementAST in the symbol table to avoid stack overflow from recursing a huge block of
+     * statements.
      */
     @TranslatorMethod(AST::class)
-    private fun transProgram(program: AST) {
+    private fun translateProgram(program: AST) {
         log("Translating program")
-        log("program.statements:")
-        program.statements.forEach { log(it.toString()) }
         resultRegister = R4
-        val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
 
-        // translate all function blocks into assembly
+        // Translate all function blocks into assembly
+        val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
         functionASTs.forEach { translate(it) }
 
         // Translate main instructions into assembly
-        // We create a new FunctionDeclarationAST to store statements in the main function
-        // and let transFunction add the entries to the text attribute
-
-        // The symbol table contains the statements AND the FunctionDeclarationAST
-//        val mainAST = FunctionDeclarationAST(program, program.symbolTable, IntType, "main")
-//        mainAST.funcIdent = FunctionType(IntType, emptyList(), program.symbolTable)
-//
-//        // Add statements
-//        val statementASTs = program.statements.filter { it !is FunctionDeclarationAST }
-//        mainAST.statements.addAll(statementASTs)
-//        mainAST.statements.add(
-//            ReturnStatementAST(
-//                mainAST, mainAST.symbolTable,
-//                IntLiteralAST(0)
-//            )
-//        )
-//
-//        translate(mainAST)
-
-        val mainLabel = newBranchLabel("main")
-        currentLabel = mainLabel
-
-        blockPrologue(ast.symbolTable)
-        addLines(
-            Push(LR)
-        )
+        mainPrologue(program.symbolTable)
         val statementASTs = program.statements.filter { it !is FunctionDeclarationAST }
         statementASTs.forEach { translate(it) }
-        blockEpilogue(ast.symbolTable)
-        addLines(
-            LoadWord(resultRegister, PseudoImmediateOperand(0)),
-            Pop(PC),
-            LTORG
-        )
+        mainEpilogue(program.symbolTable)
     }
 
     @TranslatorMethod(FunctionDeclarationAST::class)
-    private fun transFunctionDeclaration(node: FunctionDeclarationAST) {
+    private fun translateFunctionDeclaration(node: FunctionDeclarationAST) {
         log("Translating function declaration")
         // Define label
         val funcLabel = newBranchLabel(node.funcName)
@@ -250,23 +140,16 @@ class AssemblyGenerator(
         // TODO: issue - interdependence of statements to be addressed
 
         // Sets up the environment for a function
-        addLines(
-            Push(LR)
-        )
+        functionPrologue(node)
 
-        blockPrologue(node)
-        node.statements.map { s -> translate(s) }
-        blockEpilogue(node)
+        node.statements.map { translate(it) }
 
         // Restore the state so that the program can resume from where it left off
-        addLines(
-            Pop(PC),
-            LTORG
-        )
+        functionEpilogue(node)
     }
 
     @TranslatorMethod(CallAST::class)
-    private fun transCall(node: CallAST) {
+    private fun translateCall(node: CallAST) {
         log("Translating call")
 
         var callStackSize = 0
@@ -302,7 +185,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(VariableDeclarationAST::class)
-    private fun transVariableDeclaration(node: VariableDeclarationAST) {
+    private fun translateVariableDeclaration(node: VariableDeclarationAST) {
         // Parse the expression whose value is to be stored in the variable
         log("Translating VariableDeclarationAST")
         translate(node.rhs)
@@ -310,7 +193,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(AssignToIdentAST::class)
-    private fun transAssignToIdent(node: AssignToIdentAST) {
+    private fun translateAssignToIdent(node: AssignToIdentAST) {
         // Parse the expression whose value is to be stored in the variable
         log("Translating AssignToIdentAST")
         translate(node.rhs)
@@ -335,7 +218,7 @@ class AssemblyGenerator(
      * BEQ loop
      */
     @TranslatorMethod(WhileBlockAST::class)
-    private fun transWhileBlock(node: WhileBlockAST) {
+    private fun translateWhileBlock(node: WhileBlockAST) {
         log("Translating WhileBlockAST")
         // Define labels
         val checkLabel = BranchLabel(branchLabelGenerator.generate())
@@ -362,7 +245,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(BeginEndBlockAST::class)
-    private fun transBeginEndBlock(node: BeginEndBlockAST) {
+    private fun translateBeginEndBlock(node: BeginEndBlockAST) {
         log("Translating BeginEndBlockAST")
         blockPrologue(node)
         node.statements.forEach { translate(it) }
@@ -370,7 +253,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(FreeStatementAST::class)
-    private fun transFreeStatement(node: FreeStatementAST) {
+    private fun translateFreeStatement(node: FreeStatementAST) {
         log("Translating FreeStatementAST")
         defineUtilFuncs(P_FREE_PAIR)
         val variable = (node.expr as VariableIdentifierAST).ident
@@ -387,7 +270,7 @@ class AssemblyGenerator(
      * that function.
      */
     @TranslatorMethod(ReturnStatementAST::class)
-    private fun transReturnStatement(node: ReturnStatementAST) {
+    private fun translateReturnStatement(node: ReturnStatementAST) {
         log("Translating ReturnStatementAST")
         translate(node.expr)
         addLines(
@@ -401,7 +284,7 @@ class AssemblyGenerator(
      * an exit code of type int in range [0, 255].
      */
     @TranslatorMethod(ExitStatementAST::class)
-    private fun transExitStatement(node: ExitStatementAST) {
+    private fun translateExitStatement(node: ExitStatementAST) {
         log("Translating ExitStatementAST")
         translate(node.expr)
         addLines(
@@ -411,7 +294,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(PrintStatementAST::class)
-    private fun transPrintStatement(node: PrintStatementAST) {
+    private fun translatePrintStatement(node: PrintStatementAST) {
         log("Translating PrintStatementAST")
         translate(node.expr)
         addLines(
@@ -452,10 +335,10 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(PrintlnStatementAST::class)
-    private fun transPrintlnStatement(node: PrintlnStatementAST) {
+    private fun translatePrintlnStatement(node: PrintlnStatementAST) {
         log("Translating PrintlnStatementAST")
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
-        transPrintStatement(printStatementAST)
+        translatePrintStatement(printStatementAST)
         defineUtilFuncs(P_PRINT_LN)
         addLines(BranchLink(P_PRINT_LN))
     }
@@ -471,7 +354,7 @@ class AssemblyGenerator(
      * the target's value unchanged.
      */
     @TranslatorMethod(ReadStatementAST::class)
-    private fun transReadStatement(node: ReadStatementAST) {
+    private fun translateReadStatement(node: ReadStatementAST) {
         log("Translating ReadStatementAST")
 
         val assignTo = node.target.lhs
@@ -515,7 +398,7 @@ class AssemblyGenerator(
      * fi: ...
      */
     @TranslatorMethod(IfBlockAST::class)
-    private fun transIfBlock(stat: IfBlockAST) {
+    private fun translateIfBlock(stat: IfBlockAST) {
         log("Translating IfBlockAST")
 
         // Add instructions to currentLabel
@@ -547,7 +430,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(NewPairAST::class)
-    private fun transNewPair(node: NewPairAST) {
+    private fun translateNewPair(node: NewPairAST) {
         log("Translating NewPairAST")
 
         // Allocate two registers for newPair
@@ -661,7 +544,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(ArrayLiteralAST::class)
-    private fun transArrayLiteral(node: ArrayLiteralAST) {
+    private fun translateArrayLiteral(node: ArrayLiteralAST) {
         log("Translating ArrayLiteralAST")
         val elems = node.elems
         val elemSize: Int = if (node.elems.isNotEmpty()) {
@@ -723,7 +606,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(ArrayElemAST::class)
-    private fun transArrayElem(node: ArrayElemAST) {
+    private fun translateArrayElem(node: ArrayElemAST) {
         log("Translating ArrayElemAST")
 
         val oldReg = resultRegister
@@ -771,7 +654,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(AssignToArrayElemAST::class)
-    private fun transAssignToArrayElem(node: AssignToArrayElemAST) {
+    private fun translateAssignToArrayElem(node: AssignToArrayElemAST) {
         log("Translating AssignToArrayElemAST")
 
         val oldReg = resultRegister
@@ -835,23 +718,23 @@ class AssemblyGenerator(
     @TranslatorMethod(FstPairElemAST::class)
     private fun transFstPairElem(node: FstPairElemAST) {
         log("Translating FstPairElemAST")
-        transPairElem(node)
+        translatePairElem(node)
     }
 
     @TranslatorMethod(SndPairElemAST::class)
-    private fun transSndPairElem(node: SndPairElemAST) {
+    private fun translateSndPairElem(node: SndPairElemAST) {
         log("Translating SndPairElemAST")
-        transPairElem(node)
+        translatePairElem(node)
     }
 
-    private fun transPairElem(node: PairElemAST) {
+    private fun translatePairElem(node: PairElemAST) {
         getAddress(node)
         assert(node.expr.type.size() == WORD)
         addLines(LoadWord(resultRegister, ZeroOffset(resultRegister)))
     }
 
     @TranslatorMethod(AssignToPairElemAST::class)
-    private fun transAssignToPairElem(node: AssignToPairElemAST) {
+    private fun translateAssignToPairElem(node: AssignToPairElemAST) {
         log("Translating AssignToPairElemAST")
         defineUtilFuncs(
             P_CHECK_NULL_POINTER
@@ -877,8 +760,43 @@ class AssemblyGenerator(
         )
     }
 
+    @TranslatorMethod(UnaryOpExprAST::class)
+    private fun translateUnOp(unOpExpr: UnaryOpExprAST) {
+        log("Translating UnaryOpExprAST")
+        translate(unOpExpr.expr)
+
+        when (unOpExpr.operator) {
+            UnaryOp.BANG -> {
+                addLines(
+                    Xor(resultRegister, resultRegister, IntImmediateOperand(1))
+                )
+            }
+            UnaryOp.MINUS -> {
+                defineUtilFuncs(
+                    P_CHECK_DIVIDE_BY_ZERO,
+                    P_THROW_RUNTIME_ERROR,
+                    P_THROW_OVERFLOW_ERROR,
+                    P_PRINT_STRING
+                )
+                addLines(
+                    ReverseSub(
+                        updateFlags = true, resultRegister, resultRegister,
+                        IntImmediateOperand(0)
+                    ),
+                    BranchLink(VS, P_THROW_OVERFLOW_ERROR)
+                )
+            }
+            UnaryOp.LEN -> {
+                addLines(
+                    LoadWord(resultRegister, ZeroOffset(resultRegister))
+                )
+            }
+            else -> { }
+        }
+    }
+
     @TranslatorMethod(BinaryOpExprAST::class)
-    private fun transBinOp(expr: BinaryOpExprAST) {
+    private fun translateBinOp(expr: BinaryOpExprAST) {
         log("Translating BinaryOpExprAST")
 
         // Allocate two registers for BinOp
@@ -1017,39 +935,121 @@ class AssemblyGenerator(
         }
     }
 
-    @TranslatorMethod(UnaryOpExprAST::class)
-    private fun transUnOp(unOpExpr: UnaryOpExprAST) {
-        log("Translating UnaryOpExprAST")
-        translate(unOpExpr.expr)
+    //endregion
 
-        when (unOpExpr.operator) {
-            UnaryOp.BANG -> {
-                addLines(
-                    Xor(resultRegister, resultRegister, IntImmediateOperand(1))
-                )
+    //region decorators
+
+    /**
+     * Sets up the environment for the block of statements, specifically by initialising the stack variables
+     */
+    private fun blockPrologue(node: BlockAST) {
+        blockPrologue(node.symbolTable)
+    }
+
+    private fun blockPrologue(symbolTable: SymbolTable) {
+        log("Calling blockPrologue")
+        // Push the value that tracks the stack space used by intermediate values
+        // by the current block
+        offsetStackStore.addFirst(0)
+
+        // Calculate how much space to be allocated (and modify each variable to include its position on the stack)
+        val stackSpaceUsed = symbolTable.getStackSize()
+        if (stackSpaceUsed > 0) {
+            var currentStackPosition = stackSpaceUsed
+            var subtractLeft = stackSpaceUsed
+
+            // Setup stack
+            while (subtractLeft > 0) {
+                val subtractNow = if (subtractLeft <= MAX_STACK_CHANGE) {
+                    subtractLeft
+                } else {
+                    MAX_STACK_CHANGE
+                }
+                addLines(Sub(SP, SP, IntImmediateOperand(subtractNow)))
+                subtractLeft -= subtractNow
             }
-            UnaryOp.MINUS -> {
-                defineUtilFuncs(
-                    P_CHECK_DIVIDE_BY_ZERO,
-                    P_THROW_RUNTIME_ERROR,
-                    P_THROW_OVERFLOW_ERROR,
-                    P_PRINT_STRING
-                )
-                addLines(
-                    ReverseSub(
-                        updateFlags = true, resultRegister, resultRegister,
-                        IntImmediateOperand(0)
-                    ),
-                    BranchLink(VS, P_THROW_OVERFLOW_ERROR)
-                )
+
+            // Calculate the stack position for each variable
+            val variables = symbolTable.getValuesByType(Variable::class)
+            for (v in variables) {
+                currentStackPosition -= v.type.size()
+                v.stackPosition = currentStackPosition
             }
-            UnaryOp.LEN -> {
-                addLines(
-                    LoadWord(resultRegister, ZeroOffset(resultRegister))
-                )
-            }
-            else -> { }
         }
+    }
+
+    /**
+     * Restores the state so that the program can resume from where it left off before entering the block
+     */
+    private fun blockEpilogue(node: BlockAST) {
+        blockEpilogue(node.symbolTable)
+    }
+
+    private fun blockEpilogue(symbolTable: SymbolTable) {
+        log("Calling blockEpilogue")
+        // Pop the value that tracks the stack space used by intermediate values
+        // by the current block
+        offsetStackStore.removeFirst()
+
+        // Unwind stack
+        val stackSpaceUsed = symbolTable.getStackSize()
+        if (stackSpaceUsed > 0) {
+            var addLeft = stackSpaceUsed
+
+            val subList = mutableListOf<Instruction>()
+
+            // Setup stack
+            while (addLeft > 0) {
+                val addNow = if (addLeft <= MAX_STACK_CHANGE) {
+                    addLeft
+                } else {
+                    MAX_STACK_CHANGE
+                }
+                subList.add(Add(SP, SP, IntImmediateOperand(addNow)))
+                addLeft -= addNow
+            }
+
+            addLines(subList.reversed())
+        }
+    }
+
+    private fun functionPrologue(node: FunctionDeclarationAST) {
+        functionPrologue(node.symbolTable)
+    }
+
+    private fun functionPrologue(symbolTable: SymbolTable) {
+        log("Calling functionPrologue")
+        addLines(
+            Push(LR)
+        )
+        blockPrologue(symbolTable)
+    }
+
+    private fun functionEpilogue(node: FunctionDeclarationAST) {
+        functionEpilogue(node.symbolTable)
+    }
+
+    private fun functionEpilogue(symbolTable: SymbolTable) {
+        log("Calling functionEpilogue")
+        blockEpilogue(symbolTable)
+        addLines(
+            Pop(PC)
+        )
+    }
+
+    private fun mainPrologue(symbolTable: SymbolTable) {
+        val mainLabel = newBranchLabel("main")
+        currentLabel = mainLabel
+        functionPrologue(symbolTable)
+    }
+
+    private fun mainEpilogue(symbolTable: SymbolTable) {
+        blockEpilogue(symbolTable)
+        addLines(
+            LoadWord(R0, PseudoImmediateOperand(0)),
+            Pop(PC),
+            LTORG
+        )
     }
 
     //endregion
