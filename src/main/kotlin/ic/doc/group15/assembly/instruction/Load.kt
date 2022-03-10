@@ -1,8 +1,8 @@
-package ic.doc.group15.codegen.assembly.instruction
+package ic.doc.group15.assembly.instruction
 
-import ic.doc.group15.codegen.assembly.* // ktlint-disable no-wildcard-imports
-import ic.doc.group15.codegen.assembly.operand.AddressOperand
-import ic.doc.group15.codegen.assembly.operand.Register
+import ic.doc.group15.assembly.* // ktlint-disable no-wildcard-imports
+import ic.doc.group15.assembly.operand.AddressOperand
+import ic.doc.group15.assembly.operand.Register
 
 /**
  * Load operations present in ARM1176JZF-S, partly implemented.

@@ -1,4 +1,4 @@
-package ic.doc.group15
+package ic.doc.group15.util
 
 const val WORD = 4
 

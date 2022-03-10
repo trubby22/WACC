@@ -1,4 +1,4 @@
-package ic.doc.group15.codegen.assembly
+package ic.doc.group15.assembly
 
 import java.util.concurrent.atomic.AtomicInteger
 

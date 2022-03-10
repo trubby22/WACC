@@ -1,4 +1,4 @@
-package ic.doc.group15.codegen.assembly.operand
+package ic.doc.group15.assembly.operand
 
 /**
  * Registers present in ARM1176JZF-S.

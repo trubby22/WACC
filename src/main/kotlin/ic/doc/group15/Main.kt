@@ -3,10 +3,10 @@ package ic.doc.group15
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
-import ic.doc.group15.codegen.AssemblyGenerator
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
-import ic.doc.group15.visitor.Visitor
+import ic.doc.group15.visitor.AssemblyGenerator
+import ic.doc.group15.visitor.ParseTreeVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
@@ -31,7 +31,7 @@ fun main(args: Array<String>) {
     val st = SymbolTable.topLevel()
     val ast = AST(st)
     val semanticErrors = SemanticErrorList()
-    val visitor = Visitor(ast, st, semanticErrors, enableLogging = ENABLE_LOGGING)
+    val visitor = ParseTreeVisitor(ast, st, semanticErrors, enableLogging = ENABLE_LOGGING)
     visitor.visit(program)
 
     semanticErrors.checkErrors()

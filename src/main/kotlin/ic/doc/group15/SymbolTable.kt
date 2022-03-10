@@ -11,7 +11,7 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
     private var stackSize: Int = 0
 
     fun <T : Identifier> getValuesByType(klass: KClass<T>): List<T> {
-        return map.values.filter { it::class == klass }.map { it as T }
+        return map.values.filterIsInstance(klass.java)
     }
 
     companion object {

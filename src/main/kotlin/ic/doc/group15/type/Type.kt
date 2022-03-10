@@ -1,8 +1,8 @@
 package ic.doc.group15.type
 
-import ic.doc.group15.BYTE
+import ic.doc.group15.util.BYTE
 import ic.doc.group15.SymbolTable
-import ic.doc.group15.WORD
+import ic.doc.group15.util.WORD
 
 const val INT_MAX = Int.MAX_VALUE
 const val INT_MIN = Int.MIN_VALUE

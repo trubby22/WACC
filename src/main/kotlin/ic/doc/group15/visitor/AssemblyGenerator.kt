@@ -1,23 +1,23 @@
-package ic.doc.group15.codegen
+package ic.doc.group15.visitor
 
-import ic.doc.group15.BYTE
-import ic.doc.group15.WORD
+import ic.doc.group15.util.BYTE
+import ic.doc.group15.util.WORD
+import ic.doc.group15.assembly.*
+import ic.doc.group15.assembly.LibraryFunction.Companion.AEABI_IDIV
+import ic.doc.group15.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
+import ic.doc.group15.assembly.LibraryFunction.Companion.EXIT
+import ic.doc.group15.assembly.LibraryFunction.Companion.MALLOC
+import ic.doc.group15.assembly.LibraryFunction.Companion.PUTCHAR
+import ic.doc.group15.assembly.UtilFunction.*
+import ic.doc.group15.assembly.instruction.*
+import ic.doc.group15.assembly.instruction.ConditionCode.*
+import ic.doc.group15.assembly.instruction.ConditionCode.GT
+import ic.doc.group15.assembly.instruction.ConditionCode.LT
+import ic.doc.group15.assembly.instruction.Directive.Companion.LTORG
+import ic.doc.group15.assembly.operand.*
+import ic.doc.group15.assembly.operand.Register.*
 import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
-import ic.doc.group15.codegen.assembly.* // ktlint-disable no-unused-imports
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIV
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.MALLOC
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTCHAR
-import ic.doc.group15.codegen.assembly.UtilFunction.*
-import ic.doc.group15.codegen.assembly.instruction.*
-import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
-import ic.doc.group15.codegen.assembly.instruction.ConditionCode.GT
-import ic.doc.group15.codegen.assembly.instruction.ConditionCode.LT
-import ic.doc.group15.codegen.assembly.instruction.Directive.Companion.LTORG
-import ic.doc.group15.codegen.assembly.operand.*
-import ic.doc.group15.codegen.assembly.operand.Register.*
 import ic.doc.group15.type.ArrayType
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.FunctionType
@@ -35,7 +35,6 @@ class AssemblyGenerator(
     private val ast: AST,
     private val enableLogging: Boolean = true
 ) {
-
     private lateinit var currentLabel: BranchLabel
     private lateinit var resultRegister: Register
 
@@ -629,6 +628,7 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(NullPairLiteralAST::class)
+    @Suppress("UNUSED_PARAMETER")
     private fun translateNullPairLiteralAST(node: NullPairLiteralAST) {
         log("Translating NullPairLiteralAST")
         addLines(
@@ -708,7 +708,6 @@ class AssemblyGenerator(
             P_CHECK_ARRAY_BOUNDS,
             P_THROW_RUNTIME_ERROR
         )
-        val variable = node.arrayVar.ident
 
         // Allocate two registers for arrayElem
         var accumulatorState = false

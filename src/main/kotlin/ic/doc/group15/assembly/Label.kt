@@ -1,4 +1,4 @@
-package ic.doc.group15.codegen.assembly
+package ic.doc.group15.assembly
 
 import ic.doc.group15.util.EscapeChar
 import java.util.*

@@ -13,7 +13,7 @@ import ic.doc.group15.util.EscapeChar
 import org.antlr.v4.runtime.ParserRuleContext
 import java.util.*
 
-class Visitor(
+class ParseTreeVisitor(
     private val topAst: AST,
     private val topSymbolTable: SymbolTable,
     private val errors: SemanticErrorList,
@@ -118,7 +118,7 @@ class Visitor(
         }
         func.funcIdent = FunctionType(
             t as ReturnableType,
-            func.formals.map { p -> p.ident },
+            func.formals.map { it.ident },
             symbolTable
         )
         oldScope.add(funcName, func.funcIdent)

@@ -1,4 +1,4 @@
-package ic.doc.group15.codegen.assembly.instruction
+package ic.doc.group15.assembly.instruction
 
 /**
  * Condition codes present in ARM1176JZF-S, partly implemented.

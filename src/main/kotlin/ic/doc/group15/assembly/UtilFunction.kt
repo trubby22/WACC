@@ -1,18 +1,18 @@
-package ic.doc.group15.codegen.assembly
+package ic.doc.group15.assembly
 
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.EXIT
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.FFLUSH
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.FREE
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PRINTF
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.PUTS
-import ic.doc.group15.codegen.assembly.LibraryFunction.Companion.SCANF
-import ic.doc.group15.codegen.assembly.instruction.* // ktlint-disable no-unused-imports
-import ic.doc.group15.codegen.assembly.instruction.ConditionCode.*
-import ic.doc.group15.codegen.assembly.operand.DataLabelOperand
-import ic.doc.group15.codegen.assembly.operand.ImmediateOffset
-import ic.doc.group15.codegen.assembly.operand.IntImmediateOperand
-import ic.doc.group15.codegen.assembly.operand.Register.*
-import ic.doc.group15.codegen.assembly.operand.ZeroOffset
+import ic.doc.group15.assembly.LibraryFunction.Companion.EXIT
+import ic.doc.group15.assembly.LibraryFunction.Companion.FFLUSH
+import ic.doc.group15.assembly.LibraryFunction.Companion.FREE
+import ic.doc.group15.assembly.LibraryFunction.Companion.PRINTF
+import ic.doc.group15.assembly.LibraryFunction.Companion.PUTS
+import ic.doc.group15.assembly.LibraryFunction.Companion.SCANF
+import ic.doc.group15.assembly.instruction.* // ktlint-disable no-unused-imports
+import ic.doc.group15.assembly.instruction.ConditionCode.*
+import ic.doc.group15.assembly.operand.DataLabelOperand
+import ic.doc.group15.assembly.operand.ImmediateOffset
+import ic.doc.group15.assembly.operand.IntImmediateOperand
+import ic.doc.group15.assembly.operand.Register.*
+import ic.doc.group15.assembly.operand.ZeroOffset
 import java.util.*
 
 enum class UtilFunction(vararg val dependencies: UtilFunction) {

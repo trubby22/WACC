@@ -1,6 +1,6 @@
-package ic.doc.group15.codegen.assembly
+package ic.doc.group15.assembly
 
-import ic.doc.group15.codegen.assembly.operand.BranchLabelOperand
+import ic.doc.group15.assembly.operand.BranchLabelOperand
 
 class LibraryFunction private constructor(labelName: String) : BranchLabelOperand(labelName) {
 

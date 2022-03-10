@@ -1,8 +1,8 @@
-package ic.doc.group15.codegen.assembly.instruction
+package ic.doc.group15.assembly.instruction
 
-import ic.doc.group15.codegen.assembly.Instruction
-import ic.doc.group15.codegen.assembly.operand.Register
-import ic.doc.group15.codegen.assembly.operand.RegisterList
+import ic.doc.group15.assembly.Instruction
+import ic.doc.group15.assembly.operand.Register
+import ic.doc.group15.assembly.operand.RegisterList
 
 /**
  * Stack operations present in ARM1176JZF-S, partly implemented.

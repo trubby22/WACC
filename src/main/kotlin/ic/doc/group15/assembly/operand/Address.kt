@@ -1,4 +1,4 @@
-package ic.doc.group15.codegen.assembly.operand
+package ic.doc.group15.assembly.operand
 
 /**
  * Addressing mode 2 adopted in ARM1176JZF-S. Pre-indexed offset and post-indexed offset are

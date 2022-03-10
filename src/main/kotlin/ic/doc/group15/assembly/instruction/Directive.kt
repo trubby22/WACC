@@ -1,6 +1,6 @@
-package ic.doc.group15.codegen.assembly.instruction
+package ic.doc.group15.assembly.instruction
 
-import ic.doc.group15.codegen.assembly.Instruction
+import ic.doc.group15.assembly.Instruction
 
 class Directive private constructor(labelName: String) : Instruction(labelName) {
     companion object {

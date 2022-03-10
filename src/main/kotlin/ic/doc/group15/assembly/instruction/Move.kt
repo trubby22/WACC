@@ -1,7 +1,7 @@
-package ic.doc.group15.codegen.assembly.instruction
+package ic.doc.group15.assembly.instruction
 
-import ic.doc.group15.codegen.assembly.operand.Operand
-import ic.doc.group15.codegen.assembly.operand.Register
+import ic.doc.group15.assembly.operand.Operand
+import ic.doc.group15.assembly.operand.Register
 
 abstract class MoveInstruction protected constructor(
     instr: String,

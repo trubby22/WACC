@@ -1,9 +1,9 @@
-package ic.doc.group15.codegen.assembly.operand
+package ic.doc.group15.assembly.operand
 
-import ic.doc.group15.codegen.assembly.Assembly
-import ic.doc.group15.codegen.assembly.BranchLabel
-import ic.doc.group15.codegen.assembly.DataLabel
-import ic.doc.group15.codegen.assembly.Label
+import ic.doc.group15.assembly.Assembly
+import ic.doc.group15.assembly.BranchLabel
+import ic.doc.group15.assembly.DataLabel
+import ic.doc.group15.assembly.Label
 import ic.doc.group15.util.EscapeChar
 
 /**

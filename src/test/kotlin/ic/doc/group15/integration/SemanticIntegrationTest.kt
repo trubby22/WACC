@@ -4,9 +4,9 @@ import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
-import ic.doc.group15.codegen.AssemblyGenerator
 import ic.doc.group15.error.SemanticErrorList
-import ic.doc.group15.visitor.Visitor
+import ic.doc.group15.visitor.AssemblyGenerator
+import ic.doc.group15.visitor.ParseTreeVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -537,7 +537,7 @@ class SemanticIntegrationTest {
         val st = SymbolTable.topLevel()
         val ast = AST(st)
         val errors = SemanticErrorList()
-        val visitor = Visitor(ast, st, errors, enableLogging = true)
+        val visitor = ParseTreeVisitor(ast, st, errors, enableLogging = true)
 
         visitor.visit(program)
 
