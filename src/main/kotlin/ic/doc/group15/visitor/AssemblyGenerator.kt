@@ -20,6 +20,7 @@ import ic.doc.group15.ast.BinaryOp.*
 import ic.doc.group15.type.ArrayType
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.PairType
+import ic.doc.group15.type.Param
 import ic.doc.group15.type.Variable
 import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
@@ -137,10 +138,12 @@ class AssemblyGenerator(
         // Translate block statements and add to loop label - we start from register R4
         resultRegister = R4
 
+        node.formals.forEach { it.ident.stackPosition }
+
         // TODO: issue - interdependence of statements to be addressed
 
         // Sets up the environment for a function
-        functionPrologue(node)
+        functionPrologue(node, node.paramSymbolTable)
 
         node.statements.map { translate(it) }
 
@@ -222,7 +225,10 @@ class AssemblyGenerator(
         log("Translating ReturnStatementAST")
         translate(node.expr)
         addLines(
-            Move(R0, resultRegister),
+            Move(R0, resultRegister)
+        )
+        unwindStack(node.parent!!.symbolTable)
+        addLines(
             Pop(PC)
         )
     }
@@ -410,9 +416,7 @@ class AssemblyGenerator(
 
         // Translate block statements and add to loop label
         currentLabel = loopLabel
-//        blockPrologue(node)
         node.statements.forEach { translate(it) }
-//        blockEpilogue(node)
 
         currentLabel = checkLabel
 
@@ -993,7 +997,10 @@ class AssemblyGenerator(
         // by the current block
         offsetStackStore.removeFirst()
 
-        // Unwind stack
+        unwindStack(symbolTable)
+    }
+
+    private fun unwindStack(symbolTable: SymbolTable) {
         val stackSpaceUsed = symbolTable.getStackSize()
         if (stackSpaceUsed > 0) {
             var addLeft = stackSpaceUsed
@@ -1015,15 +1022,28 @@ class AssemblyGenerator(
         }
     }
 
-    private fun functionPrologue(node: FunctionDeclarationAST) {
-        functionPrologue(node.symbolTable)
+    private fun functionPrologue(
+        node: FunctionDeclarationAST,
+        paramSymbolTable: SymbolTable? = null
+    ) {
+        functionPrologue(node.symbolTable, paramSymbolTable)
     }
 
-    private fun functionPrologue(symbolTable: SymbolTable) {
+    private fun functionPrologue(symbolTable: SymbolTable, paramSymbolTable: SymbolTable? = null) {
         log("Calling functionPrologue")
         addLines(
             Push(LR)
         )
+        if (paramSymbolTable != null) {
+            // Params are pushed in reverse order to the stack
+            // After the last param is pushed, the value of LR is pushed, which is a word
+            // So, last param is found at stackSize + WORD
+            var currentStackPos = symbolTable.getStackSize() + WORD
+            paramSymbolTable.getValuesByType(Param::class).reversed().forEach {
+                it.stackPosition = currentStackPos
+                currentStackPos += it.type.size()
+            }
+        }
         blockPrologue(symbolTable)
     }
 
@@ -1035,7 +1055,8 @@ class AssemblyGenerator(
         log("Calling functionEpilogue")
         blockEpilogue(symbolTable)
         addLines(
-            Pop(PC)
+            Pop(PC),
+            LTORG
         )
     }
 

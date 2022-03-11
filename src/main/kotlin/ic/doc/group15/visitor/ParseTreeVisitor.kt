@@ -70,9 +70,11 @@ class ParseTreeVisitor(
             addError(FunctionDeclarationInWrongScopeError(ident.start))
         }
 
-        val oldScope = symbolTable
+        val oldScope = scopeAST
+        val oldSt = symbolTable
 
-        val funcScope = symbolTable.subScope()
+        val paramSt = oldSt.subScope()
+        val funcSt = paramSt.subScope()
 
         if (!functionsToVisit.containsKey(funcName)) {
             assert(declaredFunctions.containsKey(funcName))
@@ -90,8 +92,8 @@ class ParseTreeVisitor(
 
         log(""" || Return type: $returnTypeName""")
 
-        val t = TypeParser.parse(funcScope, ctx.type())
-        val f = oldScope.lookupAll(funcName)
+        val t = TypeParser.parse(funcSt, ctx.type())
+        val f = oldSt.lookupAll(funcName)
 
         when {
             t !is ReturnableType -> {
@@ -102,7 +104,7 @@ class ParseTreeVisitor(
             }
         }
 
-        val func = FunctionDeclarationAST(scopeAST, funcScope, t, funcName)
+        val func = FunctionDeclarationAST(scopeAST, paramSt, funcSt, t, funcName)
         declaredFunctions[funcName] = func
 
         log(
@@ -111,23 +113,25 @@ class ParseTreeVisitor(
 
         // Add function identifier to symbol table so that it can be recursively accessed
 
-        symbolTable = funcScope.subScope()
+        symbolTable = paramSt
         scopeAST = func
         for (param in ctx.param()) {
             func.formals.add(visitParam(param) as ParameterAST)
         }
+        symbolTable = oldSt
+
         func.funcIdent = FunctionType(
             t as ReturnableType,
             func.formals.map { it.ident },
-            symbolTable
+            funcSt
         )
-        oldScope.add(funcName, func.funcIdent)
+        oldSt.add(funcName, func.funcIdent)
+
+        symbolTable = funcSt
         log("|| Visiting $funcName function body")
         visit(ctx.valid_return_stat())
-        symbolTable = symbolTable.parentScope()!!
-        scopeAST = scopeAST.parent!!
-
-        symbolTable = oldScope
+        symbolTable = oldSt
+        scopeAST = oldScope
 
         return func
     }

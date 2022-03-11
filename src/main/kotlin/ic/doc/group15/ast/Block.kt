@@ -14,6 +14,7 @@ abstract class BlockAST protected constructor(
 
 class FunctionDeclarationAST(
     parent: BlockAST,
+    val paramSymbolTable: SymbolTable,
     symbolTable: SymbolTable,
     val returnType: Type,
     val funcName: String

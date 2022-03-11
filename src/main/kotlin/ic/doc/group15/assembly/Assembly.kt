@@ -16,6 +16,7 @@ abstract class Instruction protected constructor(
     protected vararg val params: Operand
 ) : Line() {
     override fun toString(): String {
-        return "$instr${conditionCode ?: ""} " + params.joinToString(separator = ", ")
+        return "$instr${conditionCode ?: ""}${if (params.isNotEmpty()) " " else ""}" +
+            params.joinToString(separator = ", ")
     }
 }
