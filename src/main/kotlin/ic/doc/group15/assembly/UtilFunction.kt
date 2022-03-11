@@ -222,7 +222,7 @@ enum class UtilFunction(vararg val dependencies: UtilFunction) {
     val labelName = name.lowercase()
 
     val dataBlocks: MutableList<DataLabel> = LinkedList()
-    val labelBlock: BranchLabel by lazy { BranchLabel(name.lowercase(), assembly) }
+    val labelBlock: BranchLabel by lazy { BranchLabel(labelName, assembly) }
 
     protected abstract val assembly: List<Instruction>
 

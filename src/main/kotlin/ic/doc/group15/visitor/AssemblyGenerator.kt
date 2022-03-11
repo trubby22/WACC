@@ -176,7 +176,7 @@ class AssemblyGenerator(
         }
 
         // Perform the call
-        addLines(BranchLink(BranchLabelOperand(node.funcName)))
+        addLines(BranchLink(branchToFunction(node.funcName)))
 
         // Increment the stack pointer back to where it was
         if (callStackSize > 0) {
@@ -1110,6 +1110,10 @@ class AssemblyGenerator(
 
     private fun newFunctionLabel(funcName: String, vararg lines: Instruction): BranchLabel {
         return newBranchLabel("f_$funcName", *lines)
+    }
+
+    private fun branchToFunction(funcName: String): BranchLabelOperand {
+        return BranchLabelOperand("f_$funcName")
     }
 
     private fun defineUtilFuncs(vararg funcs: UtilFunction) {
