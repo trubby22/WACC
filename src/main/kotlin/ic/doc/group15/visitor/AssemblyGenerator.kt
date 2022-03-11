@@ -23,7 +23,6 @@ import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Param
 import ic.doc.group15.type.Variable
 import ic.doc.group15.util.BYTE
-import ic.doc.group15.util.Out
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
@@ -158,8 +157,10 @@ class AssemblyGenerator(
 
         var callStackSize = 0
 
+        val oldOffset = offsetStackStore[0]
+
         // Set up the stack with the necessary parameters before a function call.
-        node.actuals.forEach {
+        node.actuals.reversed().forEach {
             // Load variable to resultRegister
             translate(it)
             val size = it.type.size()
@@ -174,7 +175,10 @@ class AssemblyGenerator(
                     StoreWord(resultRegister, ZeroOffset(SP))
                 }
             )
+            offsetStackStore[0] += size
         }
+
+        offsetStackStore[0] = oldOffset
 
         // Perform the call
         addLines(BranchLink(branchToFunction(node.funcName)))
@@ -1045,13 +1049,13 @@ class AssemblyGenerator(
         if (paramSymbolTable != null) {
             // Params are pushed in reverse order to the stack
             // After the last param is pushed, the value of LR is pushed, which is a word
-            // So the stack position of the last parameter is WORD
-            var currentStackPos = paramSymbolTable.getStackSize() + WORD
+            // So the stack position of the first parameter is WORD
+            var currentStackPos = WORD
             paramSymbolTable.getValuesByType(Param::class).forEach {
-                currentStackPos -= it.type.size()
                 it.stackPosition = currentStackPos
+                currentStackPos += it.type.size()
             }
-            assert(currentStackPos == WORD)
+            assert(currentStackPos == paramSymbolTable.getStackSize() + WORD)
         }
         blockPrologue(symbolTable)
     }
