@@ -1045,12 +1045,13 @@ class AssemblyGenerator(
         if (paramSymbolTable != null) {
             // Params are pushed in reverse order to the stack
             // After the last param is pushed, the value of LR is pushed, which is a word
-            // So, last param is found at stackSize + WORD
-            var currentStackPos = symbolTable.getStackSize() + WORD
-            paramSymbolTable.getValuesByType(Param::class).reversed().forEach {
+            // So the stack position of the last parameter is WORD
+            var currentStackPos = paramSymbolTable.getStackSize() + WORD
+            paramSymbolTable.getValuesByType(Param::class).forEach {
+                currentStackPos -= it.type.size()
                 it.stackPosition = currentStackPos
-                currentStackPos += it.type.size()
             }
+            assert(currentStackPos == WORD)
         }
         blockPrologue(symbolTable)
     }
