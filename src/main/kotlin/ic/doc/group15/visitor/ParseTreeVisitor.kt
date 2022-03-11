@@ -435,7 +435,7 @@ class ParseTreeVisitor(
         val varDecl = VariableDeclarationAST(
             scopeAST,
             symbolTable,
-            typeName,
+            varName,
             assignRhs,
             Variable(t as ReturnableType)
         )

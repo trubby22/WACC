@@ -2,6 +2,7 @@ package ic.doc.group15
 
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.*
+import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
 
 class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
@@ -53,6 +54,19 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
             st = st.enclosingTable
         }
         return null
+    }
+
+    fun calcScopeOffset(variable: Variable): Int {
+        var stackOffset = 0
+        var st: SymbolTable? = this
+        while (st != null) {
+            if (st.map.containsValue(variable)) {
+                return stackOffset
+            }
+            stackOffset += st.stackSize
+            st = st.enclosingTable
+        }
+        throw IllegalArgumentException("variable not found")
     }
 
     fun subScope(): SymbolTable = SymbolTable(this)

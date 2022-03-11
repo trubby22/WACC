@@ -23,6 +23,7 @@ import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Param
 import ic.doc.group15.type.Variable
 import ic.doc.group15.util.BYTE
+import ic.doc.group15.util.Out
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
@@ -192,7 +193,7 @@ class AssemblyGenerator(
         // Parse the expression whose value is to be stored in the variable
         log("Translating VariableDeclarationAST")
         translate(node.rhs)
-        transAssign(node.varIdent)
+        transAssign(node.varIdent, node.symbolTable)
     }
 
     @TranslatorMethod(AssignToIdentAST::class)
@@ -200,15 +201,16 @@ class AssemblyGenerator(
         // Parse the expression whose value is to be stored in the variable
         log("Translating AssignToIdentAST")
         translate(node.rhs)
-        transAssign(node.lhs.ident)
+        val lhs = node.lhs
+        transAssign(lhs.ident, lhs.symbolTable)
     }
 
     @TranslatorMethod(FreeStatementAST::class)
     private fun translateFreeStatement(node: FreeStatementAST) {
         log("Translating FreeStatementAST")
         defineUtilFuncs(P_FREE_PAIR)
-        val variable = (node.expr as VariableIdentifierAST).ident
-        transRetrieve(variable)
+        val variable = node.expr as VariableIdentifierAST
+        transRetrieve(variable.ident, node.symbolTable)
         addLines(
             Move(R0, resultRegister),
             BranchLink(P_FREE_PAIR)
@@ -368,7 +370,9 @@ class AssemblyGenerator(
         )
 
         // add sequence of instructions in THEN block under if label
+        blockPrologue(stat)
         stat.statements.forEach(::translate)
+        blockEpilogue(stat)
 
         // add branch to fi label
         addLines(
@@ -377,7 +381,9 @@ class AssemblyGenerator(
 
         // add sequence of instructions in ELSE block under else label
         currentLabel = elseLabel
+        blockPrologue(stat.elseBlock)
         stat.elseBlock.statements.forEach(::translate)
+        blockEpilogue(stat.elseBlock)
         currentLabel = fiLabel
     }
 
@@ -416,7 +422,9 @@ class AssemblyGenerator(
 
         // Translate block statements and add to loop label
         currentLabel = loopLabel
+        blockPrologue(node)
         node.statements.forEach { translate(it) }
+        blockEpilogue(node)
 
         currentLabel = checkLabel
 
@@ -537,7 +545,7 @@ class AssemblyGenerator(
     @TranslatorMethod(VariableIdentifierAST::class)
     private fun translateVariableIdentifier(node: VariableIdentifierAST) {
         log("Translating VariableIdentifierAST")
-        transRetrieve(node.ident)
+        transRetrieve(node.ident, node.symbolTable)
     }
 
     @TranslatorMethod(NullPairLiteralAST::class)
@@ -1129,36 +1137,49 @@ class AssemblyGenerator(
         }
     }
 
-    private fun transAssign(variable: Variable) {
+    private fun transAssign(variable: Variable, currentScope: SymbolTable) {
         log("Calling transAssign")
-        val size = variable.type.size()
-        // Consider the case where intermediate results are pushed on the stack
-        val pos = variable.stackPosition + offsetStackStore[0]
-        val addressOperand = if (pos == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, pos) }
-
-        addLines(
-            if (size == BYTE) {
-                StoreByte(resultRegister, addressOperand)
-            } else {
-                StoreWord(resultRegister, addressOperand)
-            }
-        )
+        variableAction(variable, currentScope, store = true)
     }
 
-    private fun transRetrieve(variable: Variable) {
+    private fun transRetrieve(variable: Variable, currentScope: SymbolTable) {
         log("Calling transRetrieve")
-        val size = variable.type.size()
-        // Consider the case where intermediate results are pushed on the stack
-        val pos = variable.stackPosition + offsetStackStore[0]
-        val addressOperand = if (pos == 0) { ZeroOffset(SP) } else { ImmediateOffset(SP, pos) }
+        variableAction(variable, currentScope, store = false)
+    }
 
-        addLines(
-            if (size == BYTE) {
-                LoadByte(resultRegister, addressOperand)
-            } else {
-                LoadWord(resultRegister, addressOperand)
-            }
-        )
+    private fun variableAction(
+        variable: Variable,
+        currentScope: SymbolTable,
+        store: Boolean
+    ) {
+        val scopeOffset = currentScope.calcScopeOffset(variable)
+        val size = variable.type.size()
+
+        // Consider the case where intermediate results are pushed on the stack
+        val pos = variable.stackPosition + offsetStackStore[0] + scopeOffset
+        val addressOperand = if (pos == 0) {
+            ZeroOffset(SP)
+        } else {
+            ImmediateOffset(SP, pos)
+        }
+
+        if (store) {
+            addLines(
+                if (size == BYTE) {
+                    StoreByte(resultRegister, addressOperand)
+                } else {
+                    StoreWord(resultRegister, addressOperand)
+                }
+            )
+        } else {
+            addLines(
+                if (size == BYTE) {
+                    LoadByte(resultRegister, addressOperand)
+                } else {
+                    LoadWord(resultRegister, addressOperand)
+                }
+            )
+        }
     }
 
     private fun getAddress(variable: VariableIdentifierAST) {
