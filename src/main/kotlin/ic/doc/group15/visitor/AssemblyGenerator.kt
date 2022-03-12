@@ -411,9 +411,18 @@ class AssemblyGenerator(
     @TranslatorMethod(WhileBlockAST::class)
     private fun translateWhileBlock(node: WhileBlockAST) {
         log("Translating WhileBlockAST")
-        // Define labels
+
+        val oldLabel = currentLabel
+
+        // Translate block statements and add to loop label
         val loopLabel = newBranchLabel()
+        currentLabel = loopLabel
+        blockPrologue(node)
+        node.statements.forEach { translate(it) }
+        blockEpilogue(node)
+
         val checkLabel = newBranchLabel()
+        currentLabel = oldLabel
 
         // Add branch instruction
         addLines(
@@ -423,14 +432,6 @@ class AssemblyGenerator(
         // Translate condition statements and add to check label
         currentLabel = checkLabel
         translate(node.condExpr)
-
-        // Translate block statements and add to loop label
-        currentLabel = loopLabel
-        blockPrologue(node)
-        node.statements.forEach { translate(it) }
-        blockEpilogue(node)
-
-        currentLabel = checkLabel
 
         // Add compare and branch instruction
         addLines(
