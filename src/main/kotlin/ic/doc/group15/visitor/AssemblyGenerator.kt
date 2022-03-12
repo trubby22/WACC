@@ -1237,11 +1237,10 @@ class AssemblyGenerator(
         )
         translate(pairElemAST.expr)
         val pairType = pairElemAST.expr.type as PairType
-        val offset: AddressOperand
-        if (pairElemAST is FstPairElemAST) {
-            offset = ZeroOffset(resultRegister)
+        val offset = if (pairElemAST is FstPairElemAST) {
+            ZeroOffset(resultRegister)
         } else {
-            offset = ImmediateOffset(resultRegister, pairType.fstType.size())
+            ImmediateOffset(resultRegister, WORD)
         }
         addLines(
             Move(R0, resultRegister),

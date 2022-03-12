@@ -209,7 +209,7 @@ enum class UtilFunction(vararg val dependencies: UtilFunction) {
                 LoadWord(R0, ZeroOffset(R0)),
                 BranchLink(FREE),
                 LoadWord(R0, ZeroOffset(SP)),
-                LoadWord(R0, ImmediateOffset(SP, 4)),
+                LoadWord(R0, ImmediateOffset(R0, 4)),
                 BranchLink(FREE),
                 Pop(R0),
                 BranchLink(FREE),
