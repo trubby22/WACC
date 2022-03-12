@@ -6,7 +6,9 @@ open class UniqueLabelGenerator(private val startingString: String) {
 
     private val counter = AtomicInteger(0)
 
-    fun generate(): String = startingString + "${counter.getAndIncrement()}"
+    fun generate(): String {
+        return StringBuilder(startingString).append("${counter.getAndIncrement()}").toString()
+    }
 }
 
 class UniqueStringLabelGenerator : UniqueLabelGenerator("msg_")
