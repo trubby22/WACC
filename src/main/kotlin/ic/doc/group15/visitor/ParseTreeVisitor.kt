@@ -648,7 +648,11 @@ class ParseTreeVisitor(
     }
 
     override fun visitStr_liter(ctx: Str_literContext): ASTNode {
-        return StringLiteralAST(ctx.text.trim('\"'))
+        var str = ctx.text.trim('\"')
+        EscapeChar.values().forEach {
+            str = str.replace(it.string, "${it.char}")
+        }
+        return StringLiteralAST(str)
     }
 
     override fun visitPair_liter(ctx: Pair_literContext): ASTNode {

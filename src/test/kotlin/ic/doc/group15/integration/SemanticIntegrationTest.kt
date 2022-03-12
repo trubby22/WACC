@@ -1,5 +1,6 @@
 package ic.doc.group15.integration
 
+import ic.doc.group15.ENABLE_LOGGING
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
@@ -537,7 +538,7 @@ class SemanticIntegrationTest {
         val st = SymbolTable.topLevel()
         val ast = AST(st)
         val errors = SemanticErrorList()
-        val visitor = ParseTreeVisitor(ast, st, errors, enableLogging = true)
+        val visitor = ParseTreeVisitor(ast, st, errors, enableLogging = ENABLE_LOGGING)
 
         visitor.visit(program)
 
@@ -547,7 +548,7 @@ class SemanticIntegrationTest {
             return false
         }
 
-        val asm = AssemblyGenerator(ast)
+        val asm = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
         println(asm.generate())
 
         return true

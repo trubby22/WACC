@@ -11,7 +11,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 
-private const val ENABLE_LOGGING = true
+const val ENABLE_LOGGING = false
 
 fun main(args: Array<String>) {
     assert(args.size == 1)
