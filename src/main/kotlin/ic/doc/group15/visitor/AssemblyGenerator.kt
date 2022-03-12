@@ -23,11 +23,7 @@ import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
-import kotlin.reflect.KCallable
-import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
-
-private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
 
 class AssemblyGenerator(
     private val ast: AST,
@@ -64,19 +60,8 @@ class AssemblyGenerator(
     private val branchLabelGenerator = UniqueBranchLabelGenerator()
 
     companion object {
-
         private const val MAX_STACK_CHANGE = 1024
-
-        private val translators: TranslatorMap by lazy {
-            AssemblyGenerator::class.members.filter {
-                it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
-            }.map {
-                assert(it.annotations.size == 1)
-                it.isAccessible = true
-                val annotation = it.annotations[0] as TranslatorMethod
-                annotation.nodeType to it
-            }.toMap()
-        }
+        private val translators: ASTTranslatorMap = generateASTTranslatorMap(AssemblyGenerator::class)
     }
 
     fun generate(): String {
