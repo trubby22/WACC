@@ -1,6 +1,5 @@
-package ic.doc.group15.ssa.instruction
+package ic.doc.group15.ssa
 
-import com.sun.org.apache.xpath.internal.operations.Bool
 import ic.doc.group15.assembly.UniqueLabelGenerator
 import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.ReturnableType
@@ -33,7 +32,7 @@ open class Register protected constructor(type: ReturnableType): Value(type) {
 
 // Types
 class Integer(val value: Int): Value(BasicType.IntType)
-class Boolean(val value: Bool): Value(BasicType.BoolType)
+class Bool(val value: Boolean): Value(BasicType.BoolType)
 class Character(val value: Char): Value(BasicType.CharType)
 
 // Binary Operations TODO
