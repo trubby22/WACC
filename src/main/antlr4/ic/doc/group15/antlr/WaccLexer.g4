@@ -39,6 +39,8 @@ FI: 'fi';
 THEN: 'then';
 ELSE: 'else';
 WHILE: 'while';
+FOR: 'for';
+INRANGE: 'in' (' ')+ 'range';
 DO: 'do';
 DONE: 'done';
 SKIP_STAT: 'skip';
