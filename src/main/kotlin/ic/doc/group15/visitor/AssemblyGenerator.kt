@@ -17,11 +17,8 @@ import ic.doc.group15.assembly.operand.*
 import ic.doc.group15.assembly.operand.Register.*
 import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
-import ic.doc.group15.type.ArrayType
+import ic.doc.group15.type.*
 import ic.doc.group15.type.BasicType.*
-import ic.doc.group15.type.PairType
-import ic.doc.group15.type.Param
-import ic.doc.group15.type.Variable
 import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
@@ -735,21 +732,27 @@ class AssemblyGenerator(
     }
 
     @TranslatorMethod(FstPairElemAST::class)
-    private fun transFstPairElem(node: FstPairElemAST) {
+    private fun translateFstPairElem(node: FstPairElemAST) {
         log("Translating FstPairElemAST")
-        translatePairElem(node)
+        translatePairElem(node, node.elemType)
     }
 
     @TranslatorMethod(SndPairElemAST::class)
     private fun translateSndPairElem(node: SndPairElemAST) {
         log("Translating SndPairElemAST")
-        translatePairElem(node)
+        translatePairElem(node, node.elemType)
     }
 
-    private fun translatePairElem(node: PairElemAST) {
+    private fun translatePairElem(node: PairElemAST, elemType: ReturnableType) {
         getAddress(node)
         assert(node.expr.type.size() == WORD)
-        addLines(LoadWord(resultRegister, ZeroOffset(resultRegister)))
+        addLines(
+            if (elemType.size() == BYTE) {
+                LoadByte(resultRegister, ZeroOffset(resultRegister))
+            } else {
+                LoadWord(resultRegister, ZeroOffset(resultRegister))
+            }
+        )
     }
 
     @TranslatorMethod(AssignToPairElemAST::class)
@@ -758,25 +761,28 @@ class AssemblyGenerator(
         defineUtilFuncs(
             P_CHECK_NULL_POINTER
         )
+
+        val oldResultRegister = resultRegister
+
+        // Translate the expression to assign
         translate(node.rhs)
-        val pairStackOffset = (node.lhs.expr as VariableIdentifierAST).ident.stackPosition
-        val storeInstruction = when (node.rhs.type.size()) {
-            1 -> StoreByte(resultRegister, ZeroOffset(resultRegister.nextReg()))
-            else -> StoreWord(resultRegister, ZeroOffset(resultRegister.nextReg()))
-        }
+        val rhsResultRegister = resultRegister
+
+        resultRegister = resultRegister.nextReg()
+
+        // Get the adress in memory at the pair element is stored
+        getAddress(node.lhs)
+
+        // Write the expression result to the pair element address
         addLines(
-            LoadWord(resultRegister.nextReg(), ImmediateOffset(SP, pairStackOffset)),
-            Move(R0, resultRegister.nextReg()),
-            BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(
-                resultRegister.nextReg(),
-                ZeroOffset(
-                    resultRegister
-                        .nextReg()
-                )
-            ),
-            storeInstruction
+            if (node.rhs.type.size() == BYTE) {
+                StoreByte(rhsResultRegister, ZeroOffset(resultRegister))
+            } else {
+                StoreWord(rhsResultRegister, ZeroOffset(resultRegister))
+            }
         )
+
+        resultRegister = oldResultRegister
     }
 
     @TranslatorMethod(UnaryOpExprAST::class)
@@ -1229,21 +1235,18 @@ class AssemblyGenerator(
         defineUtilFuncs(
             P_CHECK_NULL_POINTER
         )
-        // TODO: Fix. pairElemAST.expr is not always VariableIdentifierAST
-        val pairPointerOffset = (pairElemAST.expr as VariableIdentifierAST).ident.stackPosition
-        val sizeOfFstElem = (pairElemAST.expr.type as PairType).fstType.size()
+        translate(pairElemAST.expr)
+        val pairType = pairElemAST.expr.type as PairType
+        val offset: AddressOperand
+        if (pairElemAST is FstPairElemAST) {
+            offset = ZeroOffset(resultRegister)
+        } else {
+            offset = ImmediateOffset(resultRegister, pairType.fstType.size())
+        }
         addLines(
-            LoadWord(resultRegister, ImmediateOffset(SP, pairPointerOffset)),
             Move(R0, resultRegister),
             BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(
-                resultRegister,
-                if (pairElemAST is FstPairElemAST) {
-                    ZeroOffset(resultRegister)
-                } else {
-                    ImmediateOffset(resultRegister, sizeOfFstElem)
-                }
-            )
+            LoadWord(resultRegister, offset)
         )
     }
 
