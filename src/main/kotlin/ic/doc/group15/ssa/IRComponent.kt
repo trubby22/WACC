@@ -47,20 +47,41 @@ class IRFunction(val funcAST: FunctionDeclarationAST) {
     }
 }
 
-abstract class Block
+interface SuccessorBlock {
+    fun addPredecessors(vararg predecessors: PredecessorBlock)
+}
+
+interface PredecessorBlock {
+    fun addSuccessors(vararg successors: SuccessorBlock)
+}
+
+interface Block: SuccessorBlock, PredecessorBlock
 
 /**
  * The entry basic block in a function has two characteristics:
  * 1) It is immediately executed on entrance to the function;
  * 2) It is not allowed to have predecessor basic blocks (hence no Phi nodes)
  */
-class EntryBasicBlock(vararg arguments: ParameterAST): Block() {
+class EntryBasicBlock(vararg arguments: ParameterAST): PredecessorBlock {
     val arguments = listOf(*arguments)
-    private val successors = mutableListOf<BasicBlock>()
+    private val successors = mutableListOf<SuccessorBlock>()
 
-    fun addSuccessors(vararg successors: BasicBlock) {
+    override fun addSuccessors(vararg successors: SuccessorBlock) {
         this.successors.addAll(successors)
         successors.forEach { succ -> succ.addPredecessors(this) }
+    }
+}
+
+/**
+ * The entry basic block in a function has one characteristic:
+ * It is not allowed to have successor basic blocks.
+ */
+class ExitBasicBlock: SuccessorBlock {
+    private val predecessors = mutableListOf<PredecessorBlock>()
+
+    override fun addPredecessors(vararg predecessors: PredecessorBlock) {
+        this.predecessors.addAll(predecessors)
+        predecessors.forEach { pred -> pred.addSuccessors(this) }
     }
 }
 
@@ -78,13 +99,13 @@ class EntryBasicBlock(vararg arguments: ParameterAST): Block() {
  * different basic block. This defines the execution behaviour such that every instruction
  * in a basic block is executed in sequence.
  **/
-class BasicBlock(val irFunction: IRFunction): Block() {
+class BasicBlock(val irFunction: IRFunction): Block {
 
     private val label = irFunction.makeLabel()
     private val phis = mutableListOf<PhiAST>()
     private val instructions = mutableListOf<ASTNode>()
-    private val predecessors = mutableListOf<Block>()
-    private val successors = mutableListOf<BasicBlock>()
+    private val predecessors = mutableListOf<PredecessorBlock>()
+    private val successors = mutableListOf<SuccessorBlock>()
 
     init {
         irFunction.addBlocks(this)
@@ -102,22 +123,13 @@ class BasicBlock(val irFunction: IRFunction): Block() {
         this.instructions.addAll(instructions)
     }
 
-    fun addPredecessors(vararg predecessors: EntryBasicBlock) {
+    override fun addPredecessors(vararg predecessors: PredecessorBlock) {
         this.predecessors.addAll(predecessors)
         predecessors.forEach { pred -> pred.addSuccessors(this) }
     }
 
-    fun addPredecessors(vararg predecessors: BasicBlock) {
-        for (pred in predecessors) {
-            pred.successors.add(this)
-            this.predecessors.add(pred)
-        }
-    }
-
-    fun addSuccessors(vararg successors: BasicBlock) {
-        for (succ in successors) {
-            succ.predecessors.add(this)
-            this.successors.add(succ)
-        }
+    override fun addSuccessors(vararg successors: SuccessorBlock) {
+        this.successors.addAll(successors)
+        successors.forEach { succ -> succ.addPredecessors(this) }
     }
 }

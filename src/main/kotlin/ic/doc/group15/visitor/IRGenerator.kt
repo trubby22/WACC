@@ -58,6 +58,7 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
      * 4) Rename variables to obtain SSA form
      **/
     private fun buildCFGFromFunctionDeclaration(CFGState: CFGState, node: FunctionDeclarationAST) {
+        log("Building CFG for function ${node.funcName}")
         // Build CFG for the function
         initialiseState(CFGState, node)
         node.statements.forEach { buildCFG(CFGState, it) }
@@ -79,6 +80,7 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
      *                       (join node)
      **/
     private fun buildCFGFromIfBlock(cfgState: CFGState, node: IfBlockAST) {
+        log("Building CFG for if block")
         val thenBlock = BasicBlock(cfgState.irFunction)
         val elseBlock = BasicBlock(cfgState.irFunction)
         val exitBlock = BasicBlock(cfgState.irFunction)
@@ -119,6 +121,7 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
      *                     end while block
      **/
     private fun buildCFGFromWhileBlock(cfgState: CFGState, node: WhileBlockAST) {
+        log("Building CFG for while block")
         val condBlock = BasicBlock(cfgState.irFunction)
         val loopBlock = BasicBlock(cfgState.irFunction)
         val exitBlock = BasicBlock(cfgState.irFunction)
@@ -149,7 +152,10 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
         when (node) {
             is WhileBlockAST -> buildCFGFromWhileBlock(CFGState, node)
             is IfBlockAST -> buildCFGFromIfBlock(CFGState, node)
-            else -> CFGState.currentBlock.addInstructions(node)
+            else -> {
+                log("Adding instruction of AST type ${node::class.simpleName}")
+                CFGState.currentBlock.addInstructions(node)
+            }
         }
     }
 
