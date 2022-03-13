@@ -47,6 +47,15 @@ class WhileBlockAST(
     val condExpr: ExpressionAST
 ) : BlockAST(parent, symbolTable)
 
+class ForBlockAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable
+) : BlockAST(parent, symbolTable) {
+    lateinit var condExpr: ExpressionAST
+    lateinit var varDecl: VariableDeclarationAST
+    lateinit var incrementStat: StatementAST
+}
+
 open class BeginEndBlockAST(
     parent: BlockAST?,
     symbolTable: SymbolTable

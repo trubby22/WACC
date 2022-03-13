@@ -437,6 +437,41 @@ class AssemblyGenerator(
         )
     }
 
+    @TranslatorMethod(ForBlockAST::class)
+    private fun transForBlock(node: ForBlockAST) {
+        log("Translating ForBlockAST")
+
+        translate(node.varDecl)
+
+        val oldLabel = currentLabel
+
+        // Translate block statements and add to loop label
+        val loopLabel = newBranchLabel()
+        currentLabel = loopLabel
+        blockPrologue(node)
+        node.statements.forEach { translate(it) }
+        translate(node.incrementStat)
+        blockEpilogue(node)
+
+        val checkLabel = newBranchLabel()
+        currentLabel = oldLabel
+
+        // Add branch instruction
+        addLines(
+            Branch(BranchLabelOperand(checkLabel))
+        )
+
+        // Translate condition statements and add to check label
+        currentLabel = checkLabel
+        translate(node.condExpr)
+
+        // Add compare and branch instruction
+        addLines(
+            Compare(resultRegister, IntImmediateOperand(1)),
+            Branch(EQ, BranchLabelOperand(loopLabel))
+        )
+    }
+
     @TranslatorMethod(BeginEndBlockAST::class)
     private fun translateBeginEndBlock(node: BeginEndBlockAST) {
         log("Translating BeginEndBlockAST")

@@ -398,6 +398,43 @@ class ParseTreeVisitor(
         return addToScope(whileBlock)
     }
 
+    override fun visitForStat(ctx: ForStatContext) : ASTNode {
+        return visitFor(ctx)
+    }
+
+    private fun visitFor(ctx: ForStatContext): ASTNode {
+        log("Visiting for statement")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
+        log("|| Visiting for block")
+
+        val forBlock = ForBlockAST(scopeAST, symbolTable)
+
+        symbolTable = symbolTable.subScope()
+        scopeAST = forBlock
+
+        val loopVariable = VariableIdentifierAST(symbolTable, ctx.IDENT().text, Variable(IntType))
+        val loopVarVal = IntLiteralAST(Integer.parseInt("0"))
+        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.IDENT().text, loopVarVal, Variable(IntType))
+        val loopVarIncrement = AssignToIdentAST(scopeAST, loopVariable)
+        loopVarIncrement.rhs = BinaryOpExprAST(symbolTable, loopVarVal, IntLiteralAST(1), BinaryOp.PLUS)
+        symbolTable.add(ctx.IDENT().text, Variable(IntType))
+        val expr = BinaryOpExprAST(symbolTable, loopVariable, IntLiteralAST(Integer.parseInt(ctx.POSITIVE_OR_NEGATIVE_INTEGER().text)), BinaryOp.LT)
+
+        forBlock.varDecl = varDecl
+        forBlock.condExpr = expr
+        forBlock.incrementStat = loopVarIncrement
+
+        visit(ctx.stat()) as StatementAST
+
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        return addToScope(forBlock)
+    }
+
     //endregion
 
     //region assign_and_declare
