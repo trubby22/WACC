@@ -2,6 +2,7 @@ package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.ssa.BasicBlock
+import ic.doc.group15.ssa.Block
 import ic.doc.group15.type.*
 import java.util.*
 
@@ -68,8 +69,11 @@ class CallAST(
     val actuals: MutableList<ExpressionAST>
 ) : AssignRhsAST(symbolTable, funcIdent.returnType)
 
+/**
+ * Generated in IR; used for SSA construction.
+ */
 class PhiAST(
     type: ReturnableType,
     symbolTable: SymbolTable,
-    val arguments: MutableList<Pair<ExpressionAST, BasicBlock>>
+    val arguments: MutableList<Pair<ExpressionAST, Block>>
 ) : AssignRhsAST(symbolTable, type)

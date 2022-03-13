@@ -6,6 +6,9 @@ import ic.doc.group15.ssa.IRFunction
 import ic.doc.group15.ssa.CFGState
 import ic.doc.group15.type.BasicType
 
+/**
+ * Assumption: All nodes (read: basic blocks) can have at most two successors
+ */
 class CFGGenerator(private val enableLogging: Boolean = true) {
 
     private fun buildCFGFromProgram(program: AST): List<IRFunction> {
@@ -57,11 +60,14 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
      * 3) Insert phi nodes
      * 4) Rename variables to obtain SSA form
      **/
-    private fun buildCFGFromFunctionDeclaration(CFGState: CFGState, node: FunctionDeclarationAST) {
+    private fun buildCFGFromFunctionDeclaration(cfgState: CFGState, node: FunctionDeclarationAST) {
         log("Building CFG for function ${node.funcName}")
         // Build CFG for the function
-        initialiseState(CFGState, node)
-        node.statements.forEach { buildCFG(CFGState, it) }
+        initialiseState(cfgState, node)
+        node.statements.forEach { buildCFG(cfgState, it) }
+
+        // Form an edge between last instruction and function exit block
+        cfgState.irFunction.sealBlock()
     }
 
     /**
@@ -88,15 +94,31 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
         // add successors to entry block
         cfgState.currentBlock.addSuccessors(thenBlock, elseBlock)
 
+        // add branch instruction to entry block
+        val branchIfInst = BranchIfAST(
+            node.parent,
+            node.symbolTable,
+            node.condExpr,
+            thenBlock,
+            elseBlock
+        )
+        cfgState.currentBlock.addInstructions(branchIfInst)
+
         // construct then block
+        log("Building CFG for then block")
         cfgState.currentBlock = thenBlock
         node.statements.forEach { buildCFG(cfgState, it) }
-        cfgState.currentBlock.addSuccessors(exitBlock)
+        if (!node.elseBlock.statements.any { it is ReturnStatementAST || it is ExitStatementAST }) {
+            cfgState.currentBlock.addSuccessors(exitBlock)
+        }
 
         // construct else block
+        log("Building CFG for else block")
         cfgState.currentBlock = elseBlock
         node.elseBlock.statements.forEach { buildCFG(cfgState, it) }
-        cfgState.currentBlock.addSuccessors(exitBlock)
+        if (!node.elseBlock.statements.any { it is ReturnStatementAST || it is ExitStatementAST }) {
+            cfgState.currentBlock.addSuccessors(exitBlock)
+        }
 
         // set current block as exit block
         cfgState.currentBlock = exitBlock
@@ -131,30 +153,61 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
 
         // construct cond block
         cfgState.currentBlock = condBlock
-        buildCFG(cfgState, node.condExpr)
+        val branchIfInst = BranchIfAST(
+            node.parent,
+            node.symbolTable,
+            node.condExpr,
+            loopBlock,
+            exitBlock
+        )
+        cfgState.currentBlock.addInstructions(branchIfInst)
         cfgState.currentBlock.addSuccessors(loopBlock, exitBlock)
 
+        log("Building CFG for while loop block")
         // construct loop block
         cfgState.currentBlock = loopBlock
         node.statements.forEach { stat -> buildCFG(cfgState, stat) }
-        cfgState.currentBlock.addSuccessors(condBlock)
+        if (!node.statements.any { it is ReturnStatementAST || it is ExitStatementAST }) {
+            cfgState.currentBlock.addSuccessors(condBlock)
+        }
 
         // set current block as exit block
         cfgState.currentBlock = exitBlock
     }
 
-    private fun buildCFGFromBeginEndBlock(CFGState: CFGState, node: BeginEndBlockAST) {
-        TODO("do we need this?")
+    private fun buildCFGFromBeginEndBlock(cfgState: CFGState, node: BeginEndBlockAST) {
+        val inScopeBlock = BasicBlock(cfgState.irFunction)
+        val outScopeBlock = BasicBlock(cfgState.irFunction)
+
+        // construct in scope block
+        log("Building CFG for begin end block")
+        cfgState.currentBlock = inScopeBlock
+        node.statements.forEach { stat -> buildCFG(cfgState, stat) }
+        if (!node.statements.any { it is ReturnStatementAST || it is ExitStatementAST }) {
+            cfgState.currentBlock.addSuccessors(outScopeBlock)
+        }
+
+        // set current block as exit block
+        cfgState.currentBlock = outScopeBlock
     }
 
-    // TODO(manage exit, return, other control flow constructs)
-    private fun buildCFG(CFGState: CFGState, node: ASTNode) {
+    private fun buildCFGFromReturnStatement(cfgState: CFGState, node: ReturnStatementAST) {
+        log("Building CFG for block that ends with return statement")
+        cfgState.currentBlock.addInstructions(node)
+        // set successor to function exit point
+        cfgState.currentBlock.addSuccessors(cfgState.irFunction.exitBlock)
+    }
+
+    // TODO(manage exit, call subroutine, other control flow constructs)
+    private fun buildCFG(cfgState: CFGState, node: ASTNode) {
         when (node) {
-            is WhileBlockAST -> buildCFGFromWhileBlock(CFGState, node)
-            is IfBlockAST -> buildCFGFromIfBlock(CFGState, node)
+            is WhileBlockAST -> buildCFGFromWhileBlock(cfgState, node)
+            is IfBlockAST -> buildCFGFromIfBlock(cfgState, node)
+            is BeginEndBlockAST -> buildCFGFromBeginEndBlock(cfgState, node)
+            is ReturnStatementAST -> buildCFGFromReturnStatement(cfgState, node)
             else -> {
                 log("Adding instruction of AST type ${node::class.simpleName}")
-                CFGState.currentBlock.addInstructions(node)
+                cfgState.currentBlock.addInstructions(node)
             }
         }
     }

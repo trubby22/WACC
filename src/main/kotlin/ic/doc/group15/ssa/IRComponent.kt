@@ -26,9 +26,10 @@ open class Register {
  */
 class IRFunction(val funcAST: FunctionDeclarationAST) {
     private val labelGenerator = UniqueLabelGenerator("B")
-    private val entryBlock = EntryBasicBlock(*funcAST.formals.toTypedArray())
+    val entryBlock = EntryBasicBlock(*funcAST.formals.toTypedArray())
     // not strictly needed since can be obtained from entryBlock, but handy to have
-    private val basicBlocks = mutableListOf<BasicBlock>()
+    val basicBlocks = mutableListOf<BasicBlock>()
+    val exitBlock = ExitBasicBlock()
 
     override fun toString(): String {
         return funcAST.funcName
@@ -40,6 +41,15 @@ class IRFunction(val funcAST: FunctionDeclarationAST) {
 
     fun makeLabel(): String {
         return labelGenerator.generate()
+    }
+
+    fun sealBlock() {
+        if (basicBlocks.isEmpty()) {
+            entryBlock.addSuccessors(exitBlock)
+        } else {
+            val lastStat = basicBlocks.last()
+            lastStat.addSuccessors(exitBlock)
+        }
     }
 
     fun printCode(): String {
@@ -64,7 +74,7 @@ interface Block: SuccessorBlock, PredecessorBlock
  */
 class EntryBasicBlock(vararg arguments: ParameterAST): PredecessorBlock {
     val arguments = listOf(*arguments)
-    private val successors = mutableListOf<SuccessorBlock>()
+    private val successors = mutableSetOf<SuccessorBlock>()
 
     override fun addSuccessors(vararg successors: SuccessorBlock) {
         this.successors.addAll(successors)
@@ -73,11 +83,11 @@ class EntryBasicBlock(vararg arguments: ParameterAST): PredecessorBlock {
 }
 
 /**
- * The entry basic block in a function has one characteristic:
+ * The exit basic block in a function has one characteristic:
  * It is not allowed to have successor basic blocks.
  */
 class ExitBasicBlock: SuccessorBlock {
-    private val predecessors = mutableListOf<PredecessorBlock>()
+    private val predecessors = mutableSetOf<PredecessorBlock>()
 
     override fun addPredecessors(vararg predecessors: PredecessorBlock) {
         this.predecessors.addAll(predecessors)
@@ -104,8 +114,8 @@ class BasicBlock(val irFunction: IRFunction): Block {
     private val label = irFunction.makeLabel()
     private val phis = mutableListOf<PhiAST>()
     private val instructions = mutableListOf<ASTNode>()
-    private val predecessors = mutableListOf<PredecessorBlock>()
-    private val successors = mutableListOf<SuccessorBlock>()
+    private val predecessors = mutableSetOf<PredecessorBlock>()
+    private val successors = mutableSetOf<SuccessorBlock>()
 
     init {
         irFunction.addBlocks(this)

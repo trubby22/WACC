@@ -1,6 +1,7 @@
 package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
+import ic.doc.group15.ssa.Block
 import ic.doc.group15.type.*
 
 abstract class StatementAST protected constructor(
@@ -59,4 +60,16 @@ class PrintlnStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
     val expr: ExpressionAST
+) : StatementAST(parent, symbolTable)
+
+
+/**
+ * Used for CFG construction to determine control flow.
+ */
+class BranchIfAST(
+    parent: BlockAST?,
+    symbolTable: SymbolTable,
+    val condExpr: ExpressionAST,
+    val trueBlock: Block,
+    val falseBlock: Block
 ) : StatementAST(parent, symbolTable)
