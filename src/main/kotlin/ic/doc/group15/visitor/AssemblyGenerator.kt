@@ -419,6 +419,7 @@ class AssemblyGenerator(
         blockEpilogue(node)
 
         val checkLabel = newBranchLabel()
+        node.checkLabel = checkLabel
         currentLabel = oldLabel
 
         // Add branch instruction
@@ -435,6 +436,9 @@ class AssemblyGenerator(
             Compare(resultRegister, IntImmediateOperand(1)),
             Branch(EQ, BranchLabelOperand(loopLabel))
         )
+
+        val endLabel = newBranchLabel()
+        node.endLabel = endLabel
     }
 
     @TranslatorMethod(ForBlockAST::class)
@@ -450,6 +454,8 @@ class AssemblyGenerator(
         currentLabel = loopLabel
         blockPrologue(node)
         node.statements.forEach { translate(it) }
+        val varIncrementLabel = newBranchLabel()
+        node.varIncrementLabel = varIncrementLabel
         translate(node.incrementStat)
         blockEpilogue(node)
 
@@ -470,6 +476,43 @@ class AssemblyGenerator(
             Compare(resultRegister, IntImmediateOperand(1)),
             Branch(EQ, BranchLabelOperand(loopLabel))
         )
+
+        val endLabel = newBranchLabel()
+        node.endLabel = endLabel
+    }
+
+    @TranslatorMethod(ContinueStatementAST::class)
+    fun translateContinueStatement(node: ContinueStatementAST) {
+        var enclosingLoop = node.parent
+            while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST || enclosingLoop.parent is ForBlockAST)) {
+                enclosingLoop = enclosingLoop.parent
+            }
+
+        if (enclosingLoop == null) {
+            // throw big error because continue statements should DEFINITELY be within a loop
+        }
+
+        when (enclosingLoop) {
+            is WhileBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as WhileBlockAST).checkLabel)))
+            is ForBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForBlockAST).varIncrementLabel)))
+        }
+    }
+
+    @TranslatorMethod(BreakStatementAST::class)
+    fun translateBreakStatement(node: BreakStatementAST) {
+        var enclosingLoop = node.parent
+            while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST || enclosingLoop.parent is ForBlockAST)) {
+                enclosingLoop = enclosingLoop.parent
+            }
+
+        if (enclosingLoop == null) {
+            // throw big error because continue statements should DEFINITELY be within a loop
+        }
+
+        when (enclosingLoop) {
+            is WhileBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as WhileBlockAST).endLabel)))
+            is ForBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForBlockAST).endLabel)))
+        }
     }
 
     @TranslatorMethod(BeginEndBlockAST::class)

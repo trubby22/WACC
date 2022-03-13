@@ -217,6 +217,18 @@ class ParseTreeVisitor(
         return addToScope(SkipStatementAST(scopeAST))
     }
 
+    override fun visitContinueStat(ctx: ContinueStatContext?): ASTNode {
+        log("Visiting continue statement")
+
+        return addToScope(ContinueStatementAST(scopeAST))
+    }
+
+    override fun visitBreakStat(ctx: BreakStatContext?): ASTNode {
+        log("Visiting break statement")
+
+        return addToScope(BreakStatementAST(scopeAST))
+    }
+
     override fun visitReadStat(ctx: ReadStatContext): ASTNode {
         log("Visiting read statement")
 

@@ -32,6 +32,14 @@ class SkipStatementAST(
     parent: BlockAST,
 ) : StatementAST(parent)
 
+class ContinueStatementAST(
+    parent: BlockAST,
+) : StatementAST(parent)
+
+class BreakStatementAST(
+    parent: BlockAST,
+) : StatementAST(parent)
+
 class FreeStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
