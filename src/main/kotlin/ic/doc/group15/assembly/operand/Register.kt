@@ -78,9 +78,9 @@ enum class Register : Operand {
     R10,
 
     /**
-     * By convention, FP (or R11) is the frame pointer.
+     * By convention, R11 is a general purpose register.
      */
-    FP,
+    R11,
 
     /**
      * By convention, IP (or R12) is the intra procedural call register.
@@ -132,22 +132,21 @@ enum class Register : Operand {
     }
 
     fun nextReg(): Register {
-        if (this == maxReg()) {
+        if (this == MAX_REG) {
             throw InstantiationException("Max register limit reached!")
         }
         return values()[this.ordinal + 1]
     }
 
     fun prevReg(): Register {
-        if (this == values()[0]) {
+        if (this == MIN_REG) {
             throw InstantiationException("Min register limit reached!")
         }
         return values()[this.ordinal - 1]
     }
 
     companion object {
-        fun maxReg(): Register {
-            return R10
-        }
+        val MIN_REG = R0
+        val MAX_REG = R11
     }
 }

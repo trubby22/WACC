@@ -486,7 +486,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for newPair
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) {
+        if (resultRegister == Register.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -607,7 +607,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for ArrayLiteral
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) {
+        if (resultRegister == Register.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -669,7 +669,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for arrayElem
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) { // R10
+        if (resultRegister == Register.MAX_REG) { // R10
             resultRegister = resultRegister.prevReg() // R9
             addLines(Push(resultRegister)) // Spare R9
             offsetStackStore[0] += WORD
@@ -861,7 +861,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for BinOp
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) {
+        if (resultRegister == Register.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -986,11 +986,10 @@ class AssemblyGenerator(
         // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
         // original value in MAX_REG - 1
         if (accumulatorState) {
+            resultRegister = resultRegister.nextReg()
             addLines(
-                Move(resultRegister.nextReg(), ZeroOffset(resultRegister)),
                 Pop(resultRegister)
             )
-            resultRegister = resultRegister.nextReg()
             offsetStackStore[0] -= WORD
         }
     }
