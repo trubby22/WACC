@@ -51,7 +51,7 @@ class WhileBlockAST(
     lateinit var endLabel : BranchLabel
 }
 
-class ForBlockAST(
+class ForInRangeBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable
 ) : BlockAST(parent, symbolTable) {
