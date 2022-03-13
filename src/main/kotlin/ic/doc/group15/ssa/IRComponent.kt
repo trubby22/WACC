@@ -24,14 +24,22 @@ open class Register {
  * A function contains a list of basic blocks forming the control flow graph (CFG) for
  * the function.
  */
-class Function(val funcAST: FunctionDeclarationAST) {
-    val labelGenerator = UniqueLabelGenerator("B")
-    val entryBlock = EntryBasicBlock(*funcAST.formals.toTypedArray())
+class IRFunction(val funcAST: FunctionDeclarationAST) {
+    private val labelGenerator = UniqueLabelGenerator("B")
+    private val entryBlock = EntryBasicBlock(*funcAST.formals.toTypedArray())
     // not strictly needed since can be obtained from entryBlock, but handy to have
-    val basicBlocks = mutableListOf<BasicBlock>()
+    private val basicBlocks = mutableListOf<BasicBlock>()
 
     override fun toString(): String {
         return funcAST.funcName
+    }
+
+    fun addBlocks(vararg blocks: BasicBlock) {
+        basicBlocks.addAll(blocks)
+    }
+
+    fun makeLabel(): String {
+        return labelGenerator.generate()
     }
 
     fun printCode(): String {
@@ -39,17 +47,20 @@ class Function(val funcAST: FunctionDeclarationAST) {
     }
 }
 
+abstract class Block
+
 /**
  * The entry basic block in a function has two characteristics:
  * 1) It is immediately executed on entrance to the function;
  * 2) It is not allowed to have predecessor basic blocks (hence no Phi nodes)
  */
-class EntryBasicBlock(vararg arguments: ParameterAST) {
-    val instructions = listOf(*arguments)
+class EntryBasicBlock(vararg arguments: ParameterAST): Block() {
+    val arguments = listOf(*arguments)
     private val successors = mutableListOf<BasicBlock>()
 
     fun addSuccessors(vararg successors: BasicBlock) {
         this.successors.addAll(successors)
+        successors.forEach { succ -> succ.addPredecessors(this) }
     }
 }
 
@@ -67,27 +78,46 @@ class EntryBasicBlock(vararg arguments: ParameterAST) {
  * different basic block. This defines the execution behaviour such that every instruction
  * in a basic block is executed in sequence.
  **/
-class BasicBlock(val function: Function) {
+class BasicBlock(val irFunction: IRFunction): Block() {
 
-    private val label = function.labelGenerator.generate()
+    private val label = irFunction.makeLabel()
     private val phis = mutableListOf<PhiAST>()
-    private val instructions = mutableListOf<StatementAST>()
-    private val predecessors = mutableListOf<BasicBlock>()
+    private val instructions = mutableListOf<ASTNode>()
+    private val predecessors = mutableListOf<Block>()
     private val successors = mutableListOf<BasicBlock>()
+
+    init {
+        irFunction.addBlocks(this)
+    }
 
     override fun toString(): String {
         return label
     }
 
-    fun addInstructions(vararg instructions: StatementAST) {
+    fun addPhis(vararg instructions: PhiAST) {
+        this.phis.addAll(instructions)
+    }
+
+    fun addInstructions(vararg instructions: ASTNode) {
         this.instructions.addAll(instructions)
     }
 
-    fun addPredecessors(vararg predecessors: BasicBlock) {
+    fun addPredecessors(vararg predecessors: EntryBasicBlock) {
         this.predecessors.addAll(predecessors)
+        predecessors.forEach { pred -> pred.addSuccessors(this) }
+    }
+
+    fun addPredecessors(vararg predecessors: BasicBlock) {
+        for (pred in predecessors) {
+            pred.successors.add(this)
+            this.predecessors.add(pred)
+        }
     }
 
     fun addSuccessors(vararg successors: BasicBlock) {
-        this.successors.addAll(successors)
+        for (succ in successors) {
+            succ.predecessors.add(this)
+            this.successors.add(succ)
+        }
     }
 }
