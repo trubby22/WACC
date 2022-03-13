@@ -1,10 +1,9 @@
 package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
-import ic.doc.group15.ssa.BasicBlock
+import ic.doc.group15.ssa.BidirectionalBlock
 import ic.doc.group15.ssa.Block
 import ic.doc.group15.type.*
-import java.util.*
 
 abstract class AssignRhsAST protected constructor(
     symbolTable: SymbolTable = SymbolTable.emptyTable,

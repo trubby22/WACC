@@ -17,6 +17,7 @@ class CFGGenerator(private val enableLogging: Boolean = true) {
         // Build SSA form for each function
         val ssaIRFunctions = mutableListOf<IRFunction>()
         // Note that each function state is independent of each other
+        // TODO introduce concurrency 
         for (funcNode in functions) {
             val funcState = CFGState()
             buildCFGFromFunctionDeclaration(funcState, funcNode as FunctionDeclarationAST)

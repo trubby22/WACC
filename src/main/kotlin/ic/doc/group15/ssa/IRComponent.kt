@@ -47,6 +47,10 @@ class IRFunction(val funcAST: FunctionDeclarationAST) {
         if (basicBlocks.isEmpty()) {
             entryBlock.addSuccessors(exitBlock)
         } else {
+            // Add edge from entry point to first block
+            val firstStat = basicBlocks.first()
+            firstStat.addPredecessors(entryBlock)
+            // Add edge from last block to exit point
             val lastStat = basicBlocks.last()
             lastStat.addSuccessors(exitBlock)
         }
@@ -57,15 +61,22 @@ class IRFunction(val funcAST: FunctionDeclarationAST) {
     }
 }
 
-interface SuccessorBlock {
+interface Block {
+    // Insertion-ordered.
+    fun getSuccessors(): List<Block>?
+    // Insertion-ordered.
+    fun getPredecessors(): List<Block>?
+}
+
+interface SuccessorBlock : Block {
     fun addPredecessors(vararg predecessors: PredecessorBlock)
 }
 
-interface PredecessorBlock {
+interface PredecessorBlock : Block {
     fun addSuccessors(vararg successors: SuccessorBlock)
 }
 
-interface Block: SuccessorBlock, PredecessorBlock
+interface BidirectionalBlock: SuccessorBlock, PredecessorBlock
 
 /**
  * The entry basic block in a function has two characteristics:
@@ -74,11 +85,19 @@ interface Block: SuccessorBlock, PredecessorBlock
  */
 class EntryBasicBlock(vararg arguments: ParameterAST): PredecessorBlock {
     val arguments = listOf(*arguments)
-    private val successors = mutableSetOf<SuccessorBlock>()
+    private val successors = LinkedHashSet<SuccessorBlock>()
 
     override fun addSuccessors(vararg successors: SuccessorBlock) {
         this.successors.addAll(successors)
         successors.forEach { succ -> succ.addPredecessors(this) }
+    }
+
+    override fun getSuccessors(): List<Block> {
+        return successors.toList()
+    }
+
+    override fun getPredecessors(): List<Block>? {
+        return null
     }
 }
 
@@ -87,11 +106,19 @@ class EntryBasicBlock(vararg arguments: ParameterAST): PredecessorBlock {
  * It is not allowed to have successor basic blocks.
  */
 class ExitBasicBlock: SuccessorBlock {
-    private val predecessors = mutableSetOf<PredecessorBlock>()
+    private val predecessors = LinkedHashSet<PredecessorBlock>()
 
     override fun addPredecessors(vararg predecessors: PredecessorBlock) {
         this.predecessors.addAll(predecessors)
         predecessors.forEach { pred -> pred.addSuccessors(this) }
+    }
+
+    override fun getSuccessors(): List<Block>? {
+        return null
+    }
+
+    override fun getPredecessors(): List<Block> {
+        return predecessors.toList()
     }
 }
 
@@ -109,13 +136,14 @@ class ExitBasicBlock: SuccessorBlock {
  * different basic block. This defines the execution behaviour such that every instruction
  * in a basic block is executed in sequence.
  **/
-class BasicBlock(val irFunction: IRFunction): Block {
+class BasicBlock(val irFunction: IRFunction): BidirectionalBlock {
 
     private val label = irFunction.makeLabel()
     private val phis = mutableListOf<PhiAST>()
     private val instructions = mutableListOf<ASTNode>()
-    private val predecessors = mutableSetOf<PredecessorBlock>()
-    private val successors = mutableSetOf<SuccessorBlock>()
+    // control flow analysis
+    private val predecessors = LinkedHashSet<PredecessorBlock>()
+    private val successors = LinkedHashSet<SuccessorBlock>()
 
     init {
         irFunction.addBlocks(this)
@@ -136,6 +164,14 @@ class BasicBlock(val irFunction: IRFunction): Block {
     override fun addPredecessors(vararg predecessors: PredecessorBlock) {
         this.predecessors.addAll(predecessors)
         predecessors.forEach { pred -> pred.addSuccessors(this) }
+    }
+
+    override fun getSuccessors(): List<Block> {
+        return successors.toList()
+    }
+
+    override fun getPredecessors(): List<Block> {
+        return predecessors.toList()
     }
 
     override fun addSuccessors(vararg successors: SuccessorBlock) {
