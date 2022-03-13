@@ -2,7 +2,6 @@ package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.assembly.TranslatorMethod
-import ic.doc.group15.visitor.AssemblyGenerator
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible

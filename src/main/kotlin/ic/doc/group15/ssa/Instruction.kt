@@ -1,22 +1,12 @@
 package ic.doc.group15.ssa
 
 import ic.doc.group15.assembly.UniqueLabelGenerator
-import ic.doc.group15.type.BasicType
-import ic.doc.group15.type.ReturnableType
+import ic.doc.group15.ast.*
 import java.util.concurrent.atomic.AtomicInteger
 
-interface Instruction
-abstract class Value(val type: ReturnableType) {
-    override fun toString(): String {
-        return "<$type>"
-    }
-}
-
-open class Register protected constructor(type: ReturnableType): Value(type) {
+open class Register {
     companion object {
         private val counter = AtomicInteger()
-
-        fun generate(type: ReturnableType) = Register(type)
 
         fun reset() {
             counter.set(0)
@@ -30,126 +20,74 @@ open class Register protected constructor(type: ReturnableType): Value(type) {
     }
 }
 
-// Types
-class Integer(val value: Int): Value(BasicType.IntType)
-class Bool(val value: Boolean): Value(BasicType.BoolType)
-class Character(val value: Char): Value(BasicType.CharType)
-
-// Binary Operations TODO
-class Compare(type: ReturnableType): Value(type)
-class Add: Value(BasicType.IntType)
-class Sub: Value(BasicType.IntType)
-class Mult: Value(BasicType.IntType)
-class Div: Value(BasicType.IntType)
-class Assign(val value: Value): Instruction {
-    val register = Register.generate(value.type)
+/**
+ * A function contains a list of basic blocks forming the control flow graph (CFG) for
+ * the function.
+ */
+class Function(val funcAST: FunctionDeclarationAST) {
+    val labelGenerator = UniqueLabelGenerator("B")
+    val entryBlock = EntryBasicBlock(*funcAST.formals.toTypedArray())
+    // not strictly needed since can be obtained from entryBlock, but handy to have
+    val basicBlocks = mutableListOf<BasicBlock>()
 
     override fun toString(): String {
-        return "$register = $value"
+        return funcAST.funcName
+    }
+
+    fun printCode(): String {
+        TODO()
     }
 }
 
-// Memory Operations
-class Allocate(type: ReturnableType, val elemCount: Int): Instruction {
-    constructor(type: ReturnableType): this(type, 1)
+/**
+ * The entry basic block in a function has two characteristics:
+ * 1) It is immediately executed on entrance to the function;
+ * 2) It is not allowed to have predecessor basic blocks (hence no Phi nodes)
+ */
+class EntryBasicBlock(vararg arguments: ParameterAST) {
+    val instructions = listOf(*arguments)
+    private val successors = mutableListOf<BasicBlock>()
 
-    val register: Register = Register.generate(type)
-
-    override fun toString(): String {
-        return "<${register.type}> allocate ${if (elemCount != 1) {"[$elemCount]"} else {""} }"
-    }
-}
-class Load(val address: Register): Value(address.type) {
-    override fun toString(): String {
-        return "<${address.type}> load <${address.type}*> [$address]"
-    }
-}
-class Store(val value: Value, val address: Register): Instruction {
-    override fun toString(): String {
-        return "store <${value.type}> $value <${address.type}*> [$address]"
+    fun addSuccessors(vararg successors: BasicBlock) {
+        this.successors.addAll(successors)
     }
 }
 
-// Other Operations
-class Return(val value: Value): Instruction {
-    override fun toString(): String {
-        return "return $value"
-    }
-}
+/**
+ * A basic block is a straight-line code sequence with no branches in except to the
+ * entry and no branches out except at the exit.
+ *
+ * It acts as a node in the control flow graph (CFG) for the function,
+ * where it contains a list of instructions and a terminator instruction (a branch
+ * or return statement).
+ *
+ * It has one entry point and one exit point, hence no instructions within a basic block
+ * is the destination of a jump instruction anywhere in the program except for the
+ * terminator instruction, where it may lead the program to execute instructions in a
+ * different basic block. This defines the execution behaviour such that every instruction
+ * in a basic block is executed in sequence.
+ **/
+class BasicBlock(val function: Function) {
 
-class CondBranch(val value: Value, val branchTrue: Block, val branchFalse: Block): Instruction {
-    override fun toString(): String {
-        return "branch if $value %$branchTrue else %$branchFalse"
-    }
-}
-
-class Branch(val branch: Block): Instruction {
-    override fun toString(): String {
-        return "branch %$branch"
-    }
-}
-class Parameter(type: ReturnableType): Value(type) {
-    val register: Register = Register.generate(type)
-}
-class Phi(type: ReturnableType): Value(type) {
-    private val operands = mutableListOf<Pair<Value, Block>>()
-
-    fun addOperand(vararg operands: Pair<Value, Block>) {
-        this.operands.addAll(operands)
-    }
-
-    override fun toString(): String {
-        val sb = StringBuilder("<$type> phi ")
-        val wrap = operands.map { op -> "[${op.first} from ${op.second}]" }
-        sb.append(wrap.joinToString(separator = ", "))
-        return sb.toString()
-    }
-}
-class Call(val function: Function, vararg args: Parameter): Value(function.type) {
-    val arguments: List<Parameter> = args.asList()
-
-    init {
-        if (args.size != function.arguments.size) {
-            throw IllegalArgumentException("Argument count passed in does not match function argument count")
-        }
-    }
-    override fun toString(): String {
-        val sb = StringBuilder("<${function.type} call @$function ")
-        sb.append(arguments.joinToString(separator = ", ", prefix = "(", postfix = ")"))
-        return sb.toString()
-    }
-}
-class AccessArrayElem(type: ReturnableType): Value(type)
-class AccessPairElem(type: ReturnableType): Value(type)
-
-// Function
-class Function(type: ReturnableType, val name: String, val arguments: Collection<Parameter>, val entryBlock: Block, val blocks: Collection<Block>): Value(type)
-
-// Basic block
-// Phi instructions must precede other instructions
-class Block {
-    companion object {
-        private val labelGenerator = UniqueLabelGenerator("B")
-    }
-
-    private val label = labelGenerator.generate()
-    private val instructions = mutableListOf<Instruction>()
-    private val predecessors = mutableListOf<Block>()
-    private lateinit var successor: Block
+    private val label = function.labelGenerator.generate()
+    private val phis = mutableListOf<PhiAST>()
+    private val instructions = mutableListOf<StatementAST>()
+    private val predecessors = mutableListOf<BasicBlock>()
+    private val successors = mutableListOf<BasicBlock>()
 
     override fun toString(): String {
         return label
     }
 
-    fun addInstructions(vararg instructions: Instruction) {
+    fun addInstructions(vararg instructions: StatementAST) {
         this.instructions.addAll(instructions)
     }
 
-    fun addPredecessors(vararg predecessors: Block) {
+    fun addPredecessors(vararg predecessors: BasicBlock) {
         this.predecessors.addAll(predecessors)
     }
 
-    fun setSuccessor(successor: Block) {
-        this.successor = successor
+    fun addSuccessors(vararg successors: BasicBlock) {
+        this.successors.addAll(successors)
     }
 }
