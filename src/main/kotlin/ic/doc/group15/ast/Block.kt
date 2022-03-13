@@ -55,10 +55,21 @@ class ForInRangeBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable
 ) : BlockAST(parent, symbolTable) {
-    lateinit var condExpr: ExpressionAST
     lateinit var varDecl: VariableDeclarationAST
+    lateinit var condExpr: ExpressionAST
     lateinit var incrementStat: StatementAST
-    lateinit var varIncrementLabel : BranchLabel
+    lateinit var loopVarIncrementLabel : BranchLabel
+    lateinit var endLabel : BranchLabel
+}
+
+class ForBlockAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable
+) : BlockAST(parent, symbolTable) {
+    lateinit var varDecl: VariableDeclarationAST
+    lateinit var condExpr: ExpressionAST
+    lateinit var loopVarUpdate: StatementAST
+    lateinit var loopVarUpdateLabel : BranchLabel
     lateinit var endLabel : BranchLabel
 }
 

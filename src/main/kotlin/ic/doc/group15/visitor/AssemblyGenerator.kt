@@ -441,9 +441,49 @@ class AssemblyGenerator(
         node.endLabel = endLabel
     }
 
+    @TranslatorMethod(ForBlockAST::class)
+    private fun translateWhileBlock(node: ForBlockAST) {
+        log("Translating ForBlockAST")
+
+        translate(node.varDecl)
+
+        val oldLabel = currentLabel
+
+        // Translate block statements and add to loop label
+        val loopLabel = newBranchLabel()
+        currentLabel = loopLabel
+        blockPrologue(node)
+        node.statements.forEach { translate(it) }
+        val loopVarUpdateLabel = newBranchLabel()
+        node.loopVarUpdateLabel = loopVarUpdateLabel
+        translate(node.loopVarUpdate)
+        blockEpilogue(node)
+
+        val checkLabel = newBranchLabel()
+        currentLabel = oldLabel
+
+        // Add branch instruction
+        addLines(
+            Branch(BranchLabelOperand(checkLabel))
+        )
+
+        // Translate condition statements and add to check label
+        currentLabel = checkLabel
+        translate(node.condExpr)
+
+        // Add compare and branch instruction
+        addLines(
+            Compare(resultRegister, IntImmediateOperand(1)),
+            Branch(EQ, BranchLabelOperand(loopLabel))
+        )
+
+        val endLabel = newBranchLabel()
+        node.endLabel = endLabel
+    }
+
     @TranslatorMethod(ForInRangeBlockAST::class)
     private fun transForInRangeBlock(node: ForInRangeBlockAST) {
-        log("Translating For in range BlockAST")
+        log("Translating ForInRangeBlockAST")
 
         translate(node.varDecl)
 
@@ -455,7 +495,7 @@ class AssemblyGenerator(
         blockPrologue(node)
         node.statements.forEach { translate(it) }
         val varIncrementLabel = newBranchLabel()
-        node.varIncrementLabel = varIncrementLabel
+        node.loopVarIncrementLabel = varIncrementLabel
         translate(node.incrementStat)
         blockEpilogue(node)
 
@@ -484,7 +524,9 @@ class AssemblyGenerator(
     @TranslatorMethod(ContinueStatementAST::class)
     fun translateContinueStatement(node: ContinueStatementAST) {
         var enclosingLoop = node.parent
-            while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST || enclosingLoop.parent is ForInRangeBlockAST)) {
+            while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST ||
+                                              enclosingLoop.parent is ForBlockAST ||
+                                              enclosingLoop.parent is ForInRangeBlockAST)) {
                 enclosingLoop = enclosingLoop.parent
             }
 
@@ -494,14 +536,17 @@ class AssemblyGenerator(
 
         when (enclosingLoop) {
             is WhileBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as WhileBlockAST).checkLabel)))
-            is ForInRangeBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForInRangeBlockAST).varIncrementLabel)))
+            is ForBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForBlockAST).loopVarUpdateLabel)))
+            is ForInRangeBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForInRangeBlockAST).loopVarIncrementLabel)))
         }
     }
 
     @TranslatorMethod(BreakStatementAST::class)
     fun translateBreakStatement(node: BreakStatementAST) {
         var enclosingLoop = node.parent
-            while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST || enclosingLoop.parent is ForInRangeBlockAST)) {
+            while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST ||
+                                              enclosingLoop.parent is ForBlockAST ||
+                                              enclosingLoop.parent is ForInRangeBlockAST)) {
                 enclosingLoop = enclosingLoop.parent
             }
 
@@ -511,6 +556,7 @@ class AssemblyGenerator(
 
         when (enclosingLoop) {
             is WhileBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as WhileBlockAST).endLabel)))
+            is ForBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForBlockAST).endLabel)))
             is ForInRangeBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForInRangeBlockAST).endLabel)))
         }
     }

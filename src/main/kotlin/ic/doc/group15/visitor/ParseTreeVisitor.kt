@@ -410,6 +410,40 @@ class ParseTreeVisitor(
         return addToScope(whileBlock)
     }
 
+    override fun visitForStat(ctx: ForStatContext) : ASTNode {
+        return visitFor(ctx)
+    }
+
+    private fun visitFor(ctx: ForStatContext): ASTNode {
+        log("Visiting for statement")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
+        log ("|| Visiting for block")
+
+        val forBlock = ForBlockAST(scopeAST, symbolTable)
+
+        symbolTable = symbolTable.subScope()
+        scopeAST = forBlock
+
+        val variable = Variable(TypeParser.parse(symbolTable, ctx.type()) as ReturnableType)
+        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, visit(ctx.assign_rhs()) as AssignRhsAST, variable)
+        val condExpr = visit(ctx.expr(0)) as ExpressionAST
+        val loopVarUpdate = visit(ctx.expr(1)) as AssignToIdentAST
+
+        forBlock.varDecl = varDecl
+        forBlock.condExpr = condExpr
+        forBlock.loopVarUpdate = loopVarUpdate
+
+        visit(ctx.stat()) as StatementAST
+
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        return addToScope(forBlock)
+    }
+
     override fun visitForInRangeStat(ctx: ForInRangeStatContext) : ASTNode {
         return visitForInRange(ctx)
     }
@@ -420,19 +454,19 @@ class ParseTreeVisitor(
         val oldScope = scopeAST
         val oldSt = symbolTable
 
-        log("|| Visiting for block")
+        log("|| Visiting for in range block")
 
         val forInRangeBlock = ForInRangeBlockAST(scopeAST, symbolTable)
 
         symbolTable = symbolTable.subScope()
         scopeAST = forInRangeBlock
 
-        val loopVariable = VariableIdentifierAST(symbolTable, ctx.IDENT().text, Variable(IntType))
+        val loopVariable = VariableIdentifierAST(symbolTable, ctx.ident().text, Variable(IntType))
         val loopVarVal = IntLiteralAST(Integer.parseInt("0"))
-        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.IDENT().text, loopVarVal, Variable(IntType))
+        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, loopVarVal, Variable(IntType))
         val loopVarIncrement = AssignToIdentAST(scopeAST, loopVariable)
         loopVarIncrement.rhs = BinaryOpExprAST(symbolTable, loopVarVal, IntLiteralAST(1), BinaryOp.PLUS)
-        symbolTable.add(ctx.IDENT().text, Variable(IntType))
+        symbolTable.add(ctx.ident().text, Variable(IntType))
         val expr = BinaryOpExprAST(symbolTable, loopVariable, IntLiteralAST(Integer.parseInt(ctx.POSITIVE_OR_NEGATIVE_INTEGER().text)), BinaryOp.LT)
 
         forInRangeBlock.varDecl = varDecl

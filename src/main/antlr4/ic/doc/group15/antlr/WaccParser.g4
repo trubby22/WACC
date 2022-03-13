@@ -13,22 +13,23 @@ func: type ident OPEN_PAREN (param (COMMA param)*)? CLOSE_PAREN IS
 
 param: type ident;
 
-stat: SKIP_STAT                                                   #skipStat
-    | type ident ASSIGN assign_rhs                                #declarationStat
-    | assign_lhs ASSIGN assign_rhs                                #assignmentStat
-    | READ assign_lhs                                             #readStat
-    | FREE expr                                                   #freeStat
-    | EXIT expr                                                   #exitStat
-    | CONTINUE                                                    #continueStat
-    | BREAK                                                       #breakStat
-    | PRINT expr                                                  #printStat
-    | PRINTLN expr                                                #printlnStat
-    | IF expr THEN stat ELSE stat FI                              #ifStat
-    | WHILE expr DO stat DONE                                     #whileStat
-    | FOR IDENT INRANGE POSITIVE_OR_NEGATIVE_INTEGER DO stat DONE #forInRangeStat
-    | BEGIN stat END                                              #beginEndStat
-    | return_stat                                                 #returnStat
-    | stat END_STAT stat                                          #sequenceStat
+stat: SKIP_STAT                                                                                        #skipStat
+    | type ident ASSIGN assign_rhs                                                                     #declarationStat
+    | assign_lhs ASSIGN assign_rhs                                                                     #assignmentStat
+    | READ assign_lhs                                                                                  #readStat
+    | FREE expr                                                                                        #freeStat
+    | EXIT expr                                                                                        #exitStat
+    | CONTINUE                                                                                         #continueStat
+    | BREAK                                                                                            #breakStat
+    | PRINT expr                                                                                       #printStat
+    | PRINTLN expr                                                                                     #printlnStat
+    | IF expr THEN stat ELSE stat FI                                                                   #ifStat
+    | WHILE expr DO stat DONE                                                                          #whileStat
+    | FOR OPEN_PAREN type ident ASSIGN assign_rhs END_STAT expr END_STAT expr CLOSE_PAREN DO stat DONE #forStat
+    | FOR ident INRANGE POSITIVE_OR_NEGATIVE_INTEGER DO stat DONE                                      #forInRangeStat
+    | BEGIN stat END                                                                                   #beginEndStat
+    | return_stat                                                                                      #returnStat
+    | stat END_STAT stat                                                                               #sequenceStat
 ;
 
 return_stat: (RETURN | EXIT) expr;
