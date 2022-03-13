@@ -47,6 +47,8 @@ SKIP_STAT: 'skip';
 END_STAT: ';';
 BEGIN: 'begin';
 END: 'end';
+CONTINUE: 'continue';
+BREAK: 'break';
 
 //memory assignments
 NEWPAIR: 'newpair';

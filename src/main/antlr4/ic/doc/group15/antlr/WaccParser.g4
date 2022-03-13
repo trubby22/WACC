@@ -19,6 +19,8 @@ stat: SKIP_STAT                                                   #skipStat
     | READ assign_lhs                                             #readStat
     | FREE expr                                                   #freeStat
     | EXIT expr                                                   #exitStat
+    | CONTINUE                                                    #continueStat
+    | BREAK                                                       #breakStat
     | PRINT expr                                                  #printStat
     | PRINTLN expr                                                #printlnStat
     | IF expr THEN stat ELSE stat FI                              #ifStat
