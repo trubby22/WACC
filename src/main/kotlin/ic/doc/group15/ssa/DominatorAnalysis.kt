@@ -9,12 +9,15 @@ class DomIdState {
         return counter.getAndIncrement()
     }
 }
+
+data class DominanceAnalysisResult(val immediateDominator: Map<Block, Block>, val dominanceFrontier: Map<Block, Set<Block>>)
+
 /**
  * Dominator tree and dominance analysis. Algorithm to compute immediate dominators
  * is based on the improved iterative algorithm described in the paper
  * "A Simple, Fast Dominance Algorithm" by Keith D. Cooper, Timothy
- * J. Harvey and Ken Kennedy; algorithm to find dominance frontier is by
- * Cytron et al.
+ * J. Harvey and Ken Kennedy; algorithm to find dominance frontier is from the
+ * same paper adapted from algorithm proposed by Cytron et al.
  *
  * Note that other than the root node, the set of dominators for a node/block
  * can be calculated by:
@@ -26,7 +29,10 @@ class DominanceAnalysis {
         const val UNINITIALISED_STATE = -1
     }
 
-    fun computeImmediateDominators(root: Block): Map<Block, Block> {
+    /**
+     * Return immediate dominator and compute the set of dominance frontier for each node.
+     */
+    fun performDominanceAnalysis(root: Block): DominanceAnalysisResult {
         // Map node to unique id number
         val postorderIdMap: Map<Block, Int> = generatePostorderNumbering(root)
         val nodeCount = postorderIdMap.size
@@ -72,7 +78,27 @@ class DominanceAnalysis {
         }
 
         // Map doms array back to block
-        return doms.associateBy({ idToBlockMap[it]!! }, { idToBlockMap[doms[it]]!! })
+        val immDom = doms.associateBy({ idToBlockMap[it]!! }, { idToBlockMap[doms[it]]!! })
+
+        // Initialise map of sets to compute dominance frontier sets for each block
+        val domFrontier = postorderIdMap.entries.associateBy ({ it.key }, { mutableSetOf<Block>() })
+
+        // Compute dominance frontier algorithm
+        val allNodes = postorderIdMap.keys
+        for (node in allNodes) {
+            val block = postorderIdMap[node]!!
+            val predecessors = node.getPredecessors() ?: continue
+            for (pred in predecessors) {
+                var runner = postorderIdMap[pred]!!
+                while (runner != doms[block]) {
+                    domFrontier[idToBlockMap[runner]!!]!!.add(node)
+                    runner = doms[runner]
+                }
+            }
+        }
+
+
+        return DominanceAnalysisResult(immDom, domFrontier)
     }
 
     /**
