@@ -522,6 +522,14 @@ class EmulationCITests {
         val exitCodeMatches = (expectedExitCode == actualExitCode)
         val outputMatches = (expectedOutput == actualOutput)
 
+        println("Expected exit code: $expectedExitCode")
+        println("Expected output:")
+        println(expectedOutput)
+
+        println("Exit code: $actualExitCode")
+        println("Output:")
+        println(actualOutput)
+
         return exitCodeMatches && outputMatches
     }
 }

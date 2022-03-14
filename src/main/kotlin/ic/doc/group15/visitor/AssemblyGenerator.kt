@@ -1103,7 +1103,8 @@ class AssemblyGenerator(
             // After the last param is pushed, the value of LR is pushed, which is a word
             // So the stack position of the first parameter is WORD
             var currentStackPos = WORD
-            paramSymbolTable.getValuesByType(Param::class).reversed().forEach {
+            val params = paramSymbolTable.getValuesByType(Param::class)
+            params.forEach {
                 it.stackPosition = currentStackPos
                 currentStackPos += it.type.size()
             }

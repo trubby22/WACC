@@ -94,7 +94,7 @@ private fun printHelpMessage() {
             |Usage:
             |$tab./compile source_file [option...]
             
-            |source_file: Absolute path to the WACC source code file.
+            |source_file: Path to the WACC source code file.
             
             |Options:
         """.trimMargin()

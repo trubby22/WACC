@@ -7,7 +7,7 @@ import kotlin.reflect.KClass
 
 class SymbolTable private constructor(private val enclosingTable: SymbolTable?) {
 
-    private val map: MutableMap<String, Identifier> = HashMap()
+    private val map: MutableMap<String, Identifier> = LinkedHashMap()
 
     private var stackSize: Int = 0
 
