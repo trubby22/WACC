@@ -49,13 +49,7 @@ class BCEOptimizerSeq (
     @TranslatorMethod(ReadStatementAST::class)
     private fun translateRead(node: ReadStatementAST): ReadStatementAST {
         log("Translating ${node.javaClass}")
-        translate(node.target)
-        return node
-    }
-
-    @TranslatorMethod(SkipStatementAST::class)
-    private fun translateSkip(node: SkipStatementAST): SkipStatementAST {
-        log("Translating ${node.javaClass}")
+        translate(node.target, node.parent!!)
         return node
     }
 
@@ -67,7 +61,7 @@ class BCEOptimizerSeq (
                 addArrayUse(node.expr.varName, ArrayFree(node.parent!!))
             } else if (node.expr is ArrayElemAST) {
                 freeArrayAtIndex(node.expr.arrayVar.varName, node.expr.indexExpr
-                    .map{ evalExpr(it) }, node)
+                    .map{ evalExpr(it) }, node.parent!!)
             } else {
                 throw Error("Shouldn't get here")
             }
@@ -78,66 +72,130 @@ class BCEOptimizerSeq (
     @TranslatorMethod(ReturnStatementAST::class)
     private fun translateReturn(node: ReturnStatementAST): ReturnStatementAST {
         log("Translating ${node.javaClass}")
-        translate(node.expr)
+        translate(node.expr, node.parent!!)
         return node
     }
 
     @TranslatorMethod(ExitStatementAST::class)
     private fun translateExit(node: ExitStatementAST): ExitStatementAST {
         log("Translating ${node.javaClass}")
-        translate(node.expr)
+        translate(node.expr, node.parent!!)
         return node
     }
 
     @TranslatorMethod(PrintStatementAST::class)
     private fun translatePrint(node: PrintStatementAST): PrintStatementAST {
         log("Translating ${node.javaClass}")
-        translate(node.expr)
+        translate(node.expr, node.parent!!)
         return node
     }
 
     @TranslatorMethod(PrintlnStatementAST::class)
     private fun translatePrintln(node: PrintlnStatementAST): PrintlnStatementAST {
         log("Translating ${node.javaClass}")
-        translate(node.expr)
+        translate(node.expr, node.parent!!)
+        return node
+    }
+
+    @TranslatorMethod(UnaryOpExprAST::class)
+    private fun translateUnaryExpr(node: UnaryOpExprAST, scope: BlockAST):
+            UnaryOpExprAST {
+        log("Translating ${node.javaClass}")
+        translate(node.expr, scope)
+        return node
+    }
+
+    @TranslatorMethod(BinaryOpExprAST::class)
+    private fun translateBinaryExpr(node: BinaryOpExprAST, scope: BlockAST):
+            BinaryOpExprAST {
+        log("Translating ${node.javaClass}")
+        translate(node.expr1, scope)
+        translate(node.expr2, scope)
         return node
     }
 
     @TranslatorMethod(ArrayElemAST::class)
-    private fun translateArrayElem(node: ArrayElemAST): ArrayElemAST {
+    private fun translateArrayElem(node: ArrayElemAST, scope: BlockAST):
+            ArrayElemAST {
         log("Translating ${node.javaClass}")
         val name = node.arrayVar.varName
         val indices = node.indexExpr.map { evalExpr(it) }
-        tryEliminatingBoundsCheck(name, indices, node)
-        accessArrayAtIndex(name, indices, node)
+        listEliminateBC(name, indices, node)
+        accessArrayAtIndex(name, indices, scope)
         return node
     }
 
     @TranslatorMethod(BeginEndBlockAST::class)
     private fun translateBeginEnd(node: BeginEndBlockAST): BeginEndBlockAST {
         log("Translating ${node.javaClass}")
+        node.statements.forEach { translate(it) }
+        removeScopeArrayUses(node)
         return node
     }
 
     @TranslatorMethod(IfBlockAST::class)
     private fun translateIfBlock(node: IfBlockAST): IfBlockAST {
         log("Translating ${node.javaClass}")
+        translate(node.condExpr, node)
+        node.statements.forEach { translate(it) }
+        removeScopeArrayUses(node)
+        removeScopeArrayAccesses(node)
         return node
     }
 
     @TranslatorMethod(ElseBlockAST::class)
     private fun translateElseBlock(node: ElseBlockAST): ElseBlockAST {
         log("Translating ${node.javaClass}")
+        node.statements.forEach { translate(it) }
+        removeScopeArrayUses(node)
+        removeScopeArrayAccesses(node)
         return node
     }
 
     @TranslatorMethod(WhileBlockAST::class)
     private fun translateWhile(node: WhileBlockAST): WhileBlockAST {
         log("Translating ${node.javaClass}")
+        translate(node.condExpr, node)
+        node.statements.forEach { translate(it) }
+        removeScopeArrayUses(node)
+        removeScopeArrayAccesses(node)
         return node
     }
 
+    @TranslatorMethod(CallAST::class)
+    private fun translateCall(node: CallAST, scope: BlockAST): CallAST {
+        log("Translating ${node.javaClass}")
+        node.actuals.forEach { translate(it, scope) }
+        val funcDec = functionDeclarations[node.funcName]!!
+        funcDec.statements.forEach { translate(it) }
+        removeScopeArrayUses(funcDec)
+        return node
+    }
 
+    @TranslatorMethod(AssignToIdentAST::class)
+    private fun translateAssignToIdent(node: AssignToIdentAST): AssignToIdentAST {
+        log("Translating ${node.javaClass}")
+        translate(node.rhs, node.parent!!)
+        translate(node.lhs)
+        return node
+    }
+
+    @TranslatorMethod(AssignToArrayElemAST::class)
+    private fun translateAssignToArrayElem(node: AssignToArrayElemAST):
+            AssignToArrayElemAST {
+        log("Translating ${node.javaClass}")
+        translate(node.rhs, node.parent!!)
+        translate(node.lhs)
+        return node
+    }
+
+    @TranslatorMethod(AssignToPairElemAST::class)
+    private fun translateAssignToPairElem(node: AssignToPairElemAST):
+            AssignToPairElemAST {
+        log("Translating ${node.javaClass}")
+        translate(node.rhs, node.parent!!)
+        return node
+    }
 
 //    endregion
 
@@ -155,7 +213,7 @@ class BCEOptimizerSeq (
     private fun freeArrayAtIndex(
         name: String,
         indices: List<Int?>,
-        scope: ASTNode
+        scope: BlockAST
     ) {
         val first = indices.first()
         if (indices.isEmpty() || first == null) {
@@ -172,7 +230,7 @@ class BCEOptimizerSeq (
     private fun accessArrayAtIndex(
         name: String,
         indices: List<Int?>,
-        scope: ASTNode
+        scope: BlockAST
     ) {
         val first = indices.first()
         if (indices.isNotEmpty() && first != null) {
@@ -185,12 +243,57 @@ class BCEOptimizerSeq (
         }
     }
 
-    private fun tryEliminatingBoundsCheck(
+    private fun listEliminateBC(
         name: String,
         indices: List<Int?>,
         node: ArrayElemAST
     ) {
-        TODO("Not yet implemented")
+        val possibleBCEs = mutableListOf<Boolean>()
+        var currentName = name
+        for (index in indices.takeWhile { it != null }) {
+            possibleBCEs.add(eliminateBC(currentName, index!!))
+            currentName = getLatestArrayDeclaration(currentName)
+                .references[index]!!
+        }
+        indices.dropWhile { it != null }.forEach { possibleBCEs.add(false) }
+        node.requiresBoundsCheck = possibleBCEs
+    }
+
+    private fun eliminateBC(name: String, index: Int): Boolean {
+        if (arrayUses[name]!!.filterIsInstance<ArrayFree>().isNotEmpty()) {
+            return false
+        }
+        val max = arrayUses[name]!!.takeWhile { it is ArrayAccess }.map { (it as
+                ArrayAccess).index }.maxOrNull() ?: return false
+        return index <= max
+    }
+
+    private fun removeScopeArrayUses(scope: BlockAST) {
+        for (key in arrayUses.keys) {
+            arrayUses[key] = arrayUses[key]!!
+                .takeLastWhile { !(it is ArrayDeclaration && it.scope == scope) }
+                    as LinkedList<ArrayUse>
+        }
+    }
+
+    private fun removeScopeArrayAccesses(scope: BlockAST) {
+        for (key in arrayUses.keys) {
+            arrayUses[key] = arrayUses[key]!!
+                .filter { !(it is ArrayAccess && isSubscopeOf(it.scope, 
+                    scope)) }
+                    as LinkedList<ArrayUse>
+        }
+    }
+
+    private fun isSubscopeOf(subscope: BlockAST, superscope: BlockAST): 
+            Boolean {
+        if (subscope == superscope) {
+            return true
+        }
+        if (subscope.parent == null) {
+            return false
+        }
+        return isSubscopeOf(subscope.parent, superscope)
     }
 
     private fun getLatestArrayDeclaration(name: String):

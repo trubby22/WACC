@@ -3,6 +3,7 @@ package ic.doc.group15.visitor
 import ic.doc.group15.assembly.TranslatorMethod
 import ic.doc.group15.ast.AST
 import ic.doc.group15.ast.ASTNode
+import ic.doc.group15.ast.BlockAST
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
@@ -30,6 +31,10 @@ abstract class ASTVisitor(
 
     protected fun translate(node: ASTNode) {
         translators[node::class]?.call(this, node)
+    }
+
+    protected fun translate(node: ASTNode, scope: BlockAST) {
+        translators[node::class]?.call(this, node, scope)
     }
 
     protected fun log(str: String) {
