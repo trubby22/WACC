@@ -88,11 +88,14 @@ class DominanceAnalysis {
         for (node in allNodes) {
             val block = postorderIdMap[node]!!
             val predecessors = node.getPredecessors() ?: continue
-            for (pred in predecessors) {
-                var runner = postorderIdMap[pred]!!
-                while (runner != doms[block]) {
-                    domFrontier[idToBlockMap[runner]!!]!!.add(node)
-                    runner = doms[runner]
+
+            if (predecessors.size >= 2) {
+                for (pred in predecessors) {
+                    var runner = postorderIdMap[pred]!!
+                    while (runner != doms[block]) {
+                        domFrontier[idToBlockMap[runner]!!]!!.add(node)
+                        runner = doms[runner]
+                    }
                 }
             }
         }
