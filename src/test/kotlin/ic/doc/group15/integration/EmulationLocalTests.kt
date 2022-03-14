@@ -1,7 +1,6 @@
 package ic.doc.group15.integration
 
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
@@ -94,10 +93,10 @@ class EmulationLocalTests {
     private fun checkAssemblyFolder(path: String) {
         val res = Files.walk(Paths.get(path))
             .filter(Files::isRegularFile)
-            .filter { path -> path.toString().endsWith(".wacc") }
-            .filter { path -> !path.toString().endsWith("IOLoop.wacc") }
-            .filter { path -> !path.toString().endsWith("ticTacToe.wacc") }
-            .filter { path -> !path.toString().endsWith("hashTable.wacc") }
+            .filter { it.toString().endsWith(".wacc") }
+            .filter { !it.toString().endsWith("IOLoop.wacc") }
+            .filter { !it.toString().endsWith("ticTacToe.wacc") }
+            .filter { !it.toString().endsWith("hashTable.wacc") }
             .map {
                 checkAssembly(
                     it.toString()
@@ -128,27 +127,29 @@ class EmulationLocalTests {
             e.printStackTrace()
         }
 
-        val compilationOutput = IOUtils.toString(
-            compilation.inputStream,
-            StandardCharsets.UTF_8.name()
-        )
+//        val compilationOutput = IOUtils.toString(
+//            compilation.inputStream,
+//            StandardCharsets.UTF_8.name()
+//        )
 
 //        println("compile completed")
 
 //        println("Compilation output")
 //        println(compilationOutput)
 
-        assertTrue(setOf(0, 100, 200)
-            .contains(compilationExitStatus), "./compile $path failed\n")
+        assertTrue(
+            setOf(0, 100, 200).contains(compilationExitStatus),
+            "./compile $path failed\n"
+        )
 
         val filename = path.split("/").last()
         val executable = filename.substring(0, filename.length - 4)
         val asmFilename = executable + "s"
 
         val emulateOnline = "./wacc_examples/refEmulate $asmFilename"
-        val emulateLocal = "arm-linux-gnueabi-gcc -o $executable " +
-            "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $asmFilename; " +
-            "qemu-arm -L /usr/arm-linux-gnueabi $executable"
+//        val emulateLocal = "arm-linux-gnueabi-gcc -o $executable " +
+//            "-mcpu=arm1176jzf-s -mtune=arm1176jzf-s $asmFilename; " +
+//            "qemu-arm -L /usr/arm-linux-gnueabi $executable"
 
         val emulate =
             ProcessBuilder(

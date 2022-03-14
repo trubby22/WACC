@@ -21,6 +21,7 @@ import ic.doc.group15.type.*
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
+import java.io.BufferedWriter
 import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.reflect.KCallable
@@ -28,6 +29,16 @@ import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
 
 private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
+
+private fun BufferedWriter.writeAsm(vararg labels: Collection<Label<*>>) {
+    labels.forEach {
+        it.forEach {
+                label ->
+            write(label.toString())
+            write("\n")
+        }
+    }
+}
 
 class AssemblyGenerator(
     private val ast: AST,
@@ -79,24 +90,19 @@ class AssemblyGenerator(
         }
     }
 
-    fun generate(): String {
+    fun generate(writer: BufferedWriter) {
         log("Translating ast")
         translate(ast)
-        var asm = ""
+
+        log("Writing .data section")
         if (data.isNotEmpty() || utilData.isNotEmpty()) {
-            asm += ".data\n\n"
+            writer.write(".data\n\n")
+            writer.writeAsm(data.values, utilData.values)
         }
 
-        asm += joinAsm(data.values) +
-            joinAsm(utilData.values) +
-            "\n.text\n\n.global main\n" +
-            joinAsm(text.values) +
-            joinAsm(utilText.values)
-        return asm
-    }
-
-    private fun joinAsm(asm: Collection<Assembly>): String {
-        return asm.joinToString(separator = "\n", postfix = if (asm.isNotEmpty()) "\n" else "")
+        log("Writing .text section")
+        writer.write("\n.text\n\n.global main\n")
+        writer.writeAsm(text.values, utilText.values)
     }
 
     private fun translate(node: ASTNode) {
@@ -136,8 +142,6 @@ class AssemblyGenerator(
         resultRegister = R4
 
         node.formals.forEach { it.ident.stackPosition }
-
-        // TODO: issue - interdependence of statements to be addressed
 
         // Sets up the environment for a function
         functionPrologue(node, node.paramSymbolTable)
@@ -1277,7 +1281,6 @@ class AssemblyGenerator(
             P_CHECK_NULL_POINTER
         )
         translate(pairElemAST.expr)
-        val pairType = pairElemAST.expr.type as PairType
         val offset = if (pairElemAST is FstPairElemAST) {
             ZeroOffset(resultRegister)
         } else {

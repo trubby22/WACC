@@ -1,6 +1,5 @@
 package ic.doc.group15.integration
 
-import ic.doc.group15.ENABLE_LOGGING
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
@@ -15,6 +14,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+
+private const val ENABLE_LOGGING = false
 
 class SemanticIntegrationTest {
     private val validFolderPath = "wacc_examples/valid"
@@ -549,7 +550,9 @@ class SemanticIntegrationTest {
         }
 
         val asm = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
-        println(asm.generate())
+        val writer = System.out.bufferedWriter()
+        asm.generate(writer)
+        writer.flush()
 
         return true
     }
