@@ -535,7 +535,7 @@ class SemanticIntegrationTest {
 
         val program = parser.program()
 
-        val st = SymbolTable.topLevel()
+        val st = SymbolTable()
         val ast = AST(st)
         val errors = SemanticErrorList()
         val visitor = ParseTreeVisitor(ast, st, errors, enableLogging = ENABLE_LOGGING)

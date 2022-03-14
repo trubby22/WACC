@@ -26,14 +26,9 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
             Pair("string", StringType),
             Pair("pair", PairType())
         )
-
-        // Create a top-level symbol table for AST initialisation
-        fun topLevel(): SymbolTable {
-            val st = SymbolTable(null)
-            st.map.putAll(basicTypes)
-            return st
-        }
     }
+
+    constructor() : this(null)
 
     fun isTopLevel(): Boolean = enclosingTable == null
 
@@ -44,9 +39,13 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
         map[name] = ident
     }
 
-    fun lookup(name: String): Identifier? = map[name]
+    fun lookup(name: String): Identifier? = map[name] ?: basicTypes[name]
 
     fun lookupAll(name: String): Identifier? {
+        val basicType = basicTypes[name]
+        if (basicType != null) {
+            return basicType
+        }
         var st: SymbolTable? = this
         while (st != null) {
             val ident = st.lookup(name)

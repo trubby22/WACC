@@ -28,7 +28,7 @@ fun main(args: Array<String>) {
     syntacticErrorListener.terminateIfSyntacticErrorOccurred()
     parser.removeErrorListener(syntacticErrorListener)
 
-    val st = SymbolTable.topLevel()
+    val st = SymbolTable()
     val ast = AST(st)
     val semanticErrors = SemanticErrorList()
     val visitor = ParseTreeVisitor(ast, st, semanticErrors, enableLogging = ENABLE_LOGGING)
