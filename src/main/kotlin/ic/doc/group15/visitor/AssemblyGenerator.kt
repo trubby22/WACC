@@ -358,11 +358,13 @@ class AssemblyGenerator(
     private fun translateIfBlock(stat: IfBlockAST) {
         log("Translating IfBlockAST")
 
-        // Add instructions to currentLabel
+        val oldLabel = currentLabel
+
+        // Add condition expression to currentLabel
         translate(stat.condExpr)
 
+        // First, deal with the else label
         val elseLabel = newBranchLabel()
-        val fiLabel = newBranchLabel()
 
         // compare to set condition flags and branch (can be optimised)
         addLines(
@@ -375,16 +377,21 @@ class AssemblyGenerator(
         stat.statements.forEach(::translate)
         blockEpilogue(stat)
 
-        // add branch to fi label
-        addLines(
-            Branch(BranchLabelOperand(fiLabel))
-        )
-
         // add sequence of instructions in ELSE block under else label
         currentLabel = elseLabel
         blockPrologue(stat.elseBlock)
         stat.elseBlock.statements.forEach(::translate)
         blockEpilogue(stat.elseBlock)
+
+        currentLabel = oldLabel
+
+        // Finally, deal with what comes after the if statement
+        val fiLabel = newBranchLabel()
+
+        // add branch to fi label to the original label
+        addLines(
+            Branch(BranchLabelOperand(fiLabel))
+        )
         currentLabel = fiLabel
     }
 
@@ -1092,7 +1099,7 @@ class AssemblyGenerator(
             // After the last param is pushed, the value of LR is pushed, which is a word
             // So the stack position of the first parameter is WORD
             var currentStackPos = WORD
-            paramSymbolTable.getValuesByType(Param::class).forEach {
+            paramSymbolTable.getValuesByType(Param::class).reversed().forEach {
                 it.stackPosition = currentStackPos
                 currentStackPos += it.type.size()
             }
