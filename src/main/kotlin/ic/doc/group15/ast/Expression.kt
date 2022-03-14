@@ -24,7 +24,8 @@ class ArrayElemAST(
     symbolTable: SymbolTable,
     val arrayVar: VariableIdentifierAST,
     val indexExpr: List<ExpressionAST>,
-    val elemType: ReturnableType
+    val elemType: ReturnableType,
+    val requiresBoundsCheck: List<Boolean>? = null
 ) : ExpressionAST(symbolTable, elemType)
 
 class UnaryOpExprAST(

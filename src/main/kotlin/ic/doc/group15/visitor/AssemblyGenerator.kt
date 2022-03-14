@@ -31,12 +31,13 @@ import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
 
-private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
+//private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
 
 class AssemblyGenerator(
     private val ast: AST,
     private val enableLogging: Boolean = true
-) {
+) : ASTVisitor(ast, enableLogging) {
+
     private lateinit var currentLabel: BranchLabel
     private lateinit var resultRegister: Register
 
@@ -71,16 +72,16 @@ class AssemblyGenerator(
 
         private const val MAX_STACK_CHANGE = 1024
 
-        private val translators: TranslatorMap by lazy {
-            AssemblyGenerator::class.members.filter {
-                it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
-            }.map {
-                assert(it.annotations.size == 1)
-                it.isAccessible = true
-                val annotation = it.annotations[0] as TranslatorMethod
-                annotation.nodeType to it
-            }.toMap()
-        }
+//        private val translators: TranslatorMap by lazy {
+//            this::class.java.declaringClass::class.members.filter {
+//                it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
+//            }.map {
+//                assert(it.annotations.size == 1)
+//                it.isAccessible = true
+//                val annotation = it.annotations[0] as TranslatorMethod
+//                annotation.nodeType to it
+//            }.toMap()
+//        }
     }
 
     fun generate(): String {
@@ -103,9 +104,9 @@ class AssemblyGenerator(
         return asm.joinToString(separator = "\n", postfix = if (asm.isNotEmpty()) "\n" else "")
     }
 
-    private fun translate(node: ASTNode) {
-        translators[node::class]?.call(this, node)
-    }
+//    private fun translate(node: ASTNode) {
+//        translators[node::class]?.call(this, node)
+//    }
 
     /**
      * Per WACC language specification, a program matches the grammar "begin func* stat end".
@@ -1239,12 +1240,6 @@ class AssemblyGenerator(
                 }
             )
         )
-    }
-
-    private fun log(str: String) {
-        if (enableLogging) {
-            println(str)
-        }
     }
 
     //endregion
