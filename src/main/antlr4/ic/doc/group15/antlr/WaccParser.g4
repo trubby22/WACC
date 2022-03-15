@@ -25,7 +25,7 @@ stat: SKIP_STAT                                                                 
     | PRINTLN expr                                                                                     #printlnStat
     | IF expr THEN stat ELSE stat FI                                                                   #ifStat
     | WHILE expr DO stat DONE                                                                          #whileStat
-    | FOR OPEN_PAREN type ident ASSIGN assign_rhs END_STAT expr END_STAT expr CLOSE_PAREN DO stat DONE #forStat
+    | FOR OPEN_PAREN type ident ASSIGN assign_rhs END_STAT expr END_STAT stat CLOSE_PAREN DO stat DONE #forStat
     | FOR ident INRANGE POSITIVE_OR_NEGATIVE_INTEGER DO stat DONE                                      #forInRangeStat
     | BEGIN stat END                                                                                   #beginEndStat
     | return_stat                                                                                      #returnStat

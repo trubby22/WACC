@@ -429,14 +429,14 @@ class ParseTreeVisitor(
 
         val variable = Variable(TypeParser.parse(symbolTable, ctx.type()) as ReturnableType)
         val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, visit(ctx.assign_rhs()) as AssignRhsAST, variable)
-        val condExpr = visit(ctx.expr(0)) as ExpressionAST
-        val loopVarUpdate = visit(ctx.expr(1)) as AssignToIdentAST
+        val condExpr = visit(ctx.expr()) as ExpressionAST
+        val loopVarUpdate = visit(ctx.stat(0)) as AssignToIdentAST
 
         forBlock.varDecl = varDecl
         forBlock.condExpr = condExpr
         forBlock.loopVarUpdate = loopVarUpdate
 
-        visit(ctx.stat()) as StatementAST
+        visit(ctx.stat(1)) as StatementAST
 
         symbolTable = oldSt
         scopeAST = oldScope
