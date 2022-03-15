@@ -19,5 +19,6 @@ data class BranchIf(val cond: Operand, val label: Label): ThreeAddressCode
 data class Branch(val label: Label): ThreeAddressCode
 
 // Memory instructions (used for heap allocations/value storing)
+data class Allocate(val reg: Register, val amount: Operand): ThreeAddressCode
 data class Load(val reg: Register, val x: Operand): ThreeAddressCode
 data class Store(val reg: Register, val x: Operand): ThreeAddressCode
