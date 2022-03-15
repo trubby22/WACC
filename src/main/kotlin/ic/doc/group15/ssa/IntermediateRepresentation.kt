@@ -2,6 +2,8 @@ package ic.doc.group15.ssa
 
 import ic.doc.group15.assembly.UniqueLabelGenerator
 import ic.doc.group15.ast.*
+import ic.doc.group15.ssa.tac.Phi
+import ic.doc.group15.ssa.tac.ThreeAddressCode
 
 /**
  * A function contains a list of basic blocks forming the control flow graph (CFG) for
