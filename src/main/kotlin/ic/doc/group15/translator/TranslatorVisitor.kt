@@ -26,7 +26,7 @@ abstract class Visitor<T : Any> protected constructor() {
     /**
      * Visits an item by calling the method responsible for visiting its type.
      */
-    protected fun translate(item: T) {
+    protected fun translate(vararg item: Any) {
         getMethodMap(klass)[item::class]?.call(this, item)
     }
 

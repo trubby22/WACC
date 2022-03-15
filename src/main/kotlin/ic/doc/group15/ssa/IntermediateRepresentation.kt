@@ -122,8 +122,8 @@ class ExitBasicBlock: SuccessorBlock {
 class BasicBlock(val irFunction: IRFunction): BidirectionalBlock {
 
     private val label = irFunction.makeLabel()
-    private val phis = mutableListOf<PhiAST>()
-    private val instructions = mutableListOf<ASTNode>()
+    private val phis = mutableListOf<Phi>()
+    private val instructions = mutableListOf<ThreeAddressCode>()
     // control flow analysis
     private val predecessors = LinkedHashSet<PredecessorBlock>()
     private val successors = LinkedHashSet<SuccessorBlock>()
@@ -136,13 +136,15 @@ class BasicBlock(val irFunction: IRFunction): BidirectionalBlock {
         return label
     }
 
-    fun addPhis(vararg instructions: PhiAST) {
+    fun addPhis(vararg instructions: Phi) {
         this.phis.addAll(instructions)
     }
 
-    fun addInstructions(vararg instructions: ASTNode) {
+    fun addInstructions(vararg instructions: ThreeAddressCode) {
         this.instructions.addAll(instructions)
     }
+
+    fun getInstructionList(): List<ThreeAddressCode> = instructions
 
     override fun addPredecessors(vararg predecessors: PredecessorBlock) {
         this.predecessors.addAll(predecessors)

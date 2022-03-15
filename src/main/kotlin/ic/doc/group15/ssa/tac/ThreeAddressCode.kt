@@ -56,3 +56,6 @@ data class Store(
     val reg: Register,
     val x: Operand
 ) : ThreeAddressCode
+
+// Pseudoinstruction for SSA form
+data class Phi(val reg: Register, val args: Collection<Operand>): ThreeAddressCode

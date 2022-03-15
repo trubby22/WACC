@@ -67,12 +67,3 @@ class CallAST(
     val funcIdent: FunctionType,
     val actuals: MutableList<ExpressionAST>
 ) : AssignRhsAST(symbolTable, funcIdent.returnType)
-
-/**
- * Generated in IR; used for SSA construction.
- */
-class PhiAST(
-    type: ReturnableType,
-    symbolTable: SymbolTable,
-    val arguments: MutableList<Pair<ExpressionAST, Block>>
-) : AssignRhsAST(symbolTable, type)

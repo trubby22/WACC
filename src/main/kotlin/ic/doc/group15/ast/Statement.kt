@@ -61,15 +61,3 @@ class PrintlnStatementAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST
 ) : StatementAST(parent, symbolTable)
-
-
-/**
- * Used for CFG construction to determine control flow.
- */
-class BranchIfAST(
-    parent: BlockAST?,
-    symbolTable: SymbolTable,
-    val condExpr: ExpressionAST,
-    val trueBlock: BidirectionalBlock,
-    val falseBlock: BidirectionalBlock
-) : StatementAST(parent, symbolTable)
