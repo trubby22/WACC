@@ -282,8 +282,7 @@ class CfgGenerator(
 
         // Print value in register
         val reg = cfgState.resultRegister
-        val f = Print(reg.type())
-        val inst = Call(f, reg)
+        val inst = Call(Functions.PRINT, reg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -293,8 +292,7 @@ class CfgGenerator(
 
         // Print value in register
         val resultReg = cfgState.resultRegister
-        val f = Println(resultReg.type())
-        val inst = Call(f, resultReg)
+        val inst = Call(Functions.PRINTLN, resultReg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -309,10 +307,7 @@ class CfgGenerator(
         }
 
         // Store read value in new register
-        val type = node.target.type
-        val f = Read(type)
-        val reg = cfgState.newVar(type)
-        val inst = AssignCall(reg, f, param)
+        val inst = Call(Functions.READ, param)
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -361,7 +356,10 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateNullPairLiteralAST(node: NullPairLiteralAST, cfgState: CfgState) {
-        TODO()
+        val reg = cfgState.newVar(IntType)
+        val inst = AssignValue(reg, IntImm(0))
+
+        cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
@@ -376,6 +374,11 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateAssignToArrayElem(node: AssignToArrayElemAST, cfgState: CfgState) {
+        // Translate RHS expression
+        translate(node.rhs, cfgState)
+        val resultReg = cfgState.resultRegister
+
+        // Calculate offset
         TODO()
     }
 
@@ -396,12 +399,38 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateUnOp(unOpExpr: UnaryOpExprAST, cfgState: CfgState) {
-        TODO()
+        // Translate expression
+        translate(unOpExpr.expr)
+        val resultReg = cfgState.resultRegister
+        // Create a new variable to store the result of binary operation
+        val reg = cfgState.newVar(unOpExpr.expr.type)
+
+        val inst = when (unOpExpr.operator) {
+            UnaryOp.BANG -> AssignCall(reg, Functions.BANG, resultReg)
+            UnaryOp.MINUS -> AssignBinOp(reg, BinaryOp.MINUS, IntImm(0), resultReg)
+            UnaryOp.LEN -> AssignCall(reg, Functions.LEN, resultReg)
+            UnaryOp.ORD -> AssignCall(reg, Functions.ORD, resultReg)
+            UnaryOp.CHR -> AssignCall(reg, Functions.CHR, resultReg)
+        }
+
+        cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
     private fun translateBinOp(expr: BinaryOpExprAST, cfgState: CfgState) {
-        TODO()
+        // Translate LHS expression
+        translate(expr.expr1, cfgState)
+        val x = cfgState.resultRegister
+        // Translate RHS expression
+        translate(expr.expr2, cfgState)
+        val y = cfgState.resultRegister
+
+        val op = expr.operator
+        // Create a new variable to store the result of binary operation
+        val reg = cfgState.newVar(op.returnType)
+
+        val inst = AssignBinOp(reg, op, x, y)
+        cfgState.currentBlock.addInstructions(inst)
     }
 
     private fun initialiseState(node: FunctionDeclarationAST, cfgState: CfgState) {

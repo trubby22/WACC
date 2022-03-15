@@ -45,19 +45,11 @@ data class CustomFunc(val name: String, val type: Type) : Func {
     override fun type(): Type = type
 }
 
-abstract class IOFuncs(open val returnType: Type) : Func
-
-data class Read(override val returnType: Type) : IOFuncs(returnType) {
-    override fun type(): Type = returnType
-}
-data class Print(override val returnType: Type) : IOFuncs(returnType) {
-    override fun type(): Type = returnType
-}
-data class Println(override val returnType: Type) : IOFuncs(returnType) {
-    override fun type(): Type = returnType
-}
-
 enum class Functions(private val type: BasicType = VoidType) : Func {
+    BANG(BoolType),
+    LEN(IntType),
+    ORD(IntType),
+    CHR(CharType),
     FST(IntType),
     SND(IntType),
     NEWPAIR(IntType),

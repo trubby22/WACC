@@ -22,6 +22,7 @@ class CfgState {
 
     /**
      * Mapping of variable to register storing its value
+     * TODO("Populate the map properly")
      */
     val varDefinedAt: MutableMap<Variable, Var> = mutableMapOf()
 
@@ -30,7 +31,7 @@ class CfgState {
         resultRegister = if (varList.isEmpty()) {
             v
         } else {
-            varList[-1]
+            varList[varList.size - 1]
         }
         varList.add(v)
         return v
