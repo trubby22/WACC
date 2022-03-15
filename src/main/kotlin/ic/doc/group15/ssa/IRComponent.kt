@@ -2,23 +2,6 @@ package ic.doc.group15.ssa
 
 import ic.doc.group15.assembly.UniqueLabelGenerator
 import ic.doc.group15.ast.*
-import java.util.concurrent.atomic.AtomicInteger
-
-open class Register {
-    companion object {
-        private val counter = AtomicInteger()
-
-        fun reset() {
-            counter.set(0)
-        }
-    }
-
-    val id = counter.getAndIncrement()
-
-    override fun toString(): String {
-        return "%$id"
-    }
-}
 
 /**
  * A function contains a list of basic blocks forming the control flow graph (CFG) for

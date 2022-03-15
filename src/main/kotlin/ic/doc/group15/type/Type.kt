@@ -85,6 +85,15 @@ enum class BasicType(private val size: Int) : ReturnableType {
         override fun toString(): String {
             return "string"
         }
+    },
+    VoidType(0) {
+        override fun compatible(type: Type): Boolean {
+            return type == VoidType
+        }
+
+        override fun toString(): String {
+            return "void"
+        }
     }
     ;
 
