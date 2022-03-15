@@ -12,12 +12,10 @@ class CfgState {
     lateinit var irFunction: IRFunction
     lateinit var currentBlock: BasicBlock
 
-    private val num = AtomicInteger(0)
-
     /**
      * Map register id to register (used to obtain result register)
      */
-    private val regList: MutableMap<Int, Var> = HashMap()
+    private val varList: MutableList<Var> = ArrayList()
 
     lateinit var resultRegister: Var
         private set
@@ -28,14 +26,13 @@ class CfgState {
     val varDefinedAt: MutableMap<Variable, Var> = mutableMapOf()
 
     fun newVar(type: Type): Var {
-        val id = num.getAndIncrement()
-        val v = Var(num.getAndIncrement(), type)
-        regList[id] = v
-        resultRegister = if (id == 0) {
+        val v = Var(varList.size, type)
+        resultRegister = if (varList.isEmpty()) {
             v
         } else {
-            regList[id - 1]!!
+            varList[-1]
         }
+        varList.add(v)
         return v
     }
 }

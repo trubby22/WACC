@@ -6,9 +6,7 @@ import ic.doc.group15.ssa.IRFunction
 import ic.doc.group15.ssa.tac.*
 import ic.doc.group15.translator.AssemblyGenerator
 import ic.doc.group15.translator.TranslatorMethod
-import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.BasicType.*
-import ic.doc.group15.type.Variable
 
 /**
  * Convert the AST representation of the program to three-address code and build a control flow
@@ -24,9 +22,11 @@ class CfgGenerator(
     @TranslatorMethod
     private fun buildCFGFromProgram(program: AST): List<IRFunction> {
         log("Building CFG for program")
-        val (functions, statements) = program.statements.partition { node -> node is FunctionDeclarationAST }
+        val (functions, statements) = program.statements.partition { it is FunctionDeclarationAST }
+
         // Build SSA form for each function
         val ssaIRFunctions = mutableListOf<IRFunction>()
+
         // Note that each function state is independent of each other
         // TODO introduce concurrency
         for (funcNode in functions) {
@@ -404,13 +404,11 @@ class CfgGenerator(
         TODO()
     }
 
-    private fun generateVarName(cfgState: CfgState, v: Variable): String {
-        TODO()
-    }
-
     private fun initialiseState(node: FunctionDeclarationAST, cfgState: CfgState) {
         cfgState.irFunction = IRFunction(node)
         cfgState.currentBlock = BasicBlock(cfgState.irFunction)
-        cfgState.smallestUnusedId += node.formals.size
+        for (param in node.formals) {
+            cfgState.newVar(param.type)
+        }
     }
 }
