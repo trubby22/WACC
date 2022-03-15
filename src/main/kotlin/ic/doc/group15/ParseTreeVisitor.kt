@@ -397,7 +397,7 @@ class ParseTreeVisitor(
         return addToScope(whileBlock)
     }
 
-    override fun visitForStat(ctx: ForStatContext) : ASTNode {
+    override fun visitForStat(ctx: ForStatContext): ASTNode {
         return visitFor(ctx)
     }
 

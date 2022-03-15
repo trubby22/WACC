@@ -5,7 +5,7 @@ import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
 
-private typealias VisitorClass = KClass<out Visitor<*>>
+private typealias VisitorClass = KClass<out TranslatorVisitor<*>>
 private typealias VisitorMethodMap = Map<KClass<*>, KCallable<*>>
 
 interface Translatable
@@ -15,7 +15,7 @@ interface Translatable
  *
  * Uses the annotation [TranslatorMethod] to determine which method is used to visit a particular type.
  */
-abstract class Visitor<T : Any> protected constructor() {
+abstract class TranslatorVisitor<T : Any> protected constructor() {
 
     private val klass: VisitorClass
 
@@ -26,8 +26,10 @@ abstract class Visitor<T : Any> protected constructor() {
     /**
      * Visits an item by calling the method responsible for visiting its type.
      */
-    protected fun translate(vararg item: Any) {
-        getMethodMap(klass)[item::class]?.call(this, item)
+    protected fun translate(item: T, vararg params: Any?) {
+        val itemClass = item::class
+        val translator = getMethodMap(klass)[itemClass]
+        translator?.call(this, item, *params)
     }
 
     private companion object {
@@ -40,14 +42,15 @@ abstract class Visitor<T : Any> protected constructor() {
             return visitorMap[klass]!!
         }
 
-        fun generateMethodMap(klass: VisitorClass): VisitorMethodMap {
-            return klass.members.filter {
+        fun generateMethodMap(visitorClass: VisitorClass): VisitorMethodMap {
+            return visitorClass.members.filter {
                 it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
             }.associateBy {
                 assert(it.annotations.size == 1)
                 it.isAccessible = true
-                val annotation = it.annotations[0] as TranslatorMethod
-                annotation.itemType
+                val klass = it.parameters[1].type.classifier
+                assert(klass is KClass<*>)
+                klass as KClass<*>
             }
         }
     }

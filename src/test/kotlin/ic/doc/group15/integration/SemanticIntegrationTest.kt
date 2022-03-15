@@ -1,12 +1,12 @@
 package ic.doc.group15.integration
 
+import ic.doc.group15.ParseTreeVisitor
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
-import ic.doc.group15.assembly.AssemblyGenerator
-import ic.doc.group15.ParseTreeVisitor
+import ic.doc.group15.translator.AstAssemblyGenerator
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -549,7 +549,7 @@ class SemanticIntegrationTest {
             return false
         }
 
-        val asm = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
+        val asm = AstAssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
         val writer = System.out.bufferedWriter()
         asm.generate(writer)
         writer.flush()
