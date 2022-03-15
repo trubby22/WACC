@@ -1,6 +1,7 @@
-package ic.doc.group15.assembly
+package ic.doc.group15.translator
 
 import ic.doc.group15.SymbolTable
+import ic.doc.group15.assembly.* // ktlint-disable no-unused-imports
 import ic.doc.group15.assembly.LibraryFunction.Companion.AEABI_IDIV
 import ic.doc.group15.assembly.LibraryFunction.Companion.AEABI_IDIVMOD
 import ic.doc.group15.assembly.LibraryFunction.Companion.EXIT
