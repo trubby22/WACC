@@ -35,9 +35,9 @@ class DominanceAnalysis {
     /**
      * Return immediate dominator and compute the set of dominance frontier for each node.
      */
-    fun performDominanceAnalysis(root: Block): DominanceAnalysisResult {
+    fun performDominanceAnalysis(root: Predecessor): DominanceAnalysisResult {
         // Map node to unique id number
-        val postorderIdMap: Map<Block, Int> = generatePostorderNumbering(root)
+        val postorderIdMap: Map<Predecessor, Int> = generatePostorderNumbering(root)
         val nodeCount = postorderIdMap.size
 
         // Get list of blocks/nodes in reverse postorder id
@@ -126,21 +126,21 @@ class DominanceAnalysis {
         return finger1
     }
 
-    private fun generatePostorderNumbering(root: Block): Map<Block, Int> {
-        val map = mutableMapOf<Block, Int>()
+    private fun generatePostorderNumbering(root: Predecessor): Map<Predecessor, Int> {
+        val map = mutableMapOf<Predecessor, Int>()
         generatePostorderNumbering(root, map, DomIdState())
         return map
     }
 
     // We label each block/node by a unique id within the range [0, number of blocks)
     private fun generatePostorderNumbering(
-        root: Block,
-        map: MutableMap<Block, Int>,
+        root: Predecessor,
+        map: MutableMap<Predecessor, Int>,
         domIdState: DomIdState
     ) {
         val successors = root.getSuccessors()
-        if (successors?.isNotEmpty() == true) {
-            for (succ in successors) {
+        for (succ in successors) {
+            if (succ is Predecessor) {
                 generatePostorderNumbering(succ, map, domIdState)
             }
         }
@@ -148,7 +148,7 @@ class DominanceAnalysis {
     }
 
     // Pre: map is a one-to-one mapping
-    private fun sortNodeInReverseId(map: Map<Int, Block>): List<Block> {
+    private fun sortNodeInReverseId(map: Map<Int, Predecessor>): List<Predecessor> {
         val nodeCount = map.size
         return (nodeCount downTo 0).map { map[it]!! }.toList()
     }

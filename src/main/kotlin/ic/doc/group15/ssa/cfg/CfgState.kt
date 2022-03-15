@@ -30,7 +30,7 @@ class CfgState {
         resultRegister = if (varList.isEmpty()) {
             v
         } else {
-            varList[-1]
+            varList[varList.lastIndex - 1]
         }
         varList.add(v)
         return v
