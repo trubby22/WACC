@@ -51,50 +51,40 @@ class Param(type: ReturnableType) : Variable(type)
 
 enum class BasicType(private val size: Int) : ReturnableType {
     IntType(WORD) {
-        override fun compatible(type: Type): Boolean {
-            return type == IntType
-        }
+        override fun compatible(type: Type): Boolean = type == IntType
 
         override fun toString(): String {
             return "int"
         }
     },
     BoolType(BYTE) {
-        override fun compatible(type: Type): Boolean {
-            return type == BoolType
-        }
+        override fun compatible(type: Type): Boolean = type == BoolType
 
         override fun toString(): String {
             return "bool"
         }
     },
     CharType(BYTE) {
-        override fun compatible(type: Type): Boolean {
-            return type == CharType
-        }
+        override fun compatible(type: Type): Boolean = type == CharType
 
         override fun toString(): String {
             return "char"
         }
     },
     StringType(WORD) {
-        override fun compatible(type: Type): Boolean {
-            return type == StringType
-        }
+        override fun compatible(type: Type): Boolean = type == StringType
 
         override fun toString(): String {
             return "string"
         }
     },
     VoidType(0) {
-        override fun compatible(type: Type): Boolean {
-            return type == VoidType
-        }
+        override fun compatible(type: Type): Boolean = type == VoidType
 
         override fun toString(): String {
             return "void"
         }
-    }
+    },
     ;
 
     override fun size(): Int = this.size

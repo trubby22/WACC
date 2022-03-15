@@ -6,7 +6,6 @@ import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
-import ic.doc.group15.assembly.AssemblyGenerator
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.BufferedInputStream
@@ -71,7 +70,7 @@ fun main(args: ArgsList) {
     // Generate the assembly code and write it to the assembly file
     log("\nGenerating assembly code...\n")
     val writer = assemblyFile.bufferedWriter()
-    val assemblyGenerator = AssemblyGenerator(ast, enableLogging = enableLogging)
+    val assemblyGenerator = AstAssemblyGenerator(ast, enableLogging = enableLogging)
     assemblyGenerator.generate(writer)
     writer.close()
     log("\nCompilation finished.")

@@ -1,5 +1,6 @@
 package ic.doc.group15.visitor
 
+import ic.doc.group15.translator.TranslatorMethod
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.isAccessible
@@ -7,12 +8,12 @@ import kotlin.reflect.jvm.isAccessible
 private typealias VisitorClass = KClass<out Visitor<*>>
 private typealias VisitorMethodMap = Map<KClass<*>, KCallable<*>>
 
-interface Visitable
+interface Translatable
 
 /**
  * Generic visitor class.
  *
- * Uses the annotation [VisitorMethod] to determine which method is used to visit a particular type.
+ * Uses the annotation [TranslatorMethod] to determine which method is used to visit a particular type.
  */
 abstract class Visitor<T : Any> protected constructor() {
 
@@ -25,7 +26,7 @@ abstract class Visitor<T : Any> protected constructor() {
     /**
      * Visits an item by calling the method responsible for visiting its type.
      */
-    protected fun visit(item: T) {
+    protected fun translate(item: T) {
         getMethodMap(klass)[item::class]?.call(this, item)
     }
 
@@ -41,11 +42,11 @@ abstract class Visitor<T : Any> protected constructor() {
 
         fun generateMethodMap(klass: VisitorClass): VisitorMethodMap {
             return klass.members.filter {
-                it.annotations.isNotEmpty() && it.annotations.all { a -> a is VisitorMethod }
+                it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
             }.associateBy {
                 assert(it.annotations.size == 1)
                 it.isAccessible = true
-                val annotation = it.annotations[0] as VisitorMethod
+                val annotation = it.annotations[0] as TranslatorMethod
                 annotation.itemType
             }
         }

@@ -22,7 +22,6 @@ import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
 import ic.doc.group15.visitor.Visitor
-import ic.doc.group15.visitor.VisitorMethod
 import java.io.BufferedWriter
 import java.lang.IllegalArgumentException
 import java.util.*
@@ -39,7 +38,7 @@ private fun BufferedWriter.writeAsm(vararg labels: Collection<Label<*>>) {
     }
 }
 
-class AssemblyGenerator(
+sealed class AssemblyGenerator(
     private val ast: AST,
     private val enableLogging: Boolean = true
 ) : Visitor<ASTNode>() {
@@ -89,17 +88,13 @@ class AssemblyGenerator(
         writer.writeAsm(text.values, utilText.values)
     }
 
-    private fun translate(node: ASTNode) {
-        visit(node)
-    }
-
     /**
      * Per WACC language specification, a program matches the grammar "begin func* stat end".
      * The AST representation decouples the statements from a SequenceAST to a mapping of lists of
      * StatementAST in the symbol table to avoid stack overflow from recursing a huge block of
      * statements.
      */
-    @VisitorMethod(AST::class)
+    @TranslatorMethod(AST::class)
     private fun translateProgram(program: AST) {
         log("Translating program")
         resultRegister = R4
@@ -115,7 +110,7 @@ class AssemblyGenerator(
         mainEpilogue(program.symbolTable)
     }
 
-    @VisitorMethod(FunctionDeclarationAST::class)
+    @TranslatorMethod(FunctionDeclarationAST::class)
     private fun translateFunctionDeclaration(node: FunctionDeclarationAST) {
         log("Translating function declaration")
         // Define label
@@ -136,7 +131,7 @@ class AssemblyGenerator(
         functionEpilogue(node)
     }
 
-    @VisitorMethod(CallAST::class)
+    @TranslatorMethod(CallAST::class)
     private fun translateCall(node: CallAST) {
         log("Translating call")
 
@@ -177,7 +172,7 @@ class AssemblyGenerator(
         addLines(Move(resultRegister, R0))
     }
 
-    @VisitorMethod(VariableDeclarationAST::class)
+    @TranslatorMethod(VariableDeclarationAST::class)
     private fun translateVariableDeclaration(node: VariableDeclarationAST) {
         // Parse the expression whose value is to be stored in the variable
         log("Translating VariableDeclarationAST")
@@ -185,7 +180,7 @@ class AssemblyGenerator(
         transAssign(node.varIdent, node.symbolTable)
     }
 
-    @VisitorMethod(AssignToIdentAST::class)
+    @TranslatorMethod(AssignToIdentAST::class)
     private fun translateAssignToIdent(node: AssignToIdentAST) {
         // Parse the expression whose value is to be stored in the variable
         log("Translating AssignToIdentAST")
@@ -194,7 +189,7 @@ class AssemblyGenerator(
         transAssign(lhs.ident, lhs.symbolTable)
     }
 
-    @VisitorMethod(FreeStatementAST::class)
+    @TranslatorMethod(FreeStatementAST::class)
     private fun translateFreeStatement(node: FreeStatementAST) {
         log("Translating FreeStatementAST")
         defineUtilFuncs(P_FREE_PAIR)
@@ -211,7 +206,7 @@ class AssemblyGenerator(
      * only exist in a body of a non-main function and is used to return a value from
      * that function.
      */
-    @VisitorMethod(ReturnStatementAST::class)
+    @TranslatorMethod(ReturnStatementAST::class)
     private fun translateReturnStatement(node: ReturnStatementAST) {
         log("Translating ReturnStatementAST")
         translate(node.expr)
@@ -228,7 +223,7 @@ class AssemblyGenerator(
      * Per WACC language spec, exit statements have the format "exit x", where x is
      * an exit code of type int in range [0, 255].
      */
-    @VisitorMethod(ExitStatementAST::class)
+    @TranslatorMethod(ExitStatementAST::class)
     private fun translateExitStatement(node: ExitStatementAST) {
         log("Translating ExitStatementAST")
         translate(node.expr)
@@ -238,7 +233,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(PrintStatementAST::class)
+    @TranslatorMethod(PrintStatementAST::class)
     private fun translatePrintStatement(node: PrintStatementAST) {
         log("Translating PrintStatementAST")
         translate(node.expr)
@@ -279,7 +274,7 @@ class AssemblyGenerator(
         }
     }
 
-    @VisitorMethod(PrintlnStatementAST::class)
+    @TranslatorMethod(PrintlnStatementAST::class)
     private fun translatePrintlnStatement(node: PrintlnStatementAST) {
         log("Translating PrintlnStatementAST")
         val printStatementAST = PrintStatementAST(node.parent!!, node.symbolTable, node.expr)
@@ -298,7 +293,7 @@ class AssemblyGenerator(
      * consumed from the standard input stream. Instead, the program will continue, leaving
      * the target's value unchanged.
      */
-    @VisitorMethod(ReadStatementAST::class)
+    @TranslatorMethod(ReadStatementAST::class)
     private fun translateReadStatement(node: ReadStatementAST) {
         log("Translating ReadStatementAST")
 
@@ -342,7 +337,7 @@ class AssemblyGenerator(
      *
      * fi: ...
      */
-    @VisitorMethod(IfBlockAST::class)
+    @TranslatorMethod(IfBlockAST::class)
     private fun translateIfBlock(stat: IfBlockAST) {
         log("Translating IfBlockAST")
 
@@ -400,7 +395,7 @@ class AssemblyGenerator(
      * CMP resultReg, 1
      * BEQ loop
      */
-    @VisitorMethod(WhileBlockAST::class)
+    @TranslatorMethod(WhileBlockAST::class)
     private fun translateWhileBlock(node: WhileBlockAST) {
         log("Translating WhileBlockAST")
 
@@ -432,7 +427,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(ForBlockAST::class)
+    @TranslatorMethod(ForBlockAST::class)
     private fun transForBlock(node: ForBlockAST) {
         log("Translating ForBlockAST")
 
@@ -467,7 +462,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(BeginEndBlockAST::class)
+    @TranslatorMethod(BeginEndBlockAST::class)
     private fun translateBeginEndBlock(node: BeginEndBlockAST) {
         log("Translating BeginEndBlockAST")
         blockPrologue(node)
@@ -475,7 +470,7 @@ class AssemblyGenerator(
         blockEpilogue(node)
     }
 
-    @VisitorMethod(NewPairAST::class)
+    @TranslatorMethod(NewPairAST::class)
     private fun translateNewPair(node: NewPairAST) {
         log("Translating NewPairAST")
 
@@ -542,7 +537,7 @@ class AssemblyGenerator(
 
     //region translateExpr
 
-    @VisitorMethod(IntLiteralAST::class)
+    @TranslatorMethod(IntLiteralAST::class)
     private fun translateIntLiteral(node: IntLiteralAST) {
         log("Translating IntLiteralAST")
         addLines(
@@ -550,7 +545,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(BoolLiteralAST::class)
+    @TranslatorMethod(BoolLiteralAST::class)
     private fun translateBoolLiteral(node: BoolLiteralAST) {
         log("Translating BoolLiteralAST")
         addLines(
@@ -558,7 +553,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(CharLiteralAST::class)
+    @TranslatorMethod(CharLiteralAST::class)
     private fun translateCharLiteral(node: CharLiteralAST) {
         log("Translating CharLiteralAST")
         addLines(
@@ -566,7 +561,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(StringLiteralAST::class)
+    @TranslatorMethod(StringLiteralAST::class)
     private fun translateStringLiteral(node: StringLiteralAST) {
         log("Translating StringLiteralAST")
         addLines(
@@ -574,13 +569,13 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(VariableIdentifierAST::class)
+    @TranslatorMethod(VariableIdentifierAST::class)
     private fun translateVariableIdentifier(node: VariableIdentifierAST) {
         log("Translating VariableIdentifierAST")
         transRetrieve(node.ident, node.symbolTable)
     }
 
-    @VisitorMethod(NullPairLiteralAST::class)
+    @TranslatorMethod(NullPairLiteralAST::class)
     @Suppress("UNUSED_PARAMETER")
     private fun translateNullPairLiteralAST(node: NullPairLiteralAST) {
         log("Translating NullPairLiteralAST")
@@ -589,7 +584,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(ArrayLiteralAST::class)
+    @TranslatorMethod(ArrayLiteralAST::class)
     private fun translateArrayLiteral(node: ArrayLiteralAST) {
         log("Translating ArrayLiteralAST")
         val elems = node.elems
@@ -651,7 +646,7 @@ class AssemblyGenerator(
         }
     }
 
-    @VisitorMethod(ArrayElemAST::class)
+    @TranslatorMethod(ArrayElemAST::class)
     private fun translateArrayElem(node: ArrayElemAST) {
         log("Translating ArrayElemAST")
 
@@ -699,7 +694,7 @@ class AssemblyGenerator(
         resultRegister = oldReg
     }
 
-    @VisitorMethod(AssignToArrayElemAST::class)
+    @TranslatorMethod(AssignToArrayElemAST::class)
     private fun translateAssignToArrayElem(node: AssignToArrayElemAST) {
         log("Translating AssignToArrayElemAST")
 
@@ -761,13 +756,13 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(FstPairElemAST::class)
+    @TranslatorMethod(FstPairElemAST::class)
     private fun translateFstPairElem(node: FstPairElemAST) {
         log("Translating FstPairElemAST")
         translatePairElem(node, node.elemType)
     }
 
-    @VisitorMethod(SndPairElemAST::class)
+    @TranslatorMethod(SndPairElemAST::class)
     private fun translateSndPairElem(node: SndPairElemAST) {
         log("Translating SndPairElemAST")
         translatePairElem(node, node.elemType)
@@ -785,7 +780,7 @@ class AssemblyGenerator(
         )
     }
 
-    @VisitorMethod(AssignToPairElemAST::class)
+    @TranslatorMethod(AssignToPairElemAST::class)
     private fun translateAssignToPairElem(node: AssignToPairElemAST) {
         log("Translating AssignToPairElemAST")
         defineUtilFuncs(
@@ -815,7 +810,7 @@ class AssemblyGenerator(
         resultRegister = oldResultRegister
     }
 
-    @VisitorMethod(UnaryOpExprAST::class)
+    @TranslatorMethod(UnaryOpExprAST::class)
     private fun translateUnOp(unOpExpr: UnaryOpExprAST) {
         log("Translating UnaryOpExprAST")
         translate(unOpExpr.expr)
@@ -850,7 +845,7 @@ class AssemblyGenerator(
         }
     }
 
-    @VisitorMethod(BinaryOpExprAST::class)
+    @TranslatorMethod(BinaryOpExprAST::class)
     private fun translateBinOp(expr: BinaryOpExprAST) {
         log("Translating BinaryOpExprAST")
 
