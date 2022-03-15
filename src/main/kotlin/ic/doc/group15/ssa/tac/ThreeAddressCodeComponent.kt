@@ -8,7 +8,7 @@ sealed interface Operand {
     fun type(): Type
 }
 
-data class CharImm(val value: Char): Operand {
+data class CharImm(val value: Char) : Operand {
     override fun type(): Type = CharType
 }
 
@@ -24,7 +24,10 @@ data class BoolImm(val value: Boolean) : Operand {
     override fun type(): Type = BoolType
 }
 
-data class Var(val id: Int, val name: String, val type: Type) : Operand {
+data class Var(
+    val id: Int,
+    val type: Type
+) : Operand {
     // Can store WORD sized value by default, but can also be BYTE: check
     // assignment for actual type
     override fun type(): Type = type
@@ -42,15 +45,15 @@ data class CustomFunc(val name: String, val type: Type) : Func {
     override fun type(): Type = type
 }
 
-abstract class IOFuncs(open val returnType: Type): Func
+abstract class IOFuncs(open val returnType: Type) : Func
 
-data class Read(override val returnType: Type): IOFuncs(returnType) {
+data class Read(override val returnType: Type) : IOFuncs(returnType) {
     override fun type(): Type = returnType
 }
-data class Print(override val returnType: Type): IOFuncs(returnType) {
+data class Print(override val returnType: Type) : IOFuncs(returnType) {
     override fun type(): Type = returnType
 }
-data class Println(override val returnType: Type): IOFuncs(returnType) {
+data class Println(override val returnType: Type) : IOFuncs(returnType) {
     override fun type(): Type = returnType
 }
 

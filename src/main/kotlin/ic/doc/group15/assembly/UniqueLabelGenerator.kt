@@ -1,13 +1,11 @@
 package ic.doc.group15.assembly
 
-import java.util.concurrent.atomic.AtomicInteger
+import ic.doc.group15.util.UniqueGenerator
 
-open class UniqueLabelGenerator(private val startingString: String) {
+open class UniqueLabelGenerator(private val startingString: String) : UniqueGenerator<String>() {
 
-    private val counter = AtomicInteger(0)
-
-    fun generate(): String {
-        return StringBuilder(startingString).append("${counter.getAndIncrement()}").toString()
+    override fun generate(): String {
+        return "$startingString${uniqueNum()}"
     }
 }
 

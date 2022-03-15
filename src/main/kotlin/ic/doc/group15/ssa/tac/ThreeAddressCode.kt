@@ -1,12 +1,17 @@
 package ic.doc.group15.ssa.tac
 
 import ic.doc.group15.ast.BinaryOp
+import ic.doc.group15.ssa.Successor
 
-// Quadruple form - three address code maintains an unlimited amount of registers,
-// representing either declared variables or temporaries
+/**
+ * Quadruple form - three address code maintains an unlimited amount of registers,
+ * representing either declared variables or temporaries
+ */
 sealed interface ThreeAddressCode
 
-// Assignments
+/**
+ * Assignments
+ */
 data class AssignBinOp(
     val reg: Var,
     val op: BinaryOp,
@@ -19,29 +24,36 @@ data class AssignValue(
     val x: Operand
 ) : ThreeAddressCode
 
-data class AssignCall(
+class AssignCall(
     val reg: Var,
     val f: Func,
-    val args: Collection<Operand>
+    vararg val args: Operand
 ) : ThreeAddressCode
 
-// (Void) function calls
-data class Call(
+/**
+ * (Void) function calls
+ */
+class Call(
     val f: Func,
-    val args: Collection<Operand>
+    vararg val args: Operand
 ) : ThreeAddressCode
 
-// Branch statements
+/**
+ * Branch statements
+ */
+
 data class BranchIf(
     val cond: Operand,
-    val label: Label
+    val block: Successor
 ) : ThreeAddressCode
 
 data class Branch(
-    val label: Label
+    val block: Successor
 ) : ThreeAddressCode
 
-// Memory instructions (used for heap allocations/value storing)
+/**
+ * Memory instructions (used for heap allocations/value storing)
+ */
 data class Allocate(
     val reg: Var,
     val amount: Operand
@@ -57,5 +69,7 @@ data class Store(
     val x: Operand
 ) : ThreeAddressCode
 
-// Pseudoinstruction for SSA form
-data class Phi(val reg: Var, val args: Collection<Operand>): ThreeAddressCode
+/**
+ * Pseudo-instruction for SSA form
+ */
+data class Phi(val reg: Var, val args: Collection<Operand>) : ThreeAddressCode

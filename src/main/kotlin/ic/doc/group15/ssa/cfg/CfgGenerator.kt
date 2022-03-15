@@ -7,7 +7,7 @@ import ic.doc.group15.ssa.tac.*
 import ic.doc.group15.translator.AssemblyGenerator
 import ic.doc.group15.translator.TranslatorMethod
 import ic.doc.group15.type.BasicType
-import ic.doc.group15.type.Type
+import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Variable
 
 /**
@@ -16,7 +16,7 @@ import ic.doc.group15.type.Variable
  *
  * Assumption: All nodes (read: basic blocks) can have at most two successors
  */
-class CFGGenerator(
+class CfgGenerator(
     ast: AST,
     enableLogging: Boolean = true
 ) : AssemblyGenerator<ASTNode>(ast, enableLogging) {
@@ -30,25 +30,25 @@ class CFGGenerator(
         // Note that each function state is independent of each other
         // TODO introduce concurrency
         for (funcNode in functions) {
-            val funcState = CFGState()
+            val funcState = CfgState()
             buildCFGFromFunctionDeclaration(funcNode as FunctionDeclarationAST, funcState)
             ssaIRFunctions.add(funcState.irFunction)
         }
 
         // Construct main function separately (due to WACC language design constraints)
-        val mainState = CFGState()
+        val mainState = CfgState()
         buildCFGFromMain(mainState, program, *statements.toTypedArray())
         ssaIRFunctions.add(mainState.irFunction)
 
         return ssaIRFunctions
     }
 
-    private fun buildCFGFromMain(cfgState: CFGState, program: AST, vararg stat: StatementAST) {
+    private fun buildCFGFromMain(cfgState: CfgState, program: AST, vararg stat: StatementAST) {
         val mainNode = FunctionDeclarationAST(
             program,
             program.symbolTable,
             program.symbolTable.subScope(),
-            BasicType.IntType,
+            IntType,
             "main"
         )
         val statements = mainNode.statements
@@ -73,7 +73,7 @@ class CFGGenerator(
      * 4) Rename variables to obtain SSA form
      **/
     @TranslatorMethod
-    private fun buildCFGFromFunctionDeclaration(node: FunctionDeclarationAST, cfgState: CFGState) {
+    private fun buildCFGFromFunctionDeclaration(node: FunctionDeclarationAST, cfgState: CfgState) {
         log("Building CFG for function ${node.funcName}")
         // Build CFG for the function
         initialiseState(node, cfgState)
@@ -101,7 +101,7 @@ class CFGGenerator(
      *  In linear representation: cond block -> else block -> then block -> exit block
      **/
     @TranslatorMethod
-    private fun buildCFGFromIfBlock(node: IfBlockAST, cfgState: CFGState) {
+    private fun buildCFGFromIfBlock(node: IfBlockAST, cfgState: CfgState) {
         log("Building CFG for if block")
         val thenBlock = BasicBlock(cfgState.irFunction)
         val elseBlock = BasicBlock(cfgState.irFunction)
@@ -112,10 +112,10 @@ class CFGGenerator(
 
         // translate cond expr and store result in register
         translate(node.condExpr, cfgState)
-        val resultReg = getResultRegister(cfgState)
+        val resultReg = cfgState.resultRegister
 
         // add branch instruction to entry block
-        val branchIfInst = BranchIf(resultReg, Label(thenBlock.toString()))
+        val branchIfInst = BranchIf(resultReg, thenBlock)
         cfgState.currentBlock.addInstructions(branchIfInst)
 
         // construct then block
@@ -135,7 +135,7 @@ class CFGGenerator(
         }
 
         // Add unconditional branch statement to condition block
-        val branchInst = Branch(Label(exitBlock.toString()))
+        val branchInst = Branch(exitBlock)
         cfgState.currentBlock.addInstructions(branchInst)
 
         // set current block as exit block
@@ -161,7 +161,7 @@ class CFGGenerator(
      *                     end while block
      **/
     @TranslatorMethod
-    private fun buildCFGFromWhileBlock(node: WhileBlockAST, cfgState: CFGState) {
+    private fun buildCFGFromWhileBlock(node: WhileBlockAST, cfgState: CfgState) {
         log("Building CFG for while block")
         val condBlock = BasicBlock(cfgState.irFunction)
         val loopBlock = BasicBlock(cfgState.irFunction)
@@ -175,10 +175,10 @@ class CFGGenerator(
 
         // translate cond expr and store result in register
         translate(node.condExpr, cfgState)
-        val resultReg = getResultRegister(cfgState)
+        val resultReg = cfgState.resultRegister
 
         // Branch to exit block if boolean condition is false
-        val branchIfInst = BranchIf(resultReg, Label(exitBlock.toString()))
+        val branchIfInst = BranchIf(resultReg, exitBlock)
         cfgState.currentBlock.addInstructions(branchIfInst)
 
         // Add successors to current block for CFG analysis
@@ -193,7 +193,7 @@ class CFGGenerator(
         }
 
         // Add unconditional branch statement to condition block
-        val branchInst = Branch(Label(condBlock.toString()))
+        val branchInst = Branch(condBlock)
         cfgState.currentBlock.addInstructions(branchInst)
 
         // set current block as exit block
@@ -201,7 +201,7 @@ class CFGGenerator(
     }
 
     @TranslatorMethod
-    private fun buildCFGFromBeginEndBlock(node: BeginEndBlockAST, cfgState: CFGState) {
+    private fun buildCFGFromBeginEndBlock(node: BeginEndBlockAST, cfgState: CfgState) {
         val inScopeBlock = BasicBlock(cfgState.irFunction)
         val outScopeBlock = BasicBlock(cfgState.irFunction)
 
@@ -218,47 +218,47 @@ class CFGGenerator(
     }
 
     @TranslatorMethod
-    private fun translateFunctionCall(node: CallAST, cfgState: CFGState) {
+    private fun translateFunctionCall(node: CallAST, cfgState: CfgState) {
         val paramRegs = mutableListOf<Operand>()
         for (arg in node.actuals) {
             translate(arg, cfgState)
             // Store the result for each param to a list
-           paramRegs.add(getResultRegister(cfgState))
+           paramRegs.add(cfgState.resultRegister)
         }
 
         val type = node.funcIdent.returnType
         val f = CustomFunc(node.funcName, type)
-        val reg = createTempVar(cfgState, type)
-        val inst = AssignCall(reg, f, paramRegs)
+        val reg = cfgState.newVar(type)
+        val inst = AssignCall(reg, f, *paramRegs.toTypedArray())
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translateVariableDeclaration(node: VariableDeclarationAST, cfgState: CFGState) {
+    private fun translateVariableDeclaration(node: VariableDeclarationAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateAssignToVariable(node: AssignToIdentAST, cfgState: CFGState) {
+    private fun translateAssignToVariable(node: AssignToIdentAST, cfgState: CfgState) {
         // Store value in result register
         translate(node.rhs, cfgState)
         // Store reference of result register in variable map
-        val resultReg = getResultRegister(cfgState)
+        val resultReg = cfgState.resultRegister
         cfgState.varDefinedAt[node.lhs.ident] = resultReg
     }
 
     @TranslatorMethod
-    private fun translateFreeStat(node: FreeStatementAST, cfgState: CFGState) {
+    private fun translateFreeStat(node: FreeStatementAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateReturnStat(node: ReturnStatementAST, cfgState: CFGState) {
+    private fun translateReturnStat(node: ReturnStatementAST, cfgState: CfgState) {
         // Translate the expression value and store it in a register
         translate(node.expr, cfgState)
         // Return value stored in latest register
-        val resultReg = getResultRegister(cfgState)
-        val inst = Call(Functions.RETURN, withParam(resultReg))
+        val resultReg = cfgState.resultRegister
+        val inst = Call(Functions.RETURN, resultReg)
         cfgState.currentBlock.addInstructions(inst)
 
         // set successor to function exit point
@@ -267,42 +267,42 @@ class CFGGenerator(
 
     // TODO(find a way to add an edge to end of program)
     @TranslatorMethod
-    private fun translateExitStat(node: ExitStatementAST, cfgState: CFGState) {
+    private fun translateExitStat(node: ExitStatementAST, cfgState: CfgState) {
         // Translate the expression value and store it in a register
         translate(node.expr, cfgState)
         // Exit and return exit code stored in result register
-        val resultReg = getResultRegister(cfgState)
-        val inst = Call(Functions.EXIT, withParam(resultReg))
+        val resultReg = cfgState.resultRegister
+        val inst = Call(Functions.EXIT, resultReg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translatePrintStat(node: PrintStatementAST, cfgState: CFGState) {
+    private fun translatePrintStat(node: PrintStatementAST, cfgState: CfgState) {
         translate(node.expr, cfgState)
 
         // Print value in register
-        val reg = getResultRegister(cfgState)
+        val reg = cfgState.resultRegister
         val f = Print(reg.type())
-        val inst = Call(f, listOf(reg))
+        val inst = Call(f, reg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translatePrintlnStat(node: PrintlnStatementAST, cfgState: CFGState) {
+    private fun translatePrintlnStat(node: PrintlnStatementAST, cfgState: CfgState) {
         translate(node.expr, cfgState)
 
         // Print value in register
-        val resultReg = getResultRegister(cfgState)
+        val resultReg = cfgState.resultRegister
         val f = Println(resultReg.type())
-        val inst = Call(f, withParam(resultReg))
+        val inst = Call(f, resultReg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translateReadStat(node: ReadStatementAST, cfgState: CFGState) {
+    private fun translateReadStat(node: ReadStatementAST, cfgState: CfgState) {
         // Find if there is a previous reference
-        val param = when (val lhs = node.target.lhs) {
-            is VariableIdentifierAST -> cfgState.varDefinedAt[lhs.ident]
+        val param: Var = when (val lhs = node.target.lhs) {
+            is VariableIdentifierAST -> cfgState.varDefinedAt[lhs.ident]!!
             is ArrayElemAST -> TODO()
             is PairElemAST -> TODO()
             else -> throw IllegalArgumentException("cannot read into expression $lhs")
@@ -311,124 +311,104 @@ class CFGGenerator(
         // Store read value in new register
         val type = node.target.type
         val f = Read(type)
-        val reg = createTempVar(cfgState, type)
-        val inst = AssignCall(reg, f, withParam(param!!))
+        val reg = cfgState.newVar(type)
+        val inst = AssignCall(reg, f, param)
 
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translateNewPair(node: NewPairAST, cfgState: CFGState) {
+    private fun translateNewPair(node: NewPairAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateIntLiteral(node: IntLiteralAST, cfgState: CFGState) {
-        val reg = createTempVar(cfgState, BasicType.IntType)
+    private fun translateIntLiteral(node: IntLiteralAST, cfgState: CfgState) {
+        val reg = cfgState.newVar(IntType)
         val inst = AssignValue(reg, IntImm(node.intValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translateBoolLiteral(node: BoolLiteralAST, cfgState: CFGState) {
-        val reg = createTempVar(cfgState, BasicType.BoolType)
+    private fun translateBoolLiteral(node: BoolLiteralAST, cfgState: CfgState) {
+        val reg = cfgState.newVar(BoolType)
         val inst = AssignValue(reg, BoolImm(node.boolValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translateCharLiteral(node: CharLiteralAST, cfgState: CFGState) {
-        val reg = createTempVar(cfgState, BasicType.CharType)
+    private fun translateCharLiteral(node: CharLiteralAST, cfgState: CfgState) {
+        val reg = cfgState.newVar(CharType)
         val inst = AssignValue(reg, CharImm(node.charValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
 
-        @TranslatorMethod
-        private fun translateStringLiteral(node: StringLiteralAST, cfgState: CFGState) {
-        val reg = createTempVar(cfgState, BasicType.StringType)
+    @TranslatorMethod
+    private fun translateStringLiteral(node: StringLiteralAST, cfgState: CfgState) {
+        val reg = cfgState.newVar(StringType)
         val inst = AssignValue(reg, StrImm(node.stringValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
-    private fun translateVariableIdentifier(node: VariableIdentifierAST, cfgState: CFGState) {
+    private fun translateVariableIdentifier(node: VariableIdentifierAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateNullPairLiteralAST(node: NullPairLiteralAST, cfgState: CFGState) {
+    private fun translateNullPairLiteralAST(node: NullPairLiteralAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateArrayLiteral(node: ArrayLiteralAST, cfgState: CFGState) {
+    private fun translateArrayLiteral(node: ArrayLiteralAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateArrayElem(node: ArrayElemAST, cfgState: CFGState) {
+    private fun translateArrayElem(node: ArrayElemAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateAssignToArrayElem(node: AssignToArrayElemAST, cfgState: CFGState) {
+    private fun translateAssignToArrayElem(node: AssignToArrayElemAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateFstPairElem(node: FstPairElemAST, cfgState: CFGState) {
+    private fun translateFstPairElem(node: FstPairElemAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateSndPairElem(node: SndPairElemAST, cfgState: CFGState) {
+    private fun translateSndPairElem(node: SndPairElemAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateAssignToPairElem(node: AssignToPairElemAST, cfgState: CFGState) {
+    private fun translateAssignToPairElem(node: AssignToPairElemAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateUnOp(unOpExpr: UnaryOpExprAST, cfgState: CFGState) {
+    private fun translateUnOp(unOpExpr: UnaryOpExprAST, cfgState: CfgState) {
         TODO()
     }
 
     @TranslatorMethod
-    private fun translateBinOp(expr: BinaryOpExprAST, cfgState: CFGState) {
+    private fun translateBinOp(expr: BinaryOpExprAST, cfgState: CfgState) {
         TODO()
     }
 
-    private fun createTempVar(cfgState: CFGState, type: Type): Var {
-        val reg = Var(cfgState.smallestUnusedId++, "%t${cfgState.smallestUnusedId}", type)
-        cfgState.regList[reg.id] = reg
-        return reg
-    }
-
-    private fun createVar(cfgState: CFGState, v: Variable, type: Type): Var {
-        val reg = Var(cfgState.smallestUnusedId++, generateVarName(cfgState, v), type)
-        cfgState.regList[reg.id] = reg
-        return reg
-    }
-
-    private fun generateVarName(cfgState: CFGState, v: Variable): String {
+    private fun generateVarName(cfgState: CfgState, v: Variable): String {
         TODO()
     }
 
-    private fun getResultRegister(cfgState: CFGState): Var {
-        return cfgState.regList[cfgState.smallestUnusedId - 1]!!
-    }
-
-    private fun withParam(vararg arguments: Operand): List<Operand> {
-        return arguments.toList()
-    }
-
-    private fun initialiseState(node: FunctionDeclarationAST, cfgState: CFGState) {
+    private fun initialiseState(node: FunctionDeclarationAST, cfgState: CfgState) {
         cfgState.irFunction = IRFunction(node)
         cfgState.currentBlock = BasicBlock(cfgState.irFunction)
         cfgState.smallestUnusedId += node.formals.size

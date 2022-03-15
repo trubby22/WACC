@@ -10,7 +10,10 @@ class DomIdState {
     }
 }
 
-data class DominanceAnalysisResult(val immediateDominator: Map<Block, Block>, val dominanceFrontier: Map<Block, Set<Block>>)
+data class DominanceAnalysisResult(
+    val immediateDominator: Map<Block, Block>,
+    val dominanceFrontier: Map<Block, Set<Block>>
+)
 
 /**
  * Dominator tree and dominance analysis. Algorithm to compute immediate dominators
@@ -38,7 +41,7 @@ class DominanceAnalysis {
         val nodeCount = postorderIdMap.size
 
         // Get list of blocks/nodes in reverse postorder id
-        val idToBlockMap = postorderIdMap.entries.associateBy ({ it.value }, { it.key })
+        val idToBlockMap = postorderIdMap.entries.associateBy({ it.value }, { it.key })
         val revOrderBlocksExceptRoot = sortNodeInReverseId(idToBlockMap).toMutableList()
         // Remove last element (root visited last in postorder traversal)
         assert(revOrderBlocksExceptRoot.removeLast() == root)
@@ -56,7 +59,9 @@ class DominanceAnalysis {
             for (node in revOrderBlocksExceptRoot) {
                 val block = postorderIdMap[node]!!
                 // All nodes except root guaranteed to hold a set of predecessors
-                val predecessors = node.getPredecessors()!!.map { postorderIdMap[it]!! }.toMutableList()
+                val predecessors = node.getPredecessors()!!.map {
+                    postorderIdMap[it]!!
+                }.toMutableList()
 
                 // Pick a predecessor of current node and treat it as processed
                 // All nodes guaranteed to have at least one predecessor
@@ -81,7 +86,7 @@ class DominanceAnalysis {
         val immDom = doms.associateBy({ idToBlockMap[it]!! }, { idToBlockMap[doms[it]]!! })
 
         // Initialise map of sets to compute dominance frontier sets for each block
-        val domFrontier = postorderIdMap.entries.associateBy ({ it.key }, { mutableSetOf<Block>() })
+        val domFrontier = postorderIdMap.entries.associateBy({ it.key }, { mutableSetOf<Block>() })
 
         // Compute dominance frontier algorithm
         val allNodes = postorderIdMap.keys
@@ -99,7 +104,6 @@ class DominanceAnalysis {
                 }
             }
         }
-
 
         return DominanceAnalysisResult(immDom, domFrontier)
     }
@@ -129,7 +133,11 @@ class DominanceAnalysis {
     }
 
     // We label each block/node by a unique id within the range [0, number of blocks)
-    private fun generatePostorderNumbering(root: Block, map: MutableMap<Block, Int>, domIdState: DomIdState) {
+    private fun generatePostorderNumbering(
+        root: Block,
+        map: MutableMap<Block, Int>,
+        domIdState: DomIdState
+    ) {
         val successors = root.getSuccessors()
         if (successors?.isNotEmpty() == true) {
             for (succ in successors) {
