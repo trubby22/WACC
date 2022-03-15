@@ -1,7 +1,6 @@
 package ic.doc.group15.integration
 
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
@@ -15,7 +14,7 @@ class EmulationCITests {
     private val validFolderPath = "wacc_examples/valid"
     private val validModelOutputFolderPath = "model_output/$validFolderPath"
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class ArrayValidFiles {
         private val arrayFolderPath = "$validFolderPath/array"
@@ -42,7 +41,6 @@ class EmulationCITests {
         private val basicFolderPath = "$validFolderPath/basic"
         private val basicResultFolderPath = "$validModelOutputFolderPath/basic"
 
-        
         @Nested
         inner class ExitValidFiles {
             private val exitFolderPath = "$basicFolderPath/exit"
@@ -76,7 +74,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class ExpressionValidFiles {
         private val expressionsFolderPath = "$validFolderPath/expressions"
@@ -104,7 +102,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class FunctionValidFiles {
         private val functionsFolderPath = "$validFolderPath/function"
@@ -161,7 +159,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class IfValidFiles {
         private val ifFolderPath = "$validFolderPath/if"
@@ -178,7 +176,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class IOValidFiles {
         private val ioFolderPath = "$validFolderPath/IO"
@@ -240,7 +238,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class PairValidFiles {
         private val pairsFolderPath = "$validFolderPath/pairs"
@@ -263,7 +261,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class RuntimeErrorValidFiles {
         private val runtimeErrorFolderPath = "$validFolderPath/runtimeErr"
@@ -348,7 +346,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class ScopeValidFiles {
         private val scopeFolderPath = "$validFolderPath/scope"
@@ -371,7 +369,7 @@ class EmulationCITests {
         }
     }
 
-    //@Disabled
+    // @Disabled
     @Nested
     inner class SequenceValidFiles {
         private val sequenceFolderPath = "$validFolderPath/sequence"
@@ -523,6 +521,14 @@ class EmulationCITests {
 
         val exitCodeMatches = (expectedExitCode == actualExitCode)
         val outputMatches = (expectedOutput == actualOutput)
+
+        println("Expected exit code: $expectedExitCode")
+        println("Expected output:")
+        println(expectedOutput)
+
+        println("Exit code: $actualExitCode")
+        println("Output:")
+        println(actualOutput)
 
         return exitCodeMatches && outputMatches
     }

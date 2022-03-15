@@ -1,5 +1,6 @@
 package ic.doc.group15
 
+import ic.doc.group15.Option.* // ktlint-disable no-unused-imports
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
@@ -8,39 +9,107 @@ import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.assembly.AssemblyGenerator
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import java.io.BufferedInputStream
 import java.io.File
+import java.io.FileInputStream
 
-private const val ENABLE_LOGGING = true
+private const val TAB_CHAR = ' '
+private val tab = "$TAB_CHAR".repeat(4)
 
-fun main(args: Array<String>) {
-    assert(args.size == 1)
-    val input = CharStreams.fromStream(System.`in`)
+private var enableLogging = false
 
+fun main(args: ArgsList) {
+    // Parse command line arguments
+    if (args.hasOption(HELP)) {
+        printHelpMessage()
+        return
+    }
+    if (args.isEmpty()) {
+        println("Source file name must be specified.\n\nRun ./compile --help for more info.")
+        return
+    }
+    val sourceFilePath: String = args[0]
+    enableLogging = args.hasOption(LOGGING)
+    val printAssembly = args.hasOption(PRINT_ASM)
+
+    // Read the source file
+    val sourceFile = FileInputStream(sourceFilePath)
+    log("Reading source file at ${args[0]}...\n")
+    val inputStream = BufferedInputStream(sourceFile)
+    val input = CharStreams.fromStream(inputStream)
+
+    // Perform syntactic analysis and build the parse tree
+    log("\nPerforming syntactic analysis...\n")
     val lexer = WaccLexer(input)
     val tokens = CommonTokenStream(lexer)
     val parser = WaccParser(tokens)
     val syntacticErrorListener = SyntacticErrorListener()
     parser.addErrorListener(syntacticErrorListener)
-
     val program = parser.program()
-
     syntacticErrorListener.terminateIfSyntacticErrorOccurred()
     parser.removeErrorListener(syntacticErrorListener)
 
-    val st = SymbolTable.topLevel()
+    // Perform semantic analysis and build the AST
+    log("\nPerforming semantic analysis...\n")
+    val st = SymbolTable()
     val ast = AST(st)
     val semanticErrors = SemanticErrorList()
-    val visitor = ParseTreeVisitor(ast, st, semanticErrors, enableLogging = ENABLE_LOGGING)
+    val visitor = ParseTreeVisitor(ast, st, semanticErrors, enableLogging = enableLogging)
     visitor.visit(program)
-
     semanticErrors.checkErrors()
 
-    val assemblyGenerator = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
-    val assemblyCode = assemblyGenerator.generate()
+    // Close input resources
+    inputStream.close()
+    sourceFile.close()
 
     // Create assembly file
-    val filename = args[0].split("/").last()
+    val filename = sourceFilePath.split("/").last()
     val asmFilename = filename.substring(0, filename.length - 4) + "s"
+    log("\nCreating assembly file \"$asmFilename\"...\n")
+    val assemblyFile = File(asmFilename)
 
-    File(asmFilename).writeText(assemblyCode)
+    // Generate the assembly code and write it to the assembly file
+    log("\nGenerating assembly code...\n")
+    val writer = assemblyFile.bufferedWriter()
+    val assemblyGenerator = AssemblyGenerator(ast, enableLogging = enableLogging)
+    assemblyGenerator.generate(writer)
+    writer.close()
+    log("\nCompilation finished.")
+
+    // Print the assembly code if needed
+    if (printAssembly) {
+        log("\n$asmFilename:")
+        assemblyFile.readLines().forEach { println(it) }
+    }
+}
+
+private fun printHelpMessage() {
+    println(
+        """
+            |
+            |Imperial College 2022
+            |Group 15's compiler for the WACC language.
+            | 
+            |Usage:
+            |$tab./compile source_file [option...]
+            
+            |source_file: Path to the WACC source code file.
+            
+            |Options:
+        """.trimMargin()
+    )
+    val options = Option.values()
+    val longestString = options.maxOf { it.string().length }
+    val longestAlt = options.maxOf { it.alt().length }
+    println(
+        options.joinToString(prefix = tab, separator = "\n$tab") {
+            "--" + it.string().padEnd(longestString + tab.length, TAB_CHAR) +
+                    "-" + it.alt.padEnd(longestAlt + tab.length, TAB_CHAR) +
+                    it.description
+        }
+    )
+}
+
+private fun log(string: String) {
+    if (enableLogging) println(string)
 }

@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
+private const val ENABLE_LOGGING = false
+
 class SemanticIntegrationTest {
     private val validFolderPath = "wacc_examples/valid"
     private val invalidFolderPath = "wacc_examples/invalid"
@@ -534,10 +536,10 @@ class SemanticIntegrationTest {
 
         val program = parser.program()
 
-        val st = SymbolTable.topLevel()
+        val st = SymbolTable()
         val ast = AST(st)
         val errors = SemanticErrorList()
-        val visitor = ParseTreeVisitor(ast, st, errors, enableLogging = true)
+        val visitor = ParseTreeVisitor(ast, st, errors, enableLogging = ENABLE_LOGGING)
 
         visitor.visit(program)
 
@@ -547,8 +549,10 @@ class SemanticIntegrationTest {
             return false
         }
 
-        val asm = AssemblyGenerator(ast)
-        println(asm.generate())
+        val asm = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
+        val writer = System.out.bufferedWriter()
+        asm.generate(writer)
+        writer.flush()
 
         return true
     }

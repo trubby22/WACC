@@ -22,10 +22,21 @@ import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
 import ic.doc.group15.visitor.Visitor
 import ic.doc.group15.visitor.VisitorMethod
+import java.io.BufferedWriter
 import java.lang.IllegalArgumentException
 import java.util.*
 
 private const val MAX_STACK_CHANGE = 1024
+
+private fun BufferedWriter.writeAsm(vararg labels: Collection<Label<*>>) {
+    labels.forEach {
+        it.forEach {
+                label ->
+            write(label.toString())
+            write("\n")
+        }
+    }
+}
 
 class AssemblyGenerator(
     private val ast: AST,
@@ -62,24 +73,19 @@ class AssemblyGenerator(
     private val stringLabelGenerator = UniqueStringLabelGenerator()
     private val branchLabelGenerator = UniqueBranchLabelGenerator()
 
-    fun generate(): String {
+    fun generate(writer: BufferedWriter) {
         log("Translating ast")
         translate(ast)
-        var asm = ""
+
+        log("Writing .data section")
         if (data.isNotEmpty() || utilData.isNotEmpty()) {
-            asm += ".data\n\n"
+            writer.write(".data\n\n")
+            writer.writeAsm(data.values, utilData.values)
         }
 
-        asm += joinAsm(data.values) +
-            joinAsm(utilData.values) +
-            "\n.text\n\n.global main\n" +
-            joinAsm(text.values) +
-            joinAsm(utilText.values)
-        return asm
-    }
-
-    private fun joinAsm(asm: Collection<Assembly>): String {
-        return asm.joinToString(separator = "\n", postfix = if (asm.isNotEmpty()) "\n" else "")
+        log("Writing .text section")
+        writer.write("\n.text\n\n.global main\n")
+        writer.writeAsm(text.values, utilText.values)
     }
 
     private fun translate(node: ASTNode) {
@@ -119,8 +125,6 @@ class AssemblyGenerator(
         resultRegister = R4
 
         node.formals.forEach { it.ident.stackPosition }
-
-        // TODO: issue - interdependence of statements to be addressed
 
         // Sets up the environment for a function
         functionPrologue(node, node.paramSymbolTable)
@@ -341,11 +345,13 @@ class AssemblyGenerator(
     private fun translateIfBlock(stat: IfBlockAST) {
         log("Translating IfBlockAST")
 
-        // Add instructions to currentLabel
+        val oldLabel = currentLabel
+
+        // Add condition expression to currentLabel
         translate(stat.condExpr)
 
+        // First, deal with the else label
         val elseLabel = newBranchLabel()
-        val fiLabel = newBranchLabel()
 
         // compare to set condition flags and branch (can be optimised)
         addLines(
@@ -358,16 +364,21 @@ class AssemblyGenerator(
         stat.statements.forEach(::translate)
         blockEpilogue(stat)
 
-        // add branch to fi label
-        addLines(
-            Branch(BranchLabelOperand(fiLabel))
-        )
-
         // add sequence of instructions in ELSE block under else label
         currentLabel = elseLabel
         blockPrologue(stat.elseBlock)
         stat.elseBlock.statements.forEach(::translate)
         blockEpilogue(stat.elseBlock)
+
+        currentLabel = oldLabel
+
+        // Finally, deal with what comes after the if statement
+        val fiLabel = newBranchLabel()
+
+        // add branch to fi label to the original label
+        addLines(
+            Branch(BranchLabelOperand(fiLabel))
+        )
         currentLabel = fiLabel
     }
 
@@ -420,6 +431,41 @@ class AssemblyGenerator(
         )
     }
 
+    @VisitorMethod(ForBlockAST::class)
+    private fun transForBlock(node: ForBlockAST) {
+        log("Translating ForBlockAST")
+
+        translate(node.varDecl)
+
+        val oldLabel = currentLabel
+
+        // Translate block statements and add to loop label
+        val loopLabel = newBranchLabel()
+        currentLabel = loopLabel
+        blockPrologue(node)
+        node.statements.forEach { translate(it) }
+        translate(node.incrementStat)
+        blockEpilogue(node)
+
+        val checkLabel = newBranchLabel()
+        currentLabel = oldLabel
+
+        // Add branch instruction
+        addLines(
+            Branch(BranchLabelOperand(checkLabel))
+        )
+
+        // Translate condition statements and add to check label
+        currentLabel = checkLabel
+        translate(node.condExpr)
+
+        // Add compare and branch instruction
+        addLines(
+            Compare(resultRegister, IntImmediateOperand(1)),
+            Branch(EQ, BranchLabelOperand(loopLabel))
+        )
+    }
+
     @VisitorMethod(BeginEndBlockAST::class)
     private fun translateBeginEndBlock(node: BeginEndBlockAST) {
         log("Translating BeginEndBlockAST")
@@ -434,7 +480,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for newPair
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) {
+        if (resultRegister == Register.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -555,7 +601,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for ArrayLiteral
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) {
+        if (resultRegister == Register.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -617,7 +663,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for arrayElem
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) { // R10
+        if (resultRegister == Register.MAX_REG) { // R10
             resultRegister = resultRegister.prevReg() // R9
             addLines(Push(resultRegister)) // Spare R9
             offsetStackStore[0] += WORD
@@ -809,7 +855,7 @@ class AssemblyGenerator(
 
         // Allocate two registers for BinOp
         var accumulatorState = false
-        if (resultRegister == Register.maxReg()) {
+        if (resultRegister == Register.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -934,11 +980,10 @@ class AssemblyGenerator(
         // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
         // original value in MAX_REG - 1
         if (accumulatorState) {
+            resultRegister = resultRegister.nextReg()
             addLines(
-                Move(resultRegister.nextReg(), ZeroOffset(resultRegister)),
                 Pop(resultRegister)
             )
-            resultRegister = resultRegister.nextReg()
             offsetStackStore[0] -= WORD
         }
     }
@@ -1041,7 +1086,8 @@ class AssemblyGenerator(
             // After the last param is pushed, the value of LR is pushed, which is a word
             // So the stack position of the first parameter is WORD
             var currentStackPos = WORD
-            paramSymbolTable.getValuesByType(Param::class).forEach {
+            val params = paramSymbolTable.getValuesByType(Param::class)
+            params.forEach {
                 it.stackPosition = currentStackPos
                 currentStackPos += it.type.size()
             }
@@ -1219,12 +1265,10 @@ class AssemblyGenerator(
             P_CHECK_NULL_POINTER
         )
         translate(pairElemAST.expr)
-        val pairType = pairElemAST.expr.type as PairType
-        val offset: AddressOperand
-        if (pairElemAST is FstPairElemAST) {
-            offset = ZeroOffset(resultRegister)
+        val offset = if (pairElemAST is FstPairElemAST) {
+            ZeroOffset(resultRegister)
         } else {
-            offset = ImmediateOffset(resultRegister, pairType.fstType.size())
+            ImmediateOffset(resultRegister, WORD)
         }
         addLines(
             Move(R0, resultRegister),
