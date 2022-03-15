@@ -8,19 +8,19 @@ sealed interface ThreeAddressCode
 
 // Assignments
 data class AssignBinOp(
-    val reg: Register,
+    val reg: Var,
     val op: BinaryOp,
     val x: Operand,
     val y: Operand
 ) : ThreeAddressCode
 
 data class AssignValue(
-    val reg: Register,
+    val reg: Var,
     val x: Operand
 ) : ThreeAddressCode
 
 data class AssignCall(
-    val reg: Register,
+    val reg: Var,
     val f: Func,
     val args: Collection<Operand>
 ) : ThreeAddressCode
@@ -43,19 +43,19 @@ data class Branch(
 
 // Memory instructions (used for heap allocations/value storing)
 data class Allocate(
-    val reg: Register,
+    val reg: Var,
     val amount: Operand
 ) : ThreeAddressCode
 
 data class Load(
-    val reg: Register,
+    val reg: Var,
     val x: Operand
 ) : ThreeAddressCode
 
 data class Store(
-    val reg: Register,
+    val reg: Var,
     val x: Operand
 ) : ThreeAddressCode
 
 // Pseudoinstruction for SSA form
-data class Phi(val reg: Register, val args: Collection<Operand>): ThreeAddressCode
+data class Phi(val reg: Var, val args: Collection<Operand>): ThreeAddressCode

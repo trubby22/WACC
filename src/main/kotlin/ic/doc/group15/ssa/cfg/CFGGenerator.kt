@@ -7,6 +7,7 @@ import ic.doc.group15.ssa.tac.*
 import ic.doc.group15.translator.TranslatorMethod
 import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.Type
+import ic.doc.group15.type.Variable
 import ic.doc.group15.visitor.Visitor
 
 /**
@@ -224,7 +225,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
 
         val type = node.funcIdent.returnType
         val f = CustomFunc(node.funcName, type)
-        val reg = createRegister(cfgState, type)
+        val reg = createTempVar(cfgState, type)
         val inst = AssignCall(reg, f, paramRegs)
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -240,7 +241,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
         translate(cfgState, node.rhs)
         // Store reference of result register in variable map
         val resultReg = getResultRegister(cfgState)
-        cfgState.varInReg[node.lhs.ident] = resultReg
+        cfgState.varDefinedAt[node.lhs.ident] = resultReg
     }
 
     @TranslatorMethod(FreeStatementAST::class)
@@ -298,7 +299,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
     private fun translateReadStat(cfgState: CFGState, node: ReadStatementAST) {
         // Find if there is a previous reference
         val param = when (val lhs = node.target.lhs) {
-            is VariableIdentifierAST -> cfgState.varInReg[lhs.ident]
+            is VariableIdentifierAST -> cfgState.varDefinedAt[lhs.ident]
             is ArrayElemAST -> TODO()
             is PairElemAST -> TODO()
             else -> throw IllegalArgumentException("cannot read into expression $lhs")
@@ -307,7 +308,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
         // Store read value in new register
         val type = node.target.type
         val f = Read(type)
-        val reg = createRegister(cfgState, type)
+        val reg = createTempVar(cfgState, type)
         val inst = AssignCall(reg, f, withParam(param!!))
 
         cfgState.currentBlock.addInstructions(inst)
@@ -320,7 +321,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
 
     @TranslatorMethod(IntLiteralAST::class)
     private fun translateIntLiteral(cfgState: CFGState, node: IntLiteralAST) {
-        val reg = createRegister(cfgState, BasicType.IntType)
+        val reg = createTempVar(cfgState, BasicType.IntType)
         val inst = AssignValue(reg, IntImm(node.intValue))
 
         cfgState.currentBlock.addInstructions(inst)
@@ -328,7 +329,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
 
     @TranslatorMethod(BoolLiteralAST::class)
     private fun translateBoolLiteral(cfgState: CFGState, node: BoolLiteralAST) {
-        val reg = createRegister(cfgState, BasicType.BoolType)
+        val reg = createTempVar(cfgState, BasicType.BoolType)
         val inst = AssignValue(reg, BoolImm(node.boolValue))
 
         cfgState.currentBlock.addInstructions(inst)
@@ -336,7 +337,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
 
     @TranslatorMethod(CharLiteralAST::class)
     private fun translateCharLiteral(cfgState: CFGState, node: CharLiteralAST) {
-        val reg = createRegister(cfgState, BasicType.CharType)
+        val reg = createTempVar(cfgState, BasicType.CharType)
         val inst = AssignValue(reg, CharImm(node.charValue))
 
         cfgState.currentBlock.addInstructions(inst)
@@ -344,7 +345,7 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
 
     @TranslatorMethod(StringLiteralAST::class)
     private fun translateStringLiteral(cfgState: CFGState, node: StringLiteralAST) {
-        val reg = createRegister(cfgState, BasicType.StringType)
+        val reg = createTempVar(cfgState, BasicType.StringType)
         val inst = AssignValue(reg, StrImm(node.stringValue))
 
         cfgState.currentBlock.addInstructions(inst)
@@ -400,13 +401,23 @@ class CFGGenerator(private val enableLogging: Boolean = true): Visitor<ASTNode>(
         TODO()
     }
 
-    private fun createRegister(cfgState: CFGState, type: Type): Register {
-        val reg = Register(cfgState.smallestUnusedId++, type)
+    private fun createTempVar(cfgState: CFGState, type: Type): Var {
+        val reg = Var(cfgState.smallestUnusedId++,"%t${cfgState.smallestUnusedId}",  type)
         cfgState.regList[reg.id] = reg
         return reg
     }
 
-    private fun getResultRegister(cfgState: CFGState): Register {
+    private fun createVar(cfgState: CFGState, v: Variable, type: Type): Var {
+        val reg = Var(cfgState.smallestUnusedId++, generateVarName(cfgState, v),  type)
+        cfgState.regList[reg.id] = reg
+        return reg
+    }
+
+    private fun generateVarName(cfgState: CFGState, v: Variable): String {
+        TODO()
+    }
+
+    private fun getResultRegister(cfgState: CFGState): Var {
         return cfgState.regList[cfgState.smallestUnusedId - 1]!!
     }
 

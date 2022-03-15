@@ -2,7 +2,6 @@ package ic.doc.group15.ssa.tac
 
 import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.BasicType.*
-import ic.doc.group15.type.FunctionType
 import ic.doc.group15.type.Type
 
 sealed interface Operand {
@@ -25,7 +24,7 @@ data class BoolImm(val value: Boolean) : Operand {
     override fun type(): Type = BoolType
 }
 
-data class Register(val id: Int, val type: Type) : Operand {
+data class Var(val id: Int, val name: String, val type: Type) : Operand {
     // Can store WORD sized value by default, but can also be BYTE: check
     // assignment for actual type
     override fun type(): Type = type
