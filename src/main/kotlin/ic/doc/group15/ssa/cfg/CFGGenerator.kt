@@ -1,9 +1,8 @@
-package ic.doc.group15.visitor
+package ic.doc.group15.ssa.cfg
 
 import ic.doc.group15.ast.*
 import ic.doc.group15.ssa.BasicBlock
 import ic.doc.group15.ssa.IRFunction
-import ic.doc.group15.ssa.CFGState
 import ic.doc.group15.type.BasicType
 
 /**

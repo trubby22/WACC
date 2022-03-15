@@ -1,6 +1,5 @@
-package ic.doc.group15.visitor
+package ic.doc.group15
 
-import ic.doc.group15.SymbolTable
 import ic.doc.group15.antlr.WaccParser.*
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.ast.* // ktlint-disable no-unused-imports

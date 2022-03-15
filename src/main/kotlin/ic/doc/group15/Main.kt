@@ -5,8 +5,7 @@ import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
-import ic.doc.group15.visitor.AssemblyGenerator
-import ic.doc.group15.visitor.ParseTreeVisitor
+import ic.doc.group15.assembly.AssemblyGenerator
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File

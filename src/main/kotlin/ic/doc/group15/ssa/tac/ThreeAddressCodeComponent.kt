@@ -1,4 +1,4 @@
-package ic.doc.group15.ssa
+package ic.doc.group15.ssa.tac
 
 import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.FunctionType
