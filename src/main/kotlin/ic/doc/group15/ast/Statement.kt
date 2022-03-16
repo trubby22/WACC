@@ -22,15 +22,21 @@ class ParameterAST(
     override val ident: Param
 ) : VariableIdentifierAST(symbolTable, paramName, ident)
 
-class ReadStatementAST(
+class CallStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val target: AssignmentAST<*>
+    val call: CallAST
 ) : StatementAST(parent, symbolTable)
 
 class SkipStatementAST(
     parent: BlockAST,
 ) : StatementAST(parent)
+
+class ReadStatementAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable,
+    val target: AssignmentAST<*>
+) : StatementAST(parent, symbolTable)
 
 class FreeStatementAST(
     parent: BlockAST,

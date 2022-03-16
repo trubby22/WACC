@@ -8,6 +8,7 @@ import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.semantic.*
+import ic.doc.group15.error.syntactic.SyntacticError
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.Companion.IntType
 import ic.doc.group15.util.EscapeChar
@@ -179,6 +180,14 @@ class ParseTreeVisitor(
         return parameterAST
     }
 
+    override fun visitCallStat(ctx: CallStatContext): ASTNode {
+        log("Visiting call statement")
+
+        val call = visit(ctx.call()) as CallAST
+
+        return scopeAST.addStatement(CallStatementAST(scopeAST, symbolTable, call))
+    }
+
     override fun visitPrintStat(ctx: PrintStatContext): ASTNode {
         log("Visiting print statement")
 
@@ -238,7 +247,7 @@ class ParseTreeVisitor(
         return scopeAST.addStatement(ReadStatementAST(scopeAST, symbolTable, target))
     }
 
-    override fun visitReturnStat(ctx: ReturnStatContext): ASTNode? {
+    override fun visitReturnStat(ctx: ReturnStatContext): ASTNode {
         log("Visiting return statement")
 
         var enclosingAST: BlockAST? = scopeAST
@@ -249,7 +258,7 @@ class ParseTreeVisitor(
 
         if (enclosingAST == null) {
             addError(IllegalReturnStatementError(ctx.start))
-            return null
+            return SkipStatementAST(scopeAST)
         }
 
         val func = enclosingAST as FunctionDeclarationAST
@@ -279,10 +288,6 @@ class ParseTreeVisitor(
         func.returnStat = returnStat
 
         return scopeAST.addStatement(returnStat)
-    }
-
-    override fun visitVoidReturnStat(ctx: VoidReturnStatContext?): ASTNode {
-        return super.visitVoidReturnStat(ctx)
     }
 
     override fun visitBeginEndStat(ctx: BeginEndStatContext): ASTNode {
@@ -543,7 +548,7 @@ class ParseTreeVisitor(
         return SndPairElemAST(symbolTable, expr)
     }
 
-    override fun visitCallAssignRhs(ctx: CallAssignRhsContext): ASTNode {
+    override fun visitCall(ctx: CallContext): ASTNode {
         val ident = ctx.ident()
         val funcName = ident.text
         log("Visiting $funcName function call")
@@ -776,6 +781,13 @@ class ParseTreeVisitor(
 
     private fun addError(error: SemanticError) {
         semanticErrors.addError(error)
+        if (enableLogging) {
+            println(error.toString())
+        }
+    }
+
+    private fun addError(error: SyntacticError) {
+        syntacticErrors.addError(error)
         if (enableLogging) {
             println(error.toString())
         }
