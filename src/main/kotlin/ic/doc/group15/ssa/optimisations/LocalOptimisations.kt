@@ -319,16 +319,24 @@ class OperatorStrengthReduction {
                     }
                 }
 
-                // (v = 2 * a) or (v = a * 2) => v = a + a
+                // (v = a * 2) => v = a + a
                 if (rhs is IntImm) {
-                    if (rhs.value == 2) {
-                        return AssignBinOp(v, BinaryOp.PLUS, lhs, lhs)
-                    }
+                    if (rhs.value == 2) return AssignBinOp(v, BinaryOp.PLUS, lhs, lhs)
 
                     // v = (constant multiple of 2) * a => v = a << n
                     if (isPowerOfTwo(rhs.value)) {
                         val pow = getExponentOfBaseTwo(rhs.value)
                         return AssignCall(v, Functions.LSL, lhs, IntImm(pow))
+                    }
+                }
+            }
+
+            if (op == BinaryOp.DIV) {
+                if (rhs is IntImm) {
+                    // v = a / (constant multiple of 2) => v = a >> n
+                    if (isPowerOfTwo(rhs.value)) {
+                        val pow = getExponentOfBaseTwo(rhs.value)
+                        return AssignCall(v, Functions.ASR, lhs, IntImm(pow))
                     }
                 }
             }
