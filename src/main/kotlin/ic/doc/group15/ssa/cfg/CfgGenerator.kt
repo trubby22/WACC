@@ -7,6 +7,7 @@ import ic.doc.group15.ssa.IRFunction
 import ic.doc.group15.ssa.tac.*
 import ic.doc.group15.translator.AssemblyGenerator
 import ic.doc.group15.translator.TranslatorMethod
+import ic.doc.group15.type.ArrayType
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.PairType
 import ic.doc.group15.type.ReturnableType
@@ -393,7 +394,13 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateVariableIdentifier(node: VariableIdentifierAST, cfgState: CfgState) {
-        TODO()
+        val v = node.ident
+        val varReg = cfgState.varDefinedAt[v]!!
+
+        val reg = cfgState.newVar(varReg.type)
+        val moveInst = AssignValue(reg, varReg)
+
+        cfgState.currentBlock.addInstructions(moveInst)
     }
 
     @TranslatorMethod
@@ -417,7 +424,8 @@ class CfgGenerator(
         val mallocSize = WORD + arrSize * elemSize
 
         // Allocate memory
-        val addrReg = cfgState.newVar(IntType)
+        assert(node.type is ArrayType)
+        val addrReg = cfgState.newVar(node.type)
         val mallocInst = Allocate(addrReg, IntImm(mallocSize))
 
         // First position used to store array length
@@ -450,7 +458,16 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateArrayElem(node: ArrayElemAST, cfgState: CfgState) {
-        TODO()
+        // Compute address containing element in the array
+        translateAddress(node, cfgState)
+        val addrReg = cfgState.resultRegister
+
+        // Load value from address
+        val valueReg = cfgState.newVar(node.elemType)
+        val loadInst = Load(valueReg, addrReg)
+
+        // Add instruction
+        cfgState.currentBlock.addInstructions(loadInst)
     }
 
     @TranslatorMethod
@@ -551,6 +568,21 @@ class CfgGenerator(
             val addrInst = AssignBinOp(secondElemAddrReg, BinaryOp.PLUS, secondElemAddrReg, IntImm(WORD))
 
             cfgState.currentBlock.addInstructions(addrInst)
+        }
+    }
+
+    private fun translateAddress(node: ArrayElemAST, cfgState: CfgState) {
+        // Get reference to the reg storing the address
+        val v = node.arrayVar.ident
+        val addrReg = cfgState.varDefinedAt[v]!!
+
+        // Compute the address of element in the (potentially nested) array
+        for (expr in node.indexExpr) {
+            // Translate index expression
+            translate(expr, cfgState)
+            val currAddrReg = cfgState.resultRegister
+
+            val loadInst = TODO()
         }
     }
 
