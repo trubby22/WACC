@@ -1,5 +1,6 @@
 package ic.doc.group15.ssa.cfg
 
+import ic.doc.group15.assembly.instruction.Add
 import ic.doc.group15.ast.*
 import ic.doc.group15.ssa.BasicBlock
 import ic.doc.group15.ssa.IRFunction
@@ -7,6 +8,8 @@ import ic.doc.group15.ssa.tac.*
 import ic.doc.group15.translator.AssemblyGenerator
 import ic.doc.group15.translator.TranslatorMethod
 import ic.doc.group15.type.BasicType.*
+import ic.doc.group15.type.ReturnableType
+import ic.doc.group15.util.WORD
 
 /**
  * Convert the AST representation of the program to three-address code and build a control flow
@@ -314,7 +317,34 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateNewPair(node: NewPairAST, cfgState: CfgState) {
-        TODO()
+        // Allocate memory for two addresses in pair construction
+        val addrReg = cfgState.newVar(IntType)
+        val mallocInst = Allocate(addrReg, IntImm(2 * WORD))
+        cfgState.currentBlock.addInstructions(mallocInst)
+
+        listOf(node.fstExpr, node.sndExpr).forEachIndexed { index, expr ->
+            // Translate each expression and store it in a variable
+            translate(expr, cfgState)
+            val resultReg = cfgState.resultRegister
+            val exprType = (resultReg.type) as ReturnableType
+
+            // Allocate memory for each sub-expression and store expression value into memory
+            val subAddrReg = cfgState.newVar(exprType)
+            val subMallocInst = Allocate(subAddrReg, IntImm(exprType.size()))
+            val storeValueInst = Store(subAddrReg, resultReg)
+
+            // Store address malloced for sub-expression into the base newpair address
+            val baseAddrReg = cfgState.newVar(IntType)
+            val offsetInst = AssignBinOp(baseAddrReg, BinaryOp.PLUS, addrReg, IntImm(index * WORD))
+            val storeAddrInst = Store(baseAddrReg, subAddrReg)
+
+            cfgState.currentBlock.addInstructions(
+                subMallocInst,
+                storeValueInst,
+                offsetInst,
+                storeAddrInst
+            )
+        }
     }
 
     @TranslatorMethod

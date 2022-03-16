@@ -52,7 +52,6 @@ enum class Functions(private val type: BasicType = VoidType) : Func {
     CHR(CharType),
     FST(IntType),
     SND(IntType),
-    NEWPAIR(IntType),
     RETURN(IntType),
     EXIT(IntType),
     READ,
