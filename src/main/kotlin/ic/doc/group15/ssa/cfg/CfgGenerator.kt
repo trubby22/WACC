@@ -404,9 +404,48 @@ class CfgGenerator(
         cfgState.currentBlock.addInstructions(inst)
     }
 
+    // Note: Only 1D array can be created at a time. To create multidimensional arrays, we
+    // create another array which holds a list of addresses/references to sub-dimensional arrays
     @TranslatorMethod
     private fun translateArrayLiteral(node: ArrayLiteralAST, cfgState: CfgState) {
-        TODO()
+        // Get element type and infer size
+        val elems = node.elems
+        val elemSize = if (elems.isEmpty()) 0 else elems.first().type.size()
+        val arrSize = elems.size
+
+        // Calculate the memory size to be allocated
+        val mallocSize = WORD + arrSize * elemSize
+
+        // Allocate memory
+        val addrReg = cfgState.newVar(IntType)
+        val mallocInst = Allocate(addrReg, IntImm(mallocSize))
+
+        // First position used to store array length
+        val lenReg = cfgState.newVar(IntType)
+        val passValInst = AssignValue(lenReg, IntImm(arrSize))
+        val storeLenInst = Store(lenReg, addrReg)
+
+        // Add instructions
+        cfgState.currentBlock.addInstructions(mallocInst, passValInst, storeLenInst)
+
+        // Store subsequent values into the array
+        var offset = WORD
+        for (expr in elems) {
+            // Translate expression
+            translate(expr, cfgState)
+            val resultReg = cfgState.resultRegister
+
+            // Store value into array at corresponding position
+            val offsetAddrReg = cfgState.newVar(IntType)
+            val offsetAddrInst = AssignBinOp(offsetAddrReg, BinaryOp.PLUS, addrReg, IntImm(offset))
+            val storeInst = Store(resultReg, offsetAddrReg)
+
+            // Add instructions
+            cfgState.currentBlock.addInstructions(offsetAddrInst, storeInst)
+
+            // Increment offset
+            offset += elemSize
+        }
     }
 
     @TranslatorMethod
