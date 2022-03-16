@@ -7,16 +7,7 @@ class TypeParser {
 
     companion object {
 
-        fun parse(ctx: Return_typeContext): Type {
-            return when {
-                ctx.type() != null -> {
-                    Type.ANY
-                }
-                else -> {
-                    ReturnableType.VOID
-                }
-            }
-        }
+        fun returnTypeIsVoid(ctx: Return_typeContext): Boolean = ctx.T_VOID() != null
 
         fun parse(symbolTable: SymbolTable, ctx: Return_typeContext): Type {
             return when {

@@ -148,6 +148,21 @@ class SyntacticIntegrationTest {
     }
 
     @Nested
+    inner class HeapValidFiles {
+        private val heapFolderPath = "$validFolderPath/heap"
+
+        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ValueSource(
+            strings = [
+                "allocBasicTypes"
+            ]
+        )
+        fun testSyntacticallyValid(fileName: String) {
+            assertTrue(isSyntacticallyValid("$heapFolderPath/$fileName.wacc"))
+        }
+    }
+
+    @Nested
     inner class IfValidFiles {
         private val ifValidFileFolderPath = "$validFolderPath/if"
 

@@ -640,7 +640,7 @@ class AstAssemblyGenerator(
         // load address of value into resultRegister
         getAddress(node)
 
-        if (node.elemType.size == WORD) {
+        if (node.type.size == WORD) {
             addLines(
                 // put whats at that index into result reg
                 LoadWord(resultRegister, ZeroOffset(resultRegister))

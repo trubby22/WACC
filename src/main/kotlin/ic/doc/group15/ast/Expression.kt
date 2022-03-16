@@ -8,6 +8,11 @@ abstract class ExpressionAST protected constructor(
     type: VariableType
 ) : AssignRhsAST(symbolTable, type)
 
+class SizeOfAST(
+    symbolTable: SymbolTable,
+    sizeOfType: VariableType
+) : ExpressionAST(symbolTable, BasicType.IntType)
+
 class IntLiteralAST(val intValue: Int) : ExpressionAST(type = BasicType.IntType)
 class BoolLiteralAST(val boolValue: Boolean) : ExpressionAST(type = BasicType.BoolType)
 class CharLiteralAST(val charValue: Char) : ExpressionAST(type = BasicType.CharType)
@@ -20,12 +25,19 @@ open class VariableIdentifierAST(
     open val ident: Variable
 ) : ExpressionAST(symbolTable, ident.type)
 
+class DerefPointerAST(
+    symbolTable: SymbolTable,
+    val expr: ExpressionAST,
+    val numDerefs: Int,
+    type: VariableType
+) : ExpressionAST(symbolTable, type)
+
 class ArrayElemAST(
     symbolTable: SymbolTable,
     val arrayVar: VariableIdentifierAST,
     val indexExpr: List<ExpressionAST>,
-    val elemType: VariableType
-) : ExpressionAST(symbolTable, elemType)
+    type: VariableType
+) : ExpressionAST(symbolTable, type)
 
 class UnaryOpExprAST(
     symbolTable: SymbolTable,

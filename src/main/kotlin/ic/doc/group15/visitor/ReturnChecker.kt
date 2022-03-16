@@ -4,7 +4,6 @@ import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.syntactic.MissingReturnError
-import ic.doc.group15.type.ReturnableType
 import ic.doc.group15.type.TypeParser
 
 /**
@@ -20,8 +19,7 @@ class ReturnChecker(
     override fun visitFunc(ctx: WaccParser.FuncContext): Boolean {
         val funcName = ctx.ident().text
         log("Checking return statements of $funcName...")
-        val returnType = TypeParser.parse(ctx.return_type())
-        if (returnType == ReturnableType.VOID) {
+        if (TypeParser.returnTypeIsVoid(ctx.return_type())) {
             log("Return type of $funcName is void! No need to check for return statements.")
             return true
         }

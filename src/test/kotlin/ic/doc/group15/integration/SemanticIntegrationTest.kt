@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-private const val ENABLE_LOGGING = false
+private const val ENABLE_LOGGING = true
 
 class SemanticIntegrationTest {
     private val validFolderPath = "wacc_examples/valid"
@@ -149,6 +149,21 @@ class SemanticIntegrationTest {
             fun testSemanticallyValid(fileName: String) {
                 assertTrue(isSemanticallyValid("$voidFunctionFolderPath/$fileName.wacc"))
             }
+        }
+    }
+
+    @Nested
+    inner class HeapValidFiles {
+        private val heapFolderPath = "$validFolderPath/heap"
+
+        @ParameterizedTest(name = "check {0} source code is semantically valid")
+        @ValueSource(
+            strings = [
+                "allocBasicTypes"
+            ]
+        )
+        fun testSemanticallyValid(fileName: String) {
+            assertTrue(isSemanticallyValid("$heapFolderPath/$fileName.wacc"))
         }
     }
 

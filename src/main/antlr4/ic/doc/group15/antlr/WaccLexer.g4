@@ -54,6 +54,7 @@ CALL: 'call';
 NULL: 'null';
 SIZEOF: 'sizeof';
 POINTER: 'pointer';
+DEREF: '$';
 ALLOC: 'alloc';
 FREE: 'free';
 

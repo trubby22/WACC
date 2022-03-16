@@ -33,6 +33,7 @@ stat: SKIP_STAT                                                     #skipStat
 assign_lhs: ident                                                   #identAssignLhs
           | array_elem                                              #arrayElemAssignLhs
           | pair_elem                                               #pairElemAssignLhs
+          | pointer_deref                                           #derefAssignLhs
 ;
 
 assign_rhs: expr                                                    #exprAssignRhs
@@ -40,6 +41,7 @@ assign_rhs: expr                                                    #exprAssignR
           | NEWPAIR OPEN_PAREN expr COMMA expr CLOSE_PAREN          #newPairAssignRhs
           | pair_elem                                               #pairElemAssignRhs
           | call                                                    #callAssignRhs
+          | ALLOC OPEN_PAREN expr CLOSE_PAREN                       #allocAssignRhs
 ;
 
 arg_list: expr (COMMA expr)*;
@@ -49,6 +51,8 @@ call: CALL ident OPEN_PAREN arg_list? CLOSE_PAREN;
 pair_elem: FST expr                                                 #fstPair
          | SND expr                                                 #sndPair
 ;
+
+pointer_deref: (DEREF)+ expr;
 
 return_type: type
            | T_VOID
@@ -76,6 +80,8 @@ pair_elem_type: base_type
 pointer_type: POINTER OPEN_PAREN type CLOSE_PAREN;
 
 expr: OPEN_PAREN expr CLOSE_PAREN                                   #bracketExpr
+    | SIZEOF type                                                   #sizeofExpr
+    | pointer_deref                                                 #derefExpr
     | int_liter                                                     #singleElemExpr
     | bool_liter                                                    #singleElemExpr
     | char_liter                                                    #singleElemExpr
@@ -83,7 +89,6 @@ expr: OPEN_PAREN expr CLOSE_PAREN                                   #bracketExpr
     | pair_liter                                                    #singleElemExpr
     | array_elem                                                    #singleElemExpr
     | ident                                                         #identExpr
-    | SIZEOF type                                                   #sizeofExpr
     | BANG expr                                                     #unaryExpr
     | MINUS expr                                                    #unaryExpr
     | LEN expr                                                      #unaryExpr

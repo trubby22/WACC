@@ -1,0 +1,18 @@
+begin
+  pointer(int) i = alloc(sizeof int) ;
+  pointer(char) c = alloc(sizeof char) ;
+  pointer(bool) b = alloc(sizeof bool) ;
+  pointer(string) s = alloc(sizeof string) ;
+
+  print "Int address: " ;
+  println i ;
+
+  print "Char address: " ;
+  println c ;
+
+  print "Bool address: " ;
+  println b ;
+
+  print "String address: " ;
+  println s
+end

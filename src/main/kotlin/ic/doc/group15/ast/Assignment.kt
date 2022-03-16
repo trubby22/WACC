@@ -31,6 +31,11 @@ class AssignToPairElemAST(
     lhs: PairElemAST
 ) : AssignmentAST<PairElemAST>(parent, lhs, lhs.type)
 
+class AssignToDerefAST(
+    parent: BlockAST,
+    lhs: DerefPointerAST
+) : AssignmentAST<DerefPointerAST>(parent, lhs, lhs.type)
+
 class ArrayLiteralAST(
     symbolTable: SymbolTable,
     elemType: VariableType,
@@ -42,6 +47,11 @@ class NewPairAST(
     val fstExpr: ExpressionAST,
     val sndExpr: ExpressionAST
 ) : AssignRhsAST(symbolTable, PairType(fstExpr.type, sndExpr.type))
+
+class AllocAST(
+    symbolTable: SymbolTable,
+    val expr: ExpressionAST
+) : AssignRhsAST(symbolTable, Type.ANY)
 
 abstract class PairElemAST protected constructor(
     symbolTable: SymbolTable,

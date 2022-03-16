@@ -95,12 +95,7 @@ class ParseTreeVisitor(
 
         log(""" || Return type: $returnTypeName""")
 
-        val returnType = ctx.return_type()
-        var t = if (returnType.type() != null) {
-            TypeParser.parse(funcSt, returnType.type())
-        } else {
-            ReturnableType.VOID
-        }
+        var t = TypeParser.parse(symbolTable, ctx.return_type())
         val f = oldSt.lookupAll(funcName)
 
         when {
