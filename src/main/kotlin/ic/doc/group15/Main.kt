@@ -7,7 +7,7 @@ import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
-import ic.doc.group15.visitor.AssemblyGenerator
+import ic.doc.group15.visitor.AstAssemblyGenerator
 import ic.doc.group15.visitor.ParseTreeVisitor
 import ic.doc.group15.visitor.ReturnChecker
 import org.antlr.v4.runtime.CharStreams
@@ -32,7 +32,7 @@ fun main(args: ArgsList) {
         return
     }
     val sourceFilePath: String = args[0]
-    enableLogging = args.hasOption(LOGGING)
+    enableLogging = enableLogging || args.hasOption(LOGGING)
     val printAssembly = args.hasOption(PRINT_ASM)
 
     // Read the source file
@@ -88,7 +88,7 @@ fun main(args: ArgsList) {
     // Generate the assembly code and write it to the assembly file
     log("\nGenerating assembly code...\n")
     val writer = assemblyFile.bufferedWriter()
-    val assemblyGenerator = AssemblyGenerator(ast, enableLogging = enableLogging)
+    val assemblyGenerator = AstAssemblyGenerator(ast, enableLogging = enableLogging)
     assemblyGenerator.generate(writer)
     writer.close()
     log("\nCompilation finished.")

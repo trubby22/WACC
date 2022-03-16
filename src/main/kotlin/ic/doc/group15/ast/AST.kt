@@ -1,11 +1,12 @@
 package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
+import ic.doc.group15.visitor.Translatable
 import java.util.*
 
 abstract class ASTNode protected constructor(
     val symbolTable: SymbolTable = SymbolTable.emptyTable
-)
+) : Translatable
 
 class AST(topLevelSymbolTable: SymbolTable) : BlockAST(null, topLevelSymbolTable) {
 
