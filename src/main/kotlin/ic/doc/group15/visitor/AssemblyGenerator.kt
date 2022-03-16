@@ -18,7 +18,6 @@ import ic.doc.group15.assembly.operand.Register.*
 import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
 import ic.doc.group15.type.*
-import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.BasicType.Companion.BoolType
 import ic.doc.group15.type.BasicType.Companion.CharType
 import ic.doc.group15.type.BasicType.Companion.IntType
@@ -154,8 +153,18 @@ class AssemblyGenerator(
         functionEpilogue(node)
     }
 
-    @TranslatorMethod(CallAST::class)
-    private fun translateCall(node: CallAST) {
+    @TranslatorMethod(CallAssignAST::class)
+    private fun translateCall(node: CallAssignAST) {
+        translate(node.callStat)
+
+        log("Translating call assign")
+
+        // Move the result from R0 to resultRegister
+        addLines(Move(resultRegister, R0))
+    }
+
+    @TranslatorMethod(CallStatementAST::class)
+    private fun translateCallStat(node: CallStatementAST) {
         log("Translating call")
 
         var callStackSize = 0
@@ -190,9 +199,6 @@ class AssemblyGenerator(
         if (callStackSize > 0) {
             addLines(Add(SP, SP, IntImmediateOperand(callStackSize)))
         }
-
-        // Move the result from R0 to resultRegister
-        addLines(Move(resultRegister, R0))
     }
 
     @TranslatorMethod(VariableDeclarationAST::class)

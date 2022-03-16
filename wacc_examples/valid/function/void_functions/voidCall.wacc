@@ -1,0 +1,9 @@
+# calling a void function
+
+begin
+  void f() is
+    println "f called" ;
+    return
+  end
+  call f()
+end

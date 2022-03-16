@@ -59,10 +59,8 @@ class SndPairElemAST(
     pairExpr: ExpressionAST
 ) : PairElemAST(symbolTable, (pairExpr.type as PairType).sndType, pairExpr)
 
-class CallAST(
+class CallAssignAST(
     symbolTable: SymbolTable,
-    val funcName: String,
-    val funcIdent: FunctionType,
-    val actuals: MutableList<ExpressionAST>
-) : AssignRhsAST(symbolTable, funcIdent.returnType as VariableType)
+    val callStat: CallStatementAST
+) : AssignRhsAST(symbolTable, callStat.funcIdent.returnType as VariableType)
 

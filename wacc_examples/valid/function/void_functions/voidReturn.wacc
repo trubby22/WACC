@@ -1,0 +1,8 @@
+# a void function that has a void return statement
+
+begin
+  void f() is
+    return
+  end
+  skip
+end

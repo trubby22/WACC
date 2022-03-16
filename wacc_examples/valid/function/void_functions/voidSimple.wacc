@@ -1,0 +1,8 @@
+# a simple void function definition
+
+begin
+  void f() is
+    skip
+  end
+  skip
+end

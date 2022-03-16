@@ -96,7 +96,7 @@ class ParseTreeVisitor(
         log(""" || Return type: $returnTypeName""")
 
         val returnType = ctx.return_type()
-        val t = if (returnType.type() != null) {
+        var t = if (returnType.type() != null) {
             TypeParser.parse(funcSt, returnType.type())
         } else {
             ReturnableType.VOID
@@ -106,6 +106,7 @@ class ParseTreeVisitor(
         when {
             t !is ReturnableType -> {
                 addError(NotReturnableError(ctx.return_type().start, t))
+                t = Type.ANY
             }
             f != null -> {
                 addError(FunctionAlreadyDeclaredError(ident.start, funcName))
@@ -129,7 +130,7 @@ class ParseTreeVisitor(
         symbolTable = oldSt
 
         func.funcIdent = FunctionType(
-            t as VariableType,
+            t as ReturnableType,
             func.formals.map { it.ident },
             funcSt
         )
@@ -180,14 +181,6 @@ class ParseTreeVisitor(
         return parameterAST
     }
 
-    override fun visitCallStat(ctx: CallStatContext): ASTNode {
-        log("Visiting call statement")
-
-        val call = visit(ctx.call()) as CallAST
-
-        return scopeAST.addStatement(CallStatementAST(scopeAST, symbolTable, call))
-    }
-
     override fun visitPrintStat(ctx: PrintStatContext): ASTNode {
         log("Visiting print statement")
 
@@ -231,6 +224,63 @@ class ParseTreeVisitor(
         log("Visiting skip statement")
 
         return scopeAST.addStatement(SkipStatementAST(scopeAST))
+    }
+
+    override fun visitCall(ctx: CallContext): ASTNode {
+        val ident = ctx.ident()
+        val funcName = ident.text
+        log("Visiting $funcName function call")
+        var f = symbolTable.lookupAll(funcName)
+
+        val args: MutableList<ExprContext> =
+            if (ctx.arg_list() != null) ctx.arg_list().expr() else mutableListOf()
+
+        if (f == null) {
+            if (functionsToVisit.containsKey(funcName)) {
+                log("Function $funcName called before it was defined!")
+                val oldAst = scopeAST
+                val oldSt = symbolTable
+                // Go back to the top scope as that is the only place where functions can be
+                // defined
+                scopeAST = topAst
+                symbolTable = topSymbolTable
+                f = (visitFunc(functionsToVisit[funcName]!!) as FunctionDeclarationAST).funcIdent
+                scopeAST = oldAst
+                symbolTable = oldSt
+                functionsToVisit.remove(funcName)
+            } else {
+                addError(IdentifierNotDefinedError(ident.start, funcName))
+            }
+        }
+
+        if (f !is FunctionType) {
+            addError(NotAFunctionError(ident.start, funcName))
+        }
+        f = f as FunctionType
+
+        val actuals: MutableList<ExpressionAST> = LinkedList()
+
+        if (f.formals.size != args.size) {
+            addError(
+                NumArgumentsError(ctx.arg_list().start, funcName, f.formals.size, args.size)
+            )
+        }
+
+        for (k in args.indices) {
+            if (k >= f.formals.size) {
+                break
+            }
+            val arg = args[k]
+            val argExpr = visit(arg) as ExpressionAST
+            if (!f.formals[k].type.compatible(argExpr.type)) {
+                addError(
+                    ParameterTypeError(arg.start, funcName, k, f.formals[k].type, argExpr.type)
+                )
+            }
+            actuals.add(argExpr)
+        }
+
+        return scopeAST.addStatement(CallStatementAST(scopeAST, symbolTable, funcName, f, actuals))
     }
 
     override fun visitReadStat(ctx: ReadStatContext): ASTNode {
@@ -491,6 +541,14 @@ class ParseTreeVisitor(
         return visit(ctx.pair_elem())
     }
 
+    override fun visitCallAssignRhs(ctx: CallAssignRhsContext): ASTNode {
+        log("Visiting call assign rhs")
+
+        val call = visit(ctx.call()) as CallStatementAST
+
+        return CallAssignAST(symbolTable, call)
+    }
+
     override fun visitArrayElemAssignLhs(ctx: ArrayElemAssignLhsContext): ASTNode {
         return AssignToArrayElemAST(scopeAST, visitArray_elem(ctx.array_elem()) as ArrayElemAST)
     }
@@ -546,63 +604,6 @@ class ParseTreeVisitor(
         }
 
         return SndPairElemAST(symbolTable, expr)
-    }
-
-    override fun visitCall(ctx: CallContext): ASTNode {
-        val ident = ctx.ident()
-        val funcName = ident.text
-        log("Visiting $funcName function call")
-        var f = symbolTable.lookupAll(funcName)
-
-        val args: MutableList<ExprContext> =
-            if (ctx.arg_list() != null) ctx.arg_list().expr() else mutableListOf()
-
-        if (f == null) {
-            if (functionsToVisit.containsKey(funcName)) {
-                log("Function $funcName called before it was defined!")
-                val oldAst = scopeAST
-                val oldSt = symbolTable
-                // Go back to the top scope as that is the only place where functions can be
-                // defined
-                scopeAST = topAst
-                symbolTable = topSymbolTable
-                f = (visitFunc(functionsToVisit[funcName]!!) as FunctionDeclarationAST).funcIdent
-                scopeAST = oldAst
-                symbolTable = oldSt
-                functionsToVisit.remove(funcName)
-            } else {
-                addError(IdentifierNotDefinedError(ident.start, funcName))
-            }
-        }
-
-        if (f !is FunctionType) {
-            addError(NotAFunctionError(ident.start, funcName))
-        }
-        f = f as FunctionType
-
-        val actuals: MutableList<ExpressionAST> = LinkedList()
-
-        if (f.formals.size != args.size) {
-            addError(
-                NumArgumentsError(ctx.arg_list().start, funcName, f.formals.size, args.size)
-            )
-        }
-
-        for (k in args.indices) {
-            if (k >= f.formals.size) {
-                break
-            }
-            val arg = args[k]
-            val argExpr = visit(arg) as ExpressionAST
-            if (!f.formals[k].type.compatible(argExpr.type)) {
-                addError(
-                    ParameterTypeError(arg.start, funcName, k, f.formals[k].type, argExpr.type)
-                )
-            }
-            actuals.add(argExpr)
-        }
-
-        return CallAST(symbolTable, funcName, f, actuals)
     }
 
     //endregion

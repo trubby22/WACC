@@ -25,7 +25,9 @@ class ParameterAST(
 class CallStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val call: CallAST
+    val funcName: String,
+    val funcIdent: FunctionType,
+    val actuals: List<ExpressionAST>
 ) : StatementAST(parent, symbolTable)
 
 class SkipStatementAST(

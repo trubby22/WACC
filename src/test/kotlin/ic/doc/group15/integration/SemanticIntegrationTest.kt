@@ -135,6 +135,21 @@ class SemanticIntegrationTest {
                 assertTrue(isSemanticallyValid("$simpleFunctionsFolderPath/$fileName.wacc"))
             }
         }
+
+        @Nested
+        inner class VoidFunctionValidFiles {
+            private val voidFunctionFolderPath = "$functionsFolderPath/void_functions"
+
+            @ParameterizedTest(name = "check {0} source code is semantically valid")
+            @ValueSource(
+                strings = [
+                    "voidSimple", "voidReturn", "voidCall"
+                ]
+            )
+            fun testSemanticallyValid(fileName: String) {
+                assertTrue(isSemanticallyValid("$voidFunctionFolderPath/$fileName.wacc"))
+            }
+        }
     }
 
     @Nested
