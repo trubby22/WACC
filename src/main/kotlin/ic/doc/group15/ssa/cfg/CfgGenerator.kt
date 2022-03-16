@@ -1,6 +1,5 @@
 package ic.doc.group15.ssa.cfg
 
-import ic.doc.group15.assembly.instruction.Add
 import ic.doc.group15.ast.*
 import ic.doc.group15.ssa.BasicBlock
 import ic.doc.group15.ssa.IRFunction
@@ -315,15 +314,18 @@ class CfgGenerator(
     @TranslatorMethod
     private fun translateReadStat(node: ReadStatementAST, cfgState: CfgState) {
         // Find if there is a previous reference
-        val param: Var = when (val lhs = node.target.lhs) {
-            is VariableIdentifierAST -> cfgState.varDefinedAt[lhs.ident]!!
-            is ArrayElemAST -> TODO()
-            is PairElemAST -> TODO()
+        when (val lhs = node.target.lhs) {
+            is VariableIdentifierAST -> translate(lhs, cfgState)
+            is ArrayElemAST -> translate(lhs, cfgState)
+            is PairElemAST -> translate(lhs, cfgState)
             else -> throw IllegalArgumentException("cannot read into expression $lhs")
         }
 
-        // Store read value in new register
-        val inst = Call(Functions.READ, param)
+        // Get variable referring to LHS
+        val reg = cfgState.resultRegister
+
+        // Perform read instruction
+        val inst = Call(Functions.READ, reg)
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -529,7 +531,7 @@ class CfgGenerator(
 
         val inst = when (unOpExpr.operator) {
             UnaryOp.BANG -> AssignCall(reg, Functions.BANG, resultReg)
-            UnaryOp.MINUS -> AssignBinOp(reg, BinaryOp.MINUS, IntImm(0), resultReg)
+            UnaryOp.MINUS -> AssignValue(reg, resultReg)
             UnaryOp.LEN -> AssignCall(reg, Functions.LEN, resultReg)
             UnaryOp.ORD -> AssignCall(reg, Functions.ORD, resultReg)
             UnaryOp.CHR -> AssignCall(reg, Functions.CHR, resultReg)
