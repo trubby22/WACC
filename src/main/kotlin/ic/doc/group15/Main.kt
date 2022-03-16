@@ -32,7 +32,7 @@ fun main(args: ArgsList) {
         return
     }
     val sourceFilePath: String = args[0]
-    enableLogging = args.hasOption(LOGGING)
+    enableLogging = enableLogging || args.hasOption(LOGGING)
     val printAssembly = args.hasOption(PRINT_ASM)
 
     // Read the source file

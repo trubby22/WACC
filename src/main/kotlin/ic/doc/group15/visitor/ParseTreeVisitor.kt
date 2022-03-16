@@ -49,7 +49,7 @@ class ParseTreeVisitor(
 
         log("Visiting function definitions")
         for (func in ctx.func()) {
-            program.addStatement(visitFunc(func) as FunctionDeclarationAST)
+            visit(func)
         }
 
         log("Visiting main program")
@@ -142,7 +142,7 @@ class ParseTreeVisitor(
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return func
+        return scopeAST.addStatement(func)
     }
 
     override fun visitParam(ctx: ParamContext): ASTNode {
@@ -226,7 +226,11 @@ class ParseTreeVisitor(
         return scopeAST.addStatement(SkipStatementAST(scopeAST))
     }
 
-    override fun visitCall(ctx: CallContext): ASTNode {
+    override fun visitCallStat(ctx: CallStatContext): ASTNode {
+        return visitCall(ctx.call(), true)
+    }
+
+    private fun visitCall(ctx: CallContext, statement: Boolean = true): ASTNode {
         val ident = ctx.ident()
         val funcName = ident.text
         log("Visiting $funcName function call")
@@ -280,7 +284,11 @@ class ParseTreeVisitor(
             actuals.add(argExpr)
         }
 
-        return scopeAST.addStatement(CallStatementAST(scopeAST, symbolTable, funcName, f, actuals))
+        val stat = CallStatementAST(scopeAST, symbolTable, funcName, f, actuals)
+        if (statement) {
+            scopeAST.addStatement(stat)
+        }
+        return stat
     }
 
     override fun visitReadStat(ctx: ReadStatContext): ASTNode {
@@ -544,7 +552,7 @@ class ParseTreeVisitor(
     override fun visitCallAssignRhs(ctx: CallAssignRhsContext): ASTNode {
         log("Visiting call assign rhs")
 
-        val call = visit(ctx.call()) as CallStatementAST
+        val call = visitCall(ctx.call(), false) as CallStatementAST
 
         return CallAssignAST(symbolTable, call)
     }
