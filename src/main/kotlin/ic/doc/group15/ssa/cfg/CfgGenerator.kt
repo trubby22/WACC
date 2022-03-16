@@ -238,21 +238,32 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateVariableDeclaration(node: VariableDeclarationAST, cfgState: CfgState) {
-        TODO()
+        translate(node.rhs)
+        val resultReg = cfgState.resultRegister
+
+        // Add reference to the variable map
+        val v = node.varIdent
+        cfgState.varDefinedAt[v] = resultReg
     }
 
     @TranslatorMethod
     private fun translateAssignToVariable(node: AssignToIdentAST, cfgState: CfgState) {
         // Store value in result register
         translate(node.rhs, cfgState)
-        // Store reference of result register in variable map
         val resultReg = cfgState.resultRegister
-        cfgState.varDefinedAt[node.lhs.ident] = resultReg
+
+        // Store reference of result register in variable map
+        val v = node.lhs.ident
+        cfgState.varDefinedAt[v] = resultReg
     }
 
     @TranslatorMethod
     private fun translateFreeStat(node: FreeStatementAST, cfgState: CfgState) {
-        TODO()
+        val v = (node.expr as VariableIdentifierAST).ident
+        val addrReg = cfgState.varDefinedAt[v]!!
+
+        val inst = Call(Functions.FREE, addrReg)
+        cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
