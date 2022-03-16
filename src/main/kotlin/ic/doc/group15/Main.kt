@@ -3,9 +3,11 @@ package ic.doc.group15
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
+import ic.doc.group15.error.BCEErrorList
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.visitor.AssemblyGenerator
+import ic.doc.group15.visitor.BCEOptimizerSeq
 import ic.doc.group15.visitor.ParseTreeVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -29,12 +31,22 @@ fun main(args: Array<String>) {
     parser.removeErrorListener(syntacticErrorListener)
 
     val st = SymbolTable.topLevel()
-    val ast = AST(st)
+    var ast = AST(st)
     val semanticErrors = SemanticErrorList()
     val visitor = ParseTreeVisitor(ast, st, semanticErrors, enableLogging = ENABLE_LOGGING)
     visitor.visit(program)
 
     semanticErrors.checkErrors()
+
+    val bceErrors = BCEErrorList()
+    val astCopy = ast
+    val bceOptimizerSeq = BCEOptimizerSeq(ast, bceErrors, enableLogging =
+            ENABLE_LOGGING)
+    bceOptimizerSeq.removeArrayBoundChecking()
+
+    if (bceErrors.hasErrors()) {
+        ast = astCopy
+    }
 
     val assemblyGenerator = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
     val assemblyCode = assemblyGenerator.generate()
