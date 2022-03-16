@@ -426,14 +426,11 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateFstPairElem(node: FstPairElemAST, cfgState: CfgState) {
-        // Get base address of pair variable
-        translate(node.expr, cfgState)
+        translateAddress(node, cfgState)
         val addrReg = cfgState.resultRegister
-        // For backend analysis to insert null check before loading the address
-        assert(addrReg.type is PairType)
 
         // Load the value in memory into variable
-        val reg = cfgState.newVar(IntType)
+        val reg = cfgState.newVar(node.elemType)
         val inst = Load(reg, addrReg)
 
         cfgState.currentBlock.addInstructions(inst)
@@ -441,32 +438,35 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateSndPairElem(node: SndPairElemAST, cfgState: CfgState) {
-        // Get base address of pair variable
-        translate(node.expr, cfgState)
+        translateAddress(node, cfgState)
         val addrReg = cfgState.resultRegister
-        // For backend analysis to insert null check before loading the address
-        assert(addrReg.type() is PairType)
-
-        // Find the base address of second element of pair
-        val secondElemAddrReg = cfgState.newVar(addrReg.type())
-        val addrInst = AssignBinOp(secondElemAddrReg, BinaryOp.PLUS, secondElemAddrReg, IntImm(WORD))
 
         // Load the value in memory into variable
-        val reg = cfgState.newVar(IntType)
+        val reg = cfgState.newVar(node.elemType)
         val inst = Load(reg, addrReg)
 
-        cfgState.currentBlock.addInstructions(addrInst, inst)
+        cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
     private fun translateAssignToPairElem(node: AssignToPairElemAST, cfgState: CfgState) {
-        TODO()
+        // Translate expression
+        translate(node.rhs, cfgState)
+        val resultReg = cfgState.resultRegister
+
+        // Get base address of pair variable in memory
+        translateAddress(node.lhs, cfgState)
+        val addrReg = cfgState.resultRegister
+
+        // Add store instruction
+        val storeInst = Store(resultReg, addrReg)
+        cfgState.currentBlock.addInstructions(storeInst)
     }
 
     @TranslatorMethod
     private fun translateUnOp(unOpExpr: UnaryOpExprAST, cfgState: CfgState) {
         // Translate expression
-        translate(unOpExpr.expr)
+        translate(unOpExpr.expr, cfgState)
         val resultReg = cfgState.resultRegister
         // Create a new variable to store the result of binary operation
         val reg = cfgState.newVar(unOpExpr.expr.type)
@@ -497,6 +497,22 @@ class CfgGenerator(
 
         val inst = AssignBinOp(reg, op, x, y)
         cfgState.currentBlock.addInstructions(inst)
+    }
+
+    private fun translateAddress(node: PairElemAST, cfgState: CfgState) {
+        // Get base address of pair variable
+        translate(node.expr, cfgState)
+        val addrReg = cfgState.resultRegister
+        // For backend analysis to insert null check before loading the address
+        assert(addrReg.type() is PairType)
+
+        if (node is SndPairElemAST) {
+            // Find the base address of second element of pair
+            val secondElemAddrReg = cfgState.newVar(addrReg.type())
+            val addrInst = AssignBinOp(secondElemAddrReg, BinaryOp.PLUS, secondElemAddrReg, IntImm(WORD))
+
+            cfgState.currentBlock.addInstructions(addrInst)
+        }
     }
 
     private fun initialiseState(node: FunctionDeclarationAST, cfgState: CfgState) {
