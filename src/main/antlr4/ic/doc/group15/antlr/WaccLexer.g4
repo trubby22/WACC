@@ -28,7 +28,6 @@ IS: 'is';
 
 //functions
 READ: 'read';
-FREE: 'free';
 RETURN: 'return';
 EXIT: 'exit';
 PRINT: 'print';
@@ -49,10 +48,14 @@ END_STAT: ';';
 BEGIN: 'begin';
 END: 'end';
 
-//memory assignments
+//heap
 NEWPAIR: 'newpair';
 CALL: 'call';
 NULL: 'null';
+SIZEOF: 'sizeof';
+POINTER: 'pointer';
+ALLOC: 'alloc';
+FREE: 'free';
 
 //pair
 PAIR: 'pair';

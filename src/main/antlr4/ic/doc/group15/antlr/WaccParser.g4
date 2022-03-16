@@ -57,6 +57,7 @@ return_type: type
 type: base_type
     | array_type
     | pair_type
+    | pointer_type
 ;
 
 base_type: T_INT | T_BOOL | T_CHAR | T_STRING;
@@ -72,6 +73,8 @@ pair_elem_type: base_type
               | PAIR
 ;
 
+pointer_type: POINTER OPEN_PAREN type CLOSE_PAREN;
+
 expr: OPEN_PAREN expr CLOSE_PAREN                                   #bracketExpr
     | int_liter                                                     #singleElemExpr
     | bool_liter                                                    #singleElemExpr
@@ -80,6 +83,7 @@ expr: OPEN_PAREN expr CLOSE_PAREN                                   #bracketExpr
     | pair_liter                                                    #singleElemExpr
     | array_elem                                                    #singleElemExpr
     | ident                                                         #identExpr
+    | SIZEOF type                                                   #sizeofExpr
     | BANG expr                                                     #unaryExpr
     | MINUS expr                                                    #unaryExpr
     | LEN expr                                                      #unaryExpr
