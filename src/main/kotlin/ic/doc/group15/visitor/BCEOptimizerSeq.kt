@@ -20,7 +20,11 @@ class BCEOptimizerSeq (
             FunctionDeclarationAST> = mutableMapOf()
 
     fun removeArrayBoundChecking() {
+        log("----------------")
+        log("Begin BCE optimization")
         translateProgram(ast)
+        log("BCE optimization complete")
+        log("----------------")
     }
 
     @TranslatorMethod(AST::class)
@@ -249,11 +253,13 @@ class BCEOptimizerSeq (
         val first = indices.first()
         if (indices.isNotEmpty() && first != null) {
             addArrayUse(name, ArrayAccess(scope, first))
-            accessArrayAtIndex(
-                getLatestArrayDeclaration(name).references[first]!!,
-                indices.subList(1, indices.size),
-                scope
-            )
+            if (indices.size > 1) {
+                accessArrayAtIndex(
+                    getLatestArrayDeclaration(name).references[first]!!,
+                    indices.subList(1, indices.size),
+                    scope
+                )
+            }
         }
     }
 
@@ -313,13 +319,18 @@ class BCEOptimizerSeq (
     ) {
         val possibleBCEs = mutableListOf<Boolean>()
         var currentName = name
-        for (index in indices.takeWhile { it != null }) {
+        val validIndices = indices.takeWhile { it != null }
+        for (i in validIndices.indices) {
+            val index = validIndices[i]
             possibleBCEs.add(eliminateBC(currentName, index!!))
+            if (i == validIndices.size - 1) {
+                break
+            }
             currentName = getLatestArrayDeclaration(currentName)
                 .references[index]!!
         }
         indices.dropWhile { it != null }.forEach { possibleBCEs.add(false) }
-        node.requiresBoundsCheck = possibleBCEs
+        node.noBoundCheckRequired = possibleBCEs
     }
 
     private fun eliminateBC(name: String, index: Int): Boolean {

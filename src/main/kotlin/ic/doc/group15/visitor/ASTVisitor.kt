@@ -6,6 +6,7 @@ import ic.doc.group15.ast.ASTNode
 import ic.doc.group15.ast.BlockAST
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
+import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.jvm.isAccessible
 
 private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
@@ -15,10 +16,9 @@ abstract class ASTVisitor(
     private val enableLogging: Boolean = true
 ) {
 
-    companion object {
-        private val translators: TranslatorMap by lazy {
-            this::class.java.declaringClass::class.members
-                .filter {
+    private val translators: TranslatorMap by lazy {
+        this::class.members
+            .filter {
                 it.annotations.isNotEmpty() && it.annotations.all { a -> a is TranslatorMethod }
             }.map {
                 assert(it.annotations.size == 1)
@@ -26,10 +26,11 @@ abstract class ASTVisitor(
                 val annotation = it.annotations[0] as TranslatorMethod
                 annotation.nodeType to it
             }.toMap()
-        }
     }
 
     protected fun translate(node: ASTNode) {
+//        log("translators.keys: ${translators.keys}")
+//        log("${this::class.simpleName}")
         translators[node::class]?.call(this, node)
     }
 

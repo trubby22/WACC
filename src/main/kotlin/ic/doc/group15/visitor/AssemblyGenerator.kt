@@ -23,13 +23,9 @@ import ic.doc.group15.type.PairType
 import ic.doc.group15.type.Param
 import ic.doc.group15.type.Variable
 import ic.doc.group15.util.BYTE
-import ic.doc.group15.util.Out
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
-import kotlin.reflect.KCallable
-import kotlin.reflect.KClass
-import kotlin.reflect.jvm.isAccessible
 
 //private typealias TranslatorMap = Map<KClass<out ASTNode>, KCallable<*>>
 
@@ -701,8 +697,8 @@ class AssemblyGenerator(
                 Move(R0, resultRegister.nextReg()),
                 Move(R1, resultRegister)
             )
-            if (node.lhs.requiresBoundsCheck == null ||
-                node.lhs.requiresBoundsCheck!![i]) {
+            if (node.lhs.noBoundCheckRequired == null ||
+                !node.lhs.noBoundCheckRequired!![i]) {
                 addLines(BranchLink(P_CHECK_ARRAY_BOUNDS))
             }
             addLines(
@@ -1210,8 +1206,8 @@ class AssemblyGenerator(
                 Move(R0, resultRegister.nextReg()),
                 Move(R1, resultRegister)
             )
-            if (arrayElem.requiresBoundsCheck == null ||
-                arrayElem.requiresBoundsCheck!![i]) {
+            if (arrayElem.noBoundCheckRequired == null ||
+                !arrayElem.noBoundCheckRequired!![i]) {
                 addLines(
                     BranchLink(P_CHECK_ARRAY_BOUNDS)
                 )
