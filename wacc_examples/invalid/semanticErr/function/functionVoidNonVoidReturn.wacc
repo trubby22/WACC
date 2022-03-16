@@ -1,0 +1,7 @@
+begin
+  void f() is
+    return 2
+  end
+
+  call f()
+end

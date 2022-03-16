@@ -1,0 +1,7 @@
+begin
+  int f() is
+    return
+  end
+
+  int x = call f()
+end

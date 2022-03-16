@@ -377,7 +377,8 @@ class SyntacticIntegrationTest {
                     "badlyNamed", "badlyPlaced", "funcExpr", "funcExpr2", "functionConditionalNoReturn",
                     "functionEndingNotReturn", "functionLateDefine", "functionMissingCall", "functionMissingParam",
                     "functionMissingPType", "functionNoReturn", "functionReturnInLoop", "functionScopeDef",
-                    "mutualRecursionNoReturn", "noBodyAfterFuncs", "thisIsNotC"
+                    "mutualRecursionNoReturn", "noBodyAfterFuncs", "thisIsNotC",
+                    "functionVoidNoReturn", "functionVoidConditionalNoReturn"
                 ]
             )
             fun testSyntacticallyValid(fileName: String) {

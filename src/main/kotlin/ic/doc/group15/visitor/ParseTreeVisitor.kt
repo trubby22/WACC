@@ -331,7 +331,7 @@ class ParseTreeVisitor(
         log("actual return type: $returnType")
 
         if (!funcReturnType.compatible(returnType)) {
-            addError(ReturnTypeError(ctx.expr().start, funcReturnType, returnType))
+            addError(ReturnTypeError(ctx.expr()?.start ?: ctx.start, funcReturnType, returnType))
         }
 
         val returnStat = ReturnStatementAST(func, symbolTable, expr, returnType)

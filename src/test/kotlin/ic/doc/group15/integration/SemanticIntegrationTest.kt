@@ -143,7 +143,7 @@ class SemanticIntegrationTest {
             @ParameterizedTest(name = "check {0} source code is semantically valid")
             @ValueSource(
                 strings = [
-                    "voidSimple", "voidReturn", "voidCall"
+                    "voidSimple", "voidReturn", "voidCall", "voidExit"
                 ]
             )
             fun testSemanticallyValid(fileName: String) {
@@ -403,7 +403,7 @@ class SemanticIntegrationTest {
                 strings = [
                     "functionAssign", "functionBadArgUse", "functionBadCall", "functionBadParam",
                     "functionBadReturn", "functionOverArgs", "functionRedefine", "functionSwapArgs", "functionUnderArgs",
-                    "funcVarAccess"
+                    "funcVarAccess", "functionNonVoidVoidReturn", "functionVoidNonVoidReturn"
                 ]
             )
             fun testSemanticallyValid(fileName: String) {

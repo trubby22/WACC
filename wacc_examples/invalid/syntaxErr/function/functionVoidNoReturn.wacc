@@ -1,0 +1,7 @@
+begin
+  void f() is
+    bool b = true
+  end
+
+  call f();
+end

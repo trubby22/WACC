@@ -1,0 +1,7 @@
+begin
+  void f() is
+    exit 1
+  end
+
+  call f()
+end
