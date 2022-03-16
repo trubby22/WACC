@@ -52,8 +52,6 @@ pair_elem: FST expr                                                 #fstPair
          | SND expr                                                 #sndPair
 ;
 
-pointer_deref: (DEREF)+ expr;
-
 return_type: type
            | T_VOID
 ;
@@ -110,6 +108,8 @@ expr: OPEN_PAREN expr CLOSE_PAREN                                   #bracketExpr
 ;
 
 ident: IDENT;
+
+pointer_deref: (DEREF)+ expr;
 
 array_elem: ident (OPEN_BRACKETS expr CLOSE_BRACKETS)+;
 

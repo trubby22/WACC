@@ -51,7 +51,7 @@ class NewPairAST(
 class AllocAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST
-) : AssignRhsAST(symbolTable, Type.ANY)
+) : AssignRhsAST(symbolTable, PointerType.ANY_POINTER)
 
 abstract class PairElemAST protected constructor(
     symbolTable: SymbolTable,

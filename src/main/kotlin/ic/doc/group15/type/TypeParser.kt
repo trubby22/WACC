@@ -28,8 +28,12 @@ class TypeParser {
                 ctx.pair_type() != null -> {
                     parse(symbolTable, ctx.pair_type())
                 }
-                else -> {
+                ctx.array_type() != null -> {
                     parse(symbolTable, ctx.array_type())
+                }
+                else -> {
+                    assert(ctx.pointer_type() != null)
+                    parse(symbolTable, ctx.pointer_type())
                 }
             }
         }
@@ -64,14 +68,18 @@ class TypeParser {
         }
 
         private fun parse(symbolTable: SymbolTable, ctx: Array_typeContext): Type {
-            val type: Type
-            if (ctx.pair_type() != null) {
-                type = parse(symbolTable, ctx.pair_type() as Pair_typeContext)
+            val type: Type = if (ctx.pair_type() != null) {
+                parse(symbolTable, ctx.pair_type() as Pair_typeContext)
             } else {
                 assert(ctx.base_type() != null)
-                type = parse(symbolTable, ctx.base_type() as Base_typeContext)
+                parse(symbolTable, ctx.base_type() as Base_typeContext)
             }
             return ArrayType(type as VariableType, ctx.array_brackets().size)
+        }
+
+        private fun parse(symbolTable: SymbolTable, ctx: Pointer_typeContext): Type {
+            val type: Type = parse(symbolTable, ctx.type())
+            return PointerType(type as VariableType, 1)
         }
     }
 }

@@ -59,13 +59,23 @@ class ReturnTypeError(
     actualType
 )
 
+class AllocTypeError(
+    allocExprToken: Token,
+    actualType: Type
+) : TypeError(
+    allocExprToken,
+    "malloc can only take integer expressions",
+    IntType,
+    actualType
+)
+
 class FreeTypeError(
     freeExprToken: Token,
     actualType: Type
 ) : TypeError(
     freeExprToken,
-    "free statement can only take pairs and arrays as arguments",
-    listOf(PairType.ANY_PAIR, ArrayType.ANY_ARRAY),
+    "free statement can only take pairs, arrays and pointers as arguments",
+    listOf(PairType.ANY_PAIR, ArrayType.ANY_ARRAY, PointerType.ANY_POINTER),
     actualType
 )
 
@@ -100,6 +110,16 @@ class IndexingNonArrayTypeError(
     actualType
 )
 
+class DereferencingNonPointerTypeError(
+    derefToken: Token,
+    actualType: Type
+) : TypeError(
+    derefToken,
+    "Cannot dereference non-pointer type",
+    PointerType.ANY_POINTER,
+    actualType
+)
+
 class ArrayIndexTypeError(
     indexExprToken: Token,
     actualType: Type
@@ -127,6 +147,17 @@ class SndTypeError(
     sndExprToken,
     "snd can only be called on pairs",
     PairType.ANY_PAIR,
+    actualType
+)
+
+class SizeOfTypeError(
+    sizeOfToken: Token,
+    actualType: Type
+) : TypeError(
+    sizeOfToken,
+    "sizeof can only take variable types",
+    listOf(IntType, CharType, StringType, BoolType, PairType.ANY_PAIR, ArrayType.ANY_ARRAY,
+        PointerType.ANY_POINTER),
     actualType
 )
 

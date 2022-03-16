@@ -544,6 +544,18 @@ class ParseTreeVisitor(
         return visit(ctx.pair_elem())
     }
 
+    override fun visitAllocAssignRhs(ctx: AllocAssignRhsContext): ASTNode {
+        log("Visiting alloc")
+
+        val expr = visit(ctx.expr()) as ExpressionAST
+
+        if (expr.type != IntType) {
+            addError(AllocTypeError(ctx.expr().start, expr.type))
+        }
+
+        return AllocAST(symbolTable, expr)
+    }
+
     override fun visitCallAssignRhs(ctx: CallAssignRhsContext): ASTNode {
         log("Visiting call assign rhs")
 
@@ -560,15 +572,18 @@ class ParseTreeVisitor(
         return AssignToPairElemAST(scopeAST, visit(ctx.pair_elem()) as PairElemAST)
     }
 
+    override fun visitDerefAssignLhs(ctx: DerefAssignLhsContext): ASTNode {
+        return AssignToDerefAST(scopeAST, visitPointer_deref(ctx.pointer_deref()) as DerefPointerAST)
+    }
+
     override fun visitArray_elem(ctx: Array_elemContext): ASTNode {
         val identCtx = ctx.ident()
         val ident = visitIdent(identCtx) as VariableIdentifierAST
-        val arr: ArrayType
-        if (ident.type !is ArrayType) {
+        val arr = if (ident.type !is ArrayType) {
             addError(IndexingNonArrayTypeError(identCtx.start, ident.type))
-            arr = ArrayType.ANY_ARRAY
+            ArrayType.ANY_ARRAY
         } else {
-            arr = (symbolTable.lookupAll(ident.varName) as Variable).type as ArrayType
+            (symbolTable.lookupAll(ident.varName) as Variable).type as ArrayType
         }
         val indexList = mutableListOf<ExpressionAST>()
 
@@ -583,6 +598,32 @@ class ParseTreeVisitor(
         return ArrayElemAST(symbolTable, ident, indexList, arr.elementType)
     }
 
+    override fun visitPointer_deref(ctx: Pointer_derefContext): ASTNode {
+        log("Visiting pointer dereference")
+
+        // Every $ results in one dereference
+        val numDerefs = ctx.DEREF().size
+
+        val exprCtx = ctx.expr()
+        val expr = visit(exprCtx) as ExpressionAST
+
+        // Get the type at the end of the pointer chain
+        val elementType = if (expr.type !is PointerType) {
+            addError(DereferencingNonPointerTypeError(exprCtx.start, expr.type))
+            Type.ANY
+        } else {
+            expr.type
+        }
+
+        // Dereferencing too many times means that at one point we're dereferencing a non-pointer
+        expr.type as PointerType
+        if (numDerefs > expr.type.depth) {
+            addError(DereferencingNonPointerTypeError(ctx.start, expr.type.elementType))
+        }
+
+        return DerefPointerAST(symbolTable, expr, numDerefs, elementType)
+    }
+
     override fun visitNewPairAssignRhs(ctx: NewPairAssignRhsContext): ASTNode {
         val expr1 = visit(ctx.expr(0)) as ExpressionAST
         val expr2 = visit(ctx.expr(1)) as ExpressionAST
@@ -594,6 +635,8 @@ class ParseTreeVisitor(
         val expr = visit(exprCtx) as ExpressionAST
         if (expr.type !is PairType) {
             addError(FstTypeError(exprCtx.start, expr.type))
+        } else if (expr is NullPairLiteralAST) {
+            addError(PairElemNullError(exprCtx.start))
         }
 
         return FstPairElemAST(symbolTable, expr)
@@ -604,6 +647,8 @@ class ParseTreeVisitor(
         val expr = visit(exprCtx) as ExpressionAST
         if (expr.type !is PairType) {
             addError(SndTypeError(exprCtx.start, expr.type))
+        } else if (expr is NullPairLiteralAST) {
+            addError(PairElemNullError(exprCtx.start))
         }
 
         return SndPairElemAST(symbolTable, expr)
@@ -611,7 +656,20 @@ class ParseTreeVisitor(
 
     //endregion
 
-    //region literals
+    //region expressions
+
+    override fun visitSizeofExpr(ctx: SizeofExprContext): ASTNode {
+        log("Visiting sizeof ${ctx.type().text}")
+
+        // Get the type whose size we want
+        var t = TypeParser.parse(symbolTable, ctx.type())
+        if (t !is VariableType) {
+            addError(SizeOfTypeError(ctx.type().start, t))
+            t = Type.ANY
+        }
+
+        return SizeOfAST(symbolTable, t)
+    }
 
     override fun visitIdent(ctx: IdentContext): ASTNode {
         log("Visiting identifier with name ${ctx.text}")

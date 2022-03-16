@@ -42,3 +42,10 @@ class NumArgumentsError(
     argListToken,
     "Wrong number of arguments for call to $funcName: expected $expectedNum, got $actualNum"
 )
+
+class PairElemNullError(
+    nullExprToken: Token
+) : SemanticError(
+    nullExprToken,
+    "Cannot access element of null pair"
+)

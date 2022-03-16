@@ -46,7 +46,7 @@ class BasicType private constructor(val str: String, size: Int) : VariableType(s
         val StringType = BasicType("string", WORD)
     }
 
-    override fun compatible(type: Type): Boolean = type == this
+    override fun compatible(type: Type): Boolean = type == this || type == Type.ANY
 
     override fun toString(): String = str
 }
@@ -57,7 +57,7 @@ class PointerType(
 ) : VariableType(WORD), HeapAllocatedType {
 
     val elementType: VariableType
-    val references: Int
+    val depth: Int
 
     companion object {
         val ANY_POINTER = PointerType(Type.ANY, 1)
@@ -75,7 +75,7 @@ class PointerType(
             dim = references
         }
         this.elementType = type
-        this.references = dim
+        this.depth = dim
     }
 
     override fun compatible(type: Type): Boolean {
@@ -85,7 +85,7 @@ class PointerType(
         if (elementType == Type.ANY || type.elementType == Type.ANY) {
             return true
         }
-        if (references != type.references) {
+        if (depth != type.depth) {
             return false
         }
         assert(elementType !is PointerType)
@@ -94,7 +94,7 @@ class PointerType(
     }
 
     override fun toString(): String {
-        return "pointer(".repeat(references) + elementType.toString() + ")".repeat(references)
+        return "pointer(".repeat(depth) + elementType.toString() + ")".repeat(depth)
     }
 }
 
