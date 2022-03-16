@@ -2,14 +2,27 @@ package ic.doc.group15.ssa.optimisations
 
 import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.ssa.tac.*
+import kotlin.math.ln
+import kotlin.math.roundToInt
 
 /**
  * Applies optimisation techniques local to each basic block in three address code form.
  */
 
-class BinaryOperationIdentity {
+/**
+ * Simplify statements that are arithmetic/boolean identities.
+ */
+class OperationIdentity {
     companion object {
         fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
+            // Unary functions
+            if (instruction is AssignCall) {
+                return when (instruction.f) {
+                    Functions.BANG -> checkNotIdentity(instruction)
+                    else -> instruction
+                }
+            }
+
             // Skip if it is not a binary operation
             if (instruction !is AssignBinOp) return instruction
 
@@ -191,12 +204,36 @@ class BinaryOperationIdentity {
 
             return instruction
         }
+
+        private fun checkNotIdentity(instruction: AssignCall): ThreeAddressCode {
+            assert(instruction.args.size == 1)
+            val arg = instruction.args[0]
+
+            if (arg is BoolImm) {
+                return AssignValue(instruction.reg, BoolImm(!arg.value))
+            }
+
+            return instruction
+        }
     }
 }
 
+/**
+ * If both operands are of the same type and the immediate value is encoded, we can replace the
+ * operation with the result of the computation.
+ */
 class ConstantFolding {
     companion object {
         fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
+            // Unary functions
+            if (instruction is AssignCall) {
+                return when (instruction.f) {
+                    Functions.CHR -> foldChr(instruction)
+                    Functions.ORD -> foldOrd(instruction)
+                    else -> instruction
+                }
+            }
+
             // Skip if it is not a binary operation
             if (instruction !is AssignBinOp) return instruction
 
@@ -240,6 +277,71 @@ class ConstantFolding {
             }
 
             return instruction
+        }
+
+        private fun foldChr(instruction: AssignCall): ThreeAddressCode {
+            assert(instruction.args.size == 1)
+            val arg = instruction.args[0]
+
+            if (arg is IntImm) return AssignValue(instruction.reg, CharImm(arg.value.toChar()))
+
+            return instruction
+        }
+
+        private fun foldOrd(instruction: AssignCall): ThreeAddressCode {
+            assert(instruction.args.size == 1)
+            val arg = instruction.args[0]
+
+            if (arg is CharImm) return AssignValue(instruction.reg, IntImm(arg.value.code))
+
+            return instruction
+        }
+    }
+}
+
+class OperatorStrengthReduction {
+    companion object {
+        fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
+            // Skip if it is not a binary operation
+            if (instruction !is AssignBinOp) return instruction
+
+            val (v, op, lhs, rhs) = instruction
+
+            if (op == BinaryOp.MULT) {
+                if (lhs is IntImm) {
+                    // (v = 2 * a) => v = a + a
+                    if (lhs.value == 2) return AssignBinOp(v, BinaryOp.PLUS, rhs, rhs)
+
+                    // v = (constant multiple of 2) * a => v = a << n
+                    if (isPowerOfTwo(lhs.value)) {
+                        val pow = getExponentOfBaseTwo(lhs.value)
+                        return AssignCall(v, Functions.LSL, rhs, IntImm(pow))
+                    }
+                }
+
+                // (v = 2 * a) or (v = a * 2) => v = a + a
+                if (rhs is IntImm) {
+                    if (rhs.value == 2) {
+                        return AssignBinOp(v, BinaryOp.PLUS, lhs, lhs)
+                    }
+
+                    // v = (constant multiple of 2) * a => v = a << n
+                    if (isPowerOfTwo(rhs.value)) {
+                        val pow = getExponentOfBaseTwo(rhs.value)
+                        return AssignCall(v, Functions.LSL, lhs, IntImm(pow))
+                    }
+                }
+            }
+
+            return instruction
+        }
+
+        private fun isPowerOfTwo(x: Int): Boolean {
+            return (x != 0) && ((x and (x - 1)) == 0)
+        }
+
+        private fun getExponentOfBaseTwo(x: Int): Int {
+            return (ln(x.toDouble()) / ln(2.0)).roundToInt()
         }
     }
 }
