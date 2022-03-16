@@ -18,8 +18,12 @@ abstract class ErrorList<T : WaccError> protected constructor(private val errorC
     }
 
     fun printErrors() {
-        for (e in errors) {
-            println(e)
+        if (errors.isNotEmpty()) {
+            println("${errors.size} error(s) detected during compilation! " +
+                    "Exit code $errorCode returned.")
+            for (e in errors) {
+                println(e)
+            }
         }
     }
 

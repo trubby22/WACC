@@ -2,6 +2,9 @@ package ic.doc.group15.integration
 
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
+import ic.doc.group15.error.SyntacticErrorList
+import ic.doc.group15.error.syntactic.SyntacticError
+import ic.doc.group15.visitor.ReturnChecker
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -462,6 +465,12 @@ class SyntacticIntegrationTest {
         parser.removeErrorListeners()
         parser.addErrorListener(DummyErrorListener())
         val program = parser.program()
+        val errors = SyntacticErrorList()
+        ReturnChecker(errors, true).visit(program)
+        if (errors.hasErrors()) {
+            errors.printErrors()
+            return false
+        }
         program.toStringTree(parser)
         return true
     }
@@ -473,11 +482,12 @@ class SyntacticIntegrationTest {
     }
 
     private fun isSyntacticallyInvalid(path: String): Boolean {
+        val result: Boolean
         try {
-            isSyntacticallyValid(path)
+            result = !isSyntacticallyValid(path)
         } catch (e: ParseCancellationException) {
             return true
         }
-        return false
+        return result
     }
 }

@@ -52,11 +52,16 @@ fun main(args: ArgsList) {
     syntacticErrorListener.terminateIfSyntacticErrorOccurred()
     parser.removeErrorListener(syntacticErrorListener)
 
+    val syntacticErrors = SyntacticErrorList()
+
+    val returnChecker = ReturnChecker(syntacticErrors, enableLogging = enableLogging)
+    returnChecker.visit(program)
+    syntacticErrors.checkErrors()
+
     // Perform semantic analysis and build the AST
     log("\nPerforming semantic analysis...\n")
     val st = SymbolTable()
     val ast = AST(st)
-    val syntacticErrors = SyntacticErrorList()
     val semanticErrors = SemanticErrorList()
     val visitor = ParseTreeVisitor(
         ast,
@@ -66,9 +71,6 @@ fun main(args: ArgsList) {
         enableLogging = enableLogging
     )
     visitor.visit(program)
-    syntacticErrors.checkErrors()
-
-    val returnChecker = ReturnChecker(ast, syntacticErrors, enableLogging = enableLogging)
     syntacticErrors.checkErrors()
 
     semanticErrors.checkErrors()
