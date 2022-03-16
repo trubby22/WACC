@@ -129,7 +129,7 @@ class ParseTreeVisitor(
 
         symbolTable = funcSt
         log("|| Visiting $funcName function body")
-        visit(ctx.valid_return_stat())
+        visit(ctx.stat())
         symbolTable = oldSt
         scopeAST = oldScope
 
@@ -231,7 +231,7 @@ class ParseTreeVisitor(
         return addToScope(ReadStatementAST(scopeAST, symbolTable, target))
     }
 
-    override fun visitReturn_stat(ctx: Return_statContext): ASTNode? {
+    override fun visitReturnStat(ctx: ReturnStatContext): ASTNode? {
         log("Visiting return statement")
 
         var enclosingAST: BlockAST? = scopeAST
@@ -268,26 +268,26 @@ class ParseTreeVisitor(
         return addToScope(returnStat)
     }
 
-    override fun visitSequenceRecursiveReturn1(ctx: SequenceRecursiveReturn1Context): ASTNode? {
-        visitSequence(ctx.return_stat(), ctx.valid_return_stat())
-        return null
-    }
+//    override fun visitSequenceRecursiveReturn1(ctx: SequenceRecursiveReturn1Context): ASTNode? {
+//        visitSequence(ctx.return_stat(), ctx.valid_return_stat())
+//        return null
+//    }
+//
+//    override fun visitSequenceRecursiveReturn2(ctx: SequenceRecursiveReturn2Context): ASTNode? {
+//        visitSequence(ctx.stat(), ctx.valid_return_stat())
+//        return null
+//    }
 
-    override fun visitSequenceRecursiveReturn2(ctx: SequenceRecursiveReturn2Context): ASTNode? {
-        visitSequence(ctx.stat(), ctx.valid_return_stat())
-        return null
-    }
+//    private fun visitSequence(statCtx: ParserRuleContext, validReturnCtx: Valid_return_statContext?) {
+//        visit(statCtx)
+//        if (validReturnCtx != null) {
+//            visit(validReturnCtx)
+//        }
+//    }
 
-    private fun visitSequence(statCtx: ParserRuleContext, validReturnCtx: Valid_return_statContext?) {
-        visit(statCtx)
-        if (validReturnCtx != null) {
-            visit(validReturnCtx)
-        }
-    }
-
-    override fun visitBeginEndReturn(ctx: BeginEndReturnContext): ASTNode {
-        return visitBeginEnd(ctx.valid_return_stat())
-    }
+//    override fun visitBeginEndReturn(ctx: BeginEndReturnContext): ASTNode {
+//        return visitBeginEnd(ctx.valid_return_stat())
+//    }
 
     override fun visitBeginEndStat(ctx: BeginEndStatContext): ASTNode {
         return visitBeginEnd(ctx.stat())
@@ -309,9 +309,9 @@ class ParseTreeVisitor(
         return addToScope(node)
     }
 
-    override fun visitIfReturn(ctx: IfReturnContext): ASTNode {
-        return visitIf(ctx.expr(), ctx.valid_return_stat(0), ctx.valid_return_stat(1))
-    }
+//    override fun visitIfReturn(ctx: IfReturnContext): ASTNode {
+//        return visitIf(ctx.expr(), ctx.valid_return_stat(0), ctx.valid_return_stat(1))
+//    }
 
     override fun visitIfStat(ctx: IfStatContext): ASTNode {
         return visitIf(ctx.expr(), ctx.stat(0), ctx.stat(1))
@@ -364,9 +364,9 @@ class ParseTreeVisitor(
         return visitWhile(ctx.expr(), ctx.stat())
     }
 
-    override fun visitWhileReturn(ctx: WhileReturnContext): ASTNode {
-        return visitWhile(ctx.expr(), ctx.valid_return_stat())
-    }
+//    override fun visitWhileReturn(ctx: WhileReturnContext): ASTNode {
+//        return visitWhile(ctx.expr(), ctx.valid_return_stat())
+//    }
 
     private fun visitWhile(
         exprCtx: ExprContext,
@@ -398,7 +398,7 @@ class ParseTreeVisitor(
         return addToScope(whileBlock)
     }
 
-    override fun visitForStat(ctx: ForStatContext) : ASTNode {
+    override fun visitForStat(ctx: ForStatContext): ASTNode {
         return visitFor(ctx)
     }
 

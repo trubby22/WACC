@@ -11,6 +11,7 @@ T_INT: 'int';
 T_BOOL: 'bool';
 T_CHAR: 'char';
 T_STRING: 'string';
+T_VOID: 'void';
 
 //boolean values
 TRUE: 'true';

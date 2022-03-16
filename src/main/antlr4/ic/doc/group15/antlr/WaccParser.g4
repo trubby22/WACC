@@ -7,8 +7,8 @@ options {
 // EOF indicates that the program must consume to the end of the input.
 program: BEGIN (func)* stat END EOF;
 
-func: type ident OPEN_PAREN (param (COMMA param)*)? CLOSE_PAREN IS
-          valid_return_stat
+func: return_type ident OPEN_PAREN (param (COMMA param)*)? CLOSE_PAREN IS
+          stat
       END;
 
 param: type ident;
@@ -25,18 +25,8 @@ stat: SKIP_STAT                                                   #skipStat
     | WHILE expr DO stat DONE                                     #whileStat
     | FOR IDENT INRANGE POSITIVE_OR_NEGATIVE_INTEGER DO stat DONE #forStat
     | BEGIN stat END                                              #beginEndStat
-    | return_stat                                                 #returnStat
+    | RETURN expr                                                 #returnStat
     | stat END_STAT stat                                          #sequenceStat
-;
-
-return_stat: (RETURN | EXIT) expr;
-
-// Needed for identifying return statements inside blocks
-valid_return_stat: return_stat (END_STAT valid_return_stat)? #sequenceRecursiveReturn1
-| stat END_STAT valid_return_stat                            #sequenceRecursiveReturn2
-| IF expr THEN valid_return_stat ELSE valid_return_stat FI   #ifReturn
-| WHILE expr DO valid_return_stat DONE                       #whileReturn
-| BEGIN valid_return_stat END                                #beginEndReturn
 ;
 
 assign_lhs: ident                               #identAssignLhs
@@ -55,6 +45,10 @@ arg_list: expr (COMMA expr)*;
 
 pair_elem: FST expr                             #fstPair
          | SND expr                             #sndPair
+;
+
+return_type: type
+           | T_VOID
 ;
 
 type: base_type
