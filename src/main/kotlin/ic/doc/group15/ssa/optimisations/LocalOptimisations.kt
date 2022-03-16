@@ -2,14 +2,14 @@ package ic.doc.group15.ssa.optimisations
 
 import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.ssa.tac.*
-import ic.doc.group15.visitor.TranslatorVisitor
 
 /**
  * Applies optimisation techniques local to each basic block in three address code form.
  */
+
 class BinaryOperationIdentity {
     companion object {
-        fun simplify(instruction: ThreeAddressCode): ThreeAddressCode {
+        fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
             // Skip if it is not a binary operation
             if (instruction !is AssignBinOp) return instruction
 
@@ -113,6 +113,10 @@ class BinaryOperationIdentity {
                 return AssignValue(v, BoolImm(lhs.value == rhs.value))
             }
 
+            if (lhs is StrImm && rhs is StrImm) {
+                return AssignValue(v, BoolImm(lhs.value == rhs.value))
+            }
+
             if (lhs is Var && rhs is Var) {
                 return AssignValue(v, BoolImm(lhs.id == rhs.id))
             }
@@ -133,6 +137,10 @@ class BinaryOperationIdentity {
 
             if (lhs is BoolImm && rhs is BoolImm) {
                 return AssignValue(v, BoolImm(lhs.value != rhs.value))
+            }
+
+            if (lhs is StrImm && rhs is StrImm) {
+                return AssignValue(v, BoolImm(lhs.value == rhs.value))
             }
 
             if (lhs is Var && rhs is Var) {
@@ -180,6 +188,56 @@ class BinaryOperationIdentity {
 
             // v = (a || a) => v = a
             if (lhs is Var && rhs is Var && lhs.id == rhs.id) return AssignValue(v, lhs)
+
+            return instruction
+        }
+    }
+}
+
+class ConstantFolding {
+    companion object {
+        fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
+            // Skip if it is not a binary operation
+            if (instruction !is AssignBinOp) return instruction
+
+            val (v, op, lhs, rhs) = instruction
+
+            if (lhs is IntImm && rhs is IntImm) {
+                return when (op) {
+                    BinaryOp.MULT -> AssignValue(v, IntImm(lhs.value * rhs.value))
+                    BinaryOp.DIV -> AssignValue(v, IntImm(lhs.value / rhs.value))
+                    BinaryOp.MOD -> AssignValue(v, IntImm(lhs.value % rhs.value))
+                    BinaryOp.PLUS -> AssignValue(v, IntImm(lhs.value + rhs.value))
+                    BinaryOp.MINUS -> AssignValue(v, IntImm(lhs.value - rhs.value))
+                    BinaryOp.GT -> AssignValue(v, BoolImm(lhs.value > rhs.value))
+                    BinaryOp.GTE -> AssignValue(v, BoolImm(lhs.value >= rhs.value))
+                    BinaryOp.LT -> AssignValue(v, BoolImm(lhs.value < rhs.value))
+                    BinaryOp.LTE -> AssignValue(v, BoolImm(lhs.value <= rhs.value))
+                    BinaryOp.EQUALS -> AssignValue(v, BoolImm(lhs.value == rhs.value))
+                    BinaryOp.NOT_EQUALS -> AssignValue(v, BoolImm(lhs.value != rhs.value))
+                    else -> instruction
+                }
+            }
+
+            if (lhs is CharImm && rhs is CharImm) {
+                return when (op) {
+                    BinaryOp.GT -> AssignValue(v, BoolImm(lhs.value > rhs.value))
+                    BinaryOp.GTE -> AssignValue(v, BoolImm(lhs.value >= rhs.value))
+                    BinaryOp.LT -> AssignValue(v, BoolImm(lhs.value < rhs.value))
+                    BinaryOp.LTE -> AssignValue(v, BoolImm(lhs.value <= rhs.value))
+                    BinaryOp.EQUALS -> AssignValue(v, BoolImm(lhs.value == rhs.value))
+                    BinaryOp.NOT_EQUALS -> AssignValue(v, BoolImm(lhs.value != rhs.value))
+                    else -> instruction
+                }
+            }
+
+            if (lhs is BoolImm && rhs is BoolImm) {
+                return when (op) {
+                    BinaryOp.AND -> AssignValue(v, BoolImm(lhs.value && rhs.value))
+                    BinaryOp.OR -> AssignValue(v, BoolImm(lhs.value || rhs.value))
+                    else -> instruction
+                }
+            }
 
             return instruction
         }
