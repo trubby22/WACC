@@ -38,17 +38,6 @@ class FreeStatementAST(
     val expr: ExpressionAST
 ) : StatementAST(parent, symbolTable)
 
-class ReturnStatementAST(
-    parent: BlockAST,
-    symbolTable: SymbolTable,
-    val expr: ExpressionAST
-) : StatementAST(parent, symbolTable)
-
-class ExitStatementAST(
-    parent: BlockAST,
-    val expr: ExpressionAST
-) : StatementAST(parent)
-
 class PrintStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
@@ -60,3 +49,16 @@ class PrintlnStatementAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST
 ) : StatementAST(parent, symbolTable)
+
+open class ReturnStatementAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable,
+    open val expr: ExpressionAST?,
+    val type: ReturnableType
+) : StatementAST(parent, symbolTable)
+
+class ExitStatementAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable,
+    override val expr: ExpressionAST
+) : ReturnStatementAST(parent, symbolTable, expr, BasicType.IntType)

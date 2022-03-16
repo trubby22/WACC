@@ -2,6 +2,10 @@ package ic.doc.group15
 
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.*
+import ic.doc.group15.type.BasicType.Companion.BoolType
+import ic.doc.group15.type.BasicType.Companion.CharType
+import ic.doc.group15.type.BasicType.Companion.IntType
+import ic.doc.group15.type.BasicType.Companion.StringType
 import java.lang.IllegalArgumentException
 import kotlin.reflect.KClass
 
@@ -34,7 +38,7 @@ class SymbolTable private constructor(private val enclosingTable: SymbolTable?) 
 
     fun add(name: String, ident: Identifier) {
         if (ident is Variable) {
-            stackSize += ident.type.size()
+            stackSize += ident.type.size
         }
         map[name] = ident
     }

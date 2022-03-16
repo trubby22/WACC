@@ -9,7 +9,14 @@ abstract class BlockAST protected constructor(
     symbolTable: SymbolTable = SymbolTable.emptyTable
 ) : StatementAST(parent, symbolTable) {
 
-    val statements: MutableList<StatementAST> = LinkedList()
+    private val statements: MutableList<StatementAST> = LinkedList()
+
+    fun getStatements(): List<StatementAST> = statements
+
+    open fun addStatement(stat: StatementAST): StatementAST {
+        statements.add(stat)
+        return stat
+    }
 }
 
 class FunctionDeclarationAST(

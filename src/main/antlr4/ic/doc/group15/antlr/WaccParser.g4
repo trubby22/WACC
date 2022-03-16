@@ -25,7 +25,7 @@ stat: SKIP_STAT                                                   #skipStat
     | WHILE expr DO stat DONE                                     #whileStat
     | FOR IDENT INRANGE POSITIVE_OR_NEGATIVE_INTEGER DO stat DONE #forStat
     | BEGIN stat END                                              #beginEndStat
-    | RETURN expr                                                 #returnStat
+    | RETURN expr?                                                #returnStat
     | stat END_STAT stat                                          #sequenceStat
 ;
 

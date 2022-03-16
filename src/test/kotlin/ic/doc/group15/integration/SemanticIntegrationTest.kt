@@ -5,6 +5,7 @@ import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
+import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.visitor.AssemblyGenerator
 import ic.doc.group15.visitor.ParseTreeVisitor
 import org.antlr.v4.runtime.CharStreams
@@ -538,14 +539,21 @@ class SemanticIntegrationTest {
 
         val st = SymbolTable()
         val ast = AST(st)
-        val errors = SemanticErrorList()
-        val visitor = ParseTreeVisitor(ast, st, errors, enableLogging = ENABLE_LOGGING)
+        val syntacticErrors = SyntacticErrorList()
+        val semanticErrors = SemanticErrorList()
+        val visitor = ParseTreeVisitor(
+            ast,
+            st,
+            syntacticErrors,
+            semanticErrors,
+            enableLogging = ENABLE_LOGGING
+        )
 
         visitor.visit(program)
 
-        if (errors.hasErrors()) {
+        if (semanticErrors.hasErrors()) {
             println(path)
-            errors.printErrors()
+            semanticErrors.printErrors()
             return false
         }
 

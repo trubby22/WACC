@@ -30,8 +30,8 @@ class TypeParser {
         private fun parse(symbolTable: SymbolTable, ctx: Pair_typeContext): Type {
 
             return PairType(
-                parse(symbolTable, ctx.pair_elem_type(0)) as ReturnableType,
-                parse(symbolTable, ctx.pair_elem_type(1)) as ReturnableType
+                parse(symbolTable, ctx.pair_elem_type(0)) as VariableType,
+                parse(symbolTable, ctx.pair_elem_type(1)) as VariableType
             )
         }
 
@@ -58,7 +58,7 @@ class TypeParser {
                 assert(ctx.base_type() != null)
                 type = parse(symbolTable, ctx.base_type() as Base_typeContext)
             }
-            return ArrayType(type as ReturnableType, ctx.array_brackets().size)
+            return ArrayType(type as VariableType, ctx.array_brackets().size)
         }
     }
 }

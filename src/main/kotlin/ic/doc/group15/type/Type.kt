@@ -1,99 +1,59 @@
 package ic.doc.group15.type
 
-import ic.doc.group15.util.BYTE
 import ic.doc.group15.SymbolTable
-import ic.doc.group15.util.WORD
-
-const val INT_MAX = Int.MAX_VALUE
-const val INT_MIN = Int.MIN_VALUE
-
-interface Identifier
+import ic.doc.group15.util.*
 
 interface Type : Identifier {
 
     fun compatible(type: Type): Boolean
 
     companion object {
-        val ANY: ReturnableType = AnyType()
+        val ANY: VariableType = AnyType()
 
-        private class AnyType : Type, ReturnableType {
-
-            override fun size(): Int = 0
+        private class AnyType : VariableType(0) {
 
             override fun compatible(type: Type): Boolean = true
 
-            override fun toString(): String {
-                return "any"
-            }
+            override fun toString(): String = "any"
         }
     }
 }
 
 interface ReturnableType : Type {
 
-    fun size(): Int
-}
-
-interface HeapAllocatedType : Type
-
-// we assign the stackPos to be Int.MIN_VALUE until stackPos is actually assigned
-open class Variable(
-    val type: ReturnableType,
-) : Identifier {
     companion object {
-        val ANY_VAR = Variable(Type.ANY)
-    }
+        val VOID: ReturnableType = VoidType()
 
-    var stackPosition: Int = 0
-}
+        private class VoidType : ReturnableType {
 
-class Param(type: ReturnableType) : Variable(type)
+            override fun compatible(type: Type): Boolean = type == VOID
 
-enum class BasicType(private val size: Int) : ReturnableType {
-    IntType(WORD) {
-        override fun compatible(type: Type): Boolean {
-            return type == IntType
-        }
-
-        override fun toString(): String {
-            return "int"
-        }
-    },
-    BoolType(BYTE) {
-        override fun compatible(type: Type): Boolean {
-            return type == BoolType
-        }
-
-        override fun toString(): String {
-            return "bool"
-        }
-    },
-    CharType(BYTE) {
-        override fun compatible(type: Type): Boolean {
-            return type == CharType
-        }
-
-        override fun toString(): String {
-            return "char"
-        }
-    },
-    StringType(WORD) {
-        override fun compatible(type: Type): Boolean {
-            return type == StringType
-        }
-
-        override fun toString(): String {
-            return "string"
+            override fun toString(): String = "void"
         }
     }
-    ;
-
-    override fun size(): Int = this.size
 }
 
-class ArrayType(elementType: ReturnableType, dimension: Int) : ReturnableType, HeapAllocatedType {
+abstract class VariableType protected constructor(val size: Int) : ReturnableType
 
-    val elementType: ReturnableType
+sealed interface HeapAllocatedType : Type
+
+class BasicType private constructor(val str: String, size: Int) : VariableType(size) {
+
+    companion object {
+        val IntType = BasicType("int", WORD)
+        val BoolType = BasicType("bool", BYTE)
+        val CharType = BasicType("char", BYTE)
+        val StringType = BasicType("string", WORD)
+    }
+
+    override fun compatible(type: Type): Boolean = type == this
+
+    override fun toString(): String = str
+}
+
+class ArrayType(elementType: VariableType, dimension: Int) : VariableType(WORD), HeapAllocatedType {
+
+    val elementType: VariableType
     val dimension: Int
 
     companion object {
@@ -130,20 +90,18 @@ class ArrayType(elementType: ReturnableType, dimension: Int) : ReturnableType, H
         return elementType.compatible(type.elementType)
     }
 
-    override fun size(): Int = WORD
-
     override fun toString(): String {
         return elementType.toString() + "[]".repeat(dimension)
     }
 }
 
 class PairType(
-    fstType: ReturnableType = Type.ANY,
-    sndType: ReturnableType = Type.ANY
-) : ReturnableType, HeapAllocatedType {
+    fstType: VariableType = Type.ANY,
+    sndType: VariableType = Type.ANY
+) : VariableType(WORD), HeapAllocatedType {
 
-    val fstType: ReturnableType = if (fstType is PairType) PairType() else fstType
-    val sndType: ReturnableType = if (sndType is PairType) PairType() else sndType
+    val fstType: VariableType = if (fstType is PairType) PairType() else fstType
+    val sndType: VariableType = if (sndType is PairType) PairType() else sndType
 
     companion object {
         val ANY_PAIR = PairType()
@@ -156,8 +114,6 @@ class PairType(
         return (fstType.compatible(type.fstType) || type.fstType == Type.ANY) &&
             (sndType.compatible(type.sndType) || type.sndType == Type.ANY)
     }
-
-    override fun size(): Int = WORD
 
     override fun toString(): String {
         return "pair($fstType, $sndType)"

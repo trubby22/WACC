@@ -1,16 +1,18 @@
 package ic.doc.group15.ast
 
-import ic.doc.group15.type.BasicType.*
-import ic.doc.group15.type.ReturnableType
+import ic.doc.group15.type.BasicType.Companion.BoolType
+import ic.doc.group15.type.BasicType.Companion.CharType
+import ic.doc.group15.type.BasicType.Companion.IntType
+import ic.doc.group15.type.VariableType
 
-private val intOnly = setOf<ReturnableType>(IntType)
-private val comparables = setOf<ReturnableType>(IntType, CharType)
-private val boolOnly = setOf<ReturnableType>(BoolType)
+private val intOnly = setOf<VariableType>(IntType)
+private val comparables = setOf<VariableType>(IntType, CharType)
+private val boolOnly = setOf<VariableType>(BoolType)
 
 enum class BinaryOp(
     val str: String,
-    val allowedTypes: Set<ReturnableType>? = intOnly,
-    val returnType: ReturnableType = BoolType
+    val allowedTypes: Set<VariableType>? = intOnly,
+    val returnType: VariableType = BoolType
 ) {
     MULT("*", returnType = IntType),
     DIV("/", returnType = IntType),

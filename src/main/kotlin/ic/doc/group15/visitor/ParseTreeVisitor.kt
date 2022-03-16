@@ -6,9 +6,10 @@ import ic.doc.group15.antlr.WaccParserBaseVisitor
 import ic.doc.group15.ast.* // ktlint-disable no-unused-imports
 import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.error.SemanticErrorList
+import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.semantic.*
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
-import ic.doc.group15.type.BasicType.IntType
+import ic.doc.group15.type.BasicType.Companion.IntType
 import ic.doc.group15.util.EscapeChar
 import org.antlr.v4.runtime.ParserRuleContext
 import java.util.*
@@ -16,7 +17,8 @@ import java.util.*
 class ParseTreeVisitor(
     private val topAst: AST,
     private val topSymbolTable: SymbolTable,
-    private val errors: SemanticErrorList,
+    private val syntacticErrors: SyntacticErrorList,
+    private val semanticErrors: SemanticErrorList,
     private val enableLogging: Boolean = false
 ) : WaccParserBaseVisitor<ASTNode>() {
 
@@ -46,7 +48,7 @@ class ParseTreeVisitor(
 
         log("Visiting function definitions")
         for (func in ctx.func()) {
-            program.statements.add(visitFunc(func) as FunctionDeclarationAST)
+            program.addStatement(visitFunc(func) as FunctionDeclarationAST)
         }
 
         log("Visiting main program")
@@ -88,16 +90,21 @@ class ParseTreeVisitor(
             """
         )
 
-        val returnTypeName = ctx.type().text
+        val returnTypeName = ctx.return_type().text
 
         log(""" || Return type: $returnTypeName""")
 
-        val t = TypeParser.parse(funcSt, ctx.type())
+        val returnType = ctx.return_type()
+        val t = if (returnType.type() != null) {
+            TypeParser.parse(funcSt, returnType.type())
+        } else {
+            ReturnableType.VOID
+        }
         val f = oldSt.lookupAll(funcName)
 
         when {
             t !is ReturnableType -> {
-                addError(NotReturnableError(ctx.type().start, t))
+                addError(NotReturnableError(ctx.return_type().start, t))
             }
             f != null -> {
                 addError(FunctionAlreadyDeclaredError(ident.start, funcName))
@@ -121,7 +128,7 @@ class ParseTreeVisitor(
         symbolTable = oldSt
 
         func.funcIdent = FunctionType(
-            t as ReturnableType,
+            t as VariableType,
             func.formals.map { it.ident },
             funcSt
         )
@@ -155,7 +162,7 @@ class ParseTreeVisitor(
         val p = symbolTable.lookup(paramName)
 
         when {
-            t !is ReturnableType -> {
+            t !is VariableType -> {
                 addError(CannotBeParameterError(type.start, t))
             }
             p != null -> {
@@ -165,7 +172,7 @@ class ParseTreeVisitor(
             }
         }
 
-        parameterAST = ParameterAST(symbolTable, paramName, Param(t as ReturnableType))
+        parameterAST = ParameterAST(symbolTable, paramName, Param(t as VariableType))
 
         symbolTable.add(paramName, parameterAST.ident)
 
@@ -177,7 +184,7 @@ class ParseTreeVisitor(
 
         val expr = visit(ctx.expr()) as ExpressionAST
 
-        return addToScope(PrintStatementAST(scopeAST, symbolTable, expr))
+        return scopeAST.addStatement(PrintStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitPrintlnStat(ctx: PrintlnStatContext): ASTNode {
@@ -185,7 +192,7 @@ class ParseTreeVisitor(
 
         val expr = visit(ctx.expr()) as ExpressionAST
 
-        return addToScope(PrintlnStatementAST(scopeAST, symbolTable, expr))
+        return scopeAST.addStatement(PrintlnStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitExitStat(ctx: ExitStatContext): ASTNode {
@@ -196,7 +203,7 @@ class ParseTreeVisitor(
             addError(ExitTypeError(ctx.expr().start, expr.type))
         }
 
-        return addToScope(ExitStatementAST(scopeAST, expr))
+        return scopeAST.addStatement(ExitStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitFreeStat(ctx: FreeStatContext): ASTNode {
@@ -208,13 +215,13 @@ class ParseTreeVisitor(
             addError(FreeTypeError(ctxExpr.start, expr.type))
         }
 
-        return addToScope(FreeStatementAST(scopeAST, symbolTable, expr))
+        return scopeAST.addStatement(FreeStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitSkipStat(ctx: SkipStatContext?): ASTNode {
         log("Visiting skip statement")
 
-        return addToScope(SkipStatementAST(scopeAST))
+        return scopeAST.addStatement(SkipStatementAST(scopeAST))
     }
 
     override fun visitReadStat(ctx: ReadStatContext): ASTNode {
@@ -228,7 +235,7 @@ class ParseTreeVisitor(
 
         log("|| Target type: ${target.type}")
 
-        return addToScope(ReadStatementAST(scopeAST, symbolTable, target))
+        return scopeAST.addStatement(ReadStatementAST(scopeAST, symbolTable, target))
     }
 
     override fun visitReturnStat(ctx: ReturnStatContext): ASTNode? {
@@ -246,48 +253,37 @@ class ParseTreeVisitor(
         }
 
         val func = enclosingAST as FunctionDeclarationAST
-        val returnType = func.returnType
+        val funcReturnType = func.returnType
 
         log(" || return statement is under function ${func.funcName}")
 
-        val expr = visit(ctx.expr()) as ExpressionAST
-
-        log("we're in return stat")
-        log("asserted return type: $returnType")
-        log("actual return type: ${expr.type}")
-
-        when {
-            ctx.RETURN() != null && !returnType.compatible(expr.type) -> {
-                addError(ReturnTypeError(ctx.expr().start, returnType, expr.type))
-            }
+        val expr: ExpressionAST?
+        val returnType: ReturnableType
+        if (ctx.expr() != null) {
+            expr = visit(ctx.expr()) as ExpressionAST
+            returnType = expr.type
+        } else {
+            expr = null
+            returnType = ReturnableType.VOID
         }
 
-        val returnStat = ReturnStatementAST(func, symbolTable, expr)
+        log("we're in return stat")
+        log("asserted return type: $funcReturnType")
+        log("actual return type: $returnType")
+
+        if (!funcReturnType.compatible(returnType)) {
+            addError(ReturnTypeError(ctx.expr().start, funcReturnType, returnType))
+        }
+
+        val returnStat = ReturnStatementAST(func, symbolTable, expr, returnType)
         func.returnStat = returnStat
 
-        return addToScope(returnStat)
+        return scopeAST.addStatement(returnStat)
     }
 
-//    override fun visitSequenceRecursiveReturn1(ctx: SequenceRecursiveReturn1Context): ASTNode? {
-//        visitSequence(ctx.return_stat(), ctx.valid_return_stat())
-//        return null
-//    }
-//
-//    override fun visitSequenceRecursiveReturn2(ctx: SequenceRecursiveReturn2Context): ASTNode? {
-//        visitSequence(ctx.stat(), ctx.valid_return_stat())
-//        return null
-//    }
-
-//    private fun visitSequence(statCtx: ParserRuleContext, validReturnCtx: Valid_return_statContext?) {
-//        visit(statCtx)
-//        if (validReturnCtx != null) {
-//            visit(validReturnCtx)
-//        }
-//    }
-
-//    override fun visitBeginEndReturn(ctx: BeginEndReturnContext): ASTNode {
-//        return visitBeginEnd(ctx.valid_return_stat())
-//    }
+    override fun visitVoidReturnStat(ctx: VoidReturnStatContext?): ASTNode {
+        return super.visitVoidReturnStat(ctx)
+    }
 
     override fun visitBeginEndStat(ctx: BeginEndStatContext): ASTNode {
         return visitBeginEnd(ctx.stat())
@@ -306,22 +302,10 @@ class ParseTreeVisitor(
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return addToScope(node)
+        return scopeAST.addStatement(node)
     }
-
-//    override fun visitIfReturn(ctx: IfReturnContext): ASTNode {
-//        return visitIf(ctx.expr(), ctx.valid_return_stat(0), ctx.valid_return_stat(1))
-//    }
 
     override fun visitIfStat(ctx: IfStatContext): ASTNode {
-        return visitIf(ctx.expr(), ctx.stat(0), ctx.stat(1))
-    }
-
-    private fun visitIf(
-        ifExpr: ExprContext,
-        thenStat: ParserRuleContext,
-        elseStat: ParserRuleContext
-    ): ASTNode {
         log("Visiting if statement")
 
         val oldScope = scopeAST
@@ -331,10 +315,10 @@ class ParseTreeVisitor(
         val elseSt = oldSt.subScope()
 
         log("Visiting if statement condition expression")
-        val condExpr = visit(ifExpr) as ExpressionAST
+        val condExpr = visit(ctx.expr()) as ExpressionAST
 
         if (condExpr.type != BasicType.BoolType) {
-            addError(CondTypeError(ifExpr.start, condExpr.type))
+            addError(CondTypeError(ctx.expr().start, condExpr.type))
         }
 
         val ifBlock = IfBlockAST(scopeAST, thenSt, condExpr)
@@ -342,7 +326,7 @@ class ParseTreeVisitor(
         scopeAST = ifBlock
         symbolTable = thenSt
         log("|| Visiting then block")
-        visit(thenStat)
+        visit(ctx.stat(0))
         symbolTable = oldSt
         scopeAST = oldScope
 
@@ -351,27 +335,16 @@ class ParseTreeVisitor(
         scopeAST = elseBlock
         symbolTable = elseSt
         log("|| Visiting else block")
-        visit(elseStat)
+        visit(ctx.stat(1))
         symbolTable = oldSt
         scopeAST = oldScope
 
         ifBlock.elseBlock = elseBlock
 
-        return addToScope(ifBlock)
+        return scopeAST.addStatement(ifBlock)
     }
 
     override fun visitWhileStat(ctx: WhileStatContext): ASTNode {
-        return visitWhile(ctx.expr(), ctx.stat())
-    }
-
-//    override fun visitWhileReturn(ctx: WhileReturnContext): ASTNode {
-//        return visitWhile(ctx.expr(), ctx.valid_return_stat())
-//    }
-
-    private fun visitWhile(
-        exprCtx: ExprContext,
-        statCtx: ParserRuleContext
-    ): ASTNode {
         log("Visiting while statement")
 
         val oldScope = scopeAST
@@ -380,10 +353,10 @@ class ParseTreeVisitor(
         val whileSt = oldSt.subScope()
 
         log("|| Visiting while condition expression")
-        val condExpr = visit(exprCtx) as ExpressionAST
+        val condExpr = visit(ctx.expr()) as ExpressionAST
 
         if (condExpr.type != BasicType.BoolType) {
-            addError(CondTypeError(exprCtx.start, condExpr.type))
+            addError(CondTypeError(ctx.expr().start, condExpr.type))
         }
 
         val whileBlock = WhileBlockAST(scopeAST, whileSt, condExpr)
@@ -391,18 +364,14 @@ class ParseTreeVisitor(
         scopeAST = whileBlock
         symbolTable = whileSt
         log("|| Visiting while block")
-        visit(statCtx) as StatementAST
+        visit(ctx.stat()) as StatementAST
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return addToScope(whileBlock)
+        return scopeAST.addStatement(whileBlock)
     }
 
     override fun visitForStat(ctx: ForStatContext): ASTNode {
-        return visitFor(ctx)
-    }
-
-    private fun visitFor(ctx: ForStatContext): ASTNode {
         log("Visiting for statement")
 
         val oldScope = scopeAST
@@ -432,7 +401,7 @@ class ParseTreeVisitor(
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return addToScope(forBlock)
+        return scopeAST.addStatement(forBlock)
     }
 
     //endregion
@@ -474,11 +443,11 @@ class ParseTreeVisitor(
             symbolTable,
             varName,
             assignRhs,
-            Variable(t as ReturnableType)
+            Variable(t as VariableType)
         )
         symbolTable.add(varName, varDecl.varIdent)
 
-        return addToScope(varDecl)
+        return scopeAST.addStatement(varDecl)
     }
 
     override fun visitAssignmentStat(ctx: AssignmentStatContext): ASTNode {
@@ -496,7 +465,7 @@ class ParseTreeVisitor(
 
         assignLhs.rhs = assignRhs
 
-        return addToScope(assignLhs)
+        return scopeAST.addStatement(assignLhs)
     }
 
     override fun visitIdentAssignLhs(ctx: IdentAssignLhsContext): ASTNode {
@@ -655,14 +624,14 @@ class ParseTreeVisitor(
 
     override fun visitInt_liter_positive(ctx: Int_liter_positiveContext): ASTNode {
         val i = Integer.parseInt(ctx.POSITIVE_OR_NEGATIVE_INTEGER().text)
-        assert(i in 0..INT_MAX)
+        assert(i in 0..Int.MAX_VALUE)
 
         return IntLiteralAST(i)
     }
 
     override fun visitInt_liter_negative(ctx: Int_liter_negativeContext): ASTNode {
         val i = Integer.parseInt(ctx.text)
-        assert(i in INT_MIN..0)
+        assert(i in Int.MIN_VALUE..0)
 
         return IntLiteralAST(i)
     }
@@ -799,11 +768,6 @@ class ParseTreeVisitor(
 
     //region helpers
 
-    private fun addToScope(stat: StatementAST): StatementAST {
-        scopeAST.statements.add(stat)
-        return stat
-    }
-
     private fun log(message: String) {
         if (enableLogging) {
             println(message.trimMargin())
@@ -811,7 +775,7 @@ class ParseTreeVisitor(
     }
 
     private fun addError(error: SemanticError) {
-        errors.addError(error)
+        semanticErrors.addError(error)
         if (enableLogging) {
             println(error.toString())
         }

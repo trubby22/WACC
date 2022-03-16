@@ -4,6 +4,10 @@ import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.ast.UnaryOp
 import ic.doc.group15.type.*
 import ic.doc.group15.type.BasicType.*
+import ic.doc.group15.type.BasicType.Companion.BoolType
+import ic.doc.group15.type.BasicType.Companion.CharType
+import ic.doc.group15.type.BasicType.Companion.IntType
+import ic.doc.group15.type.BasicType.Companion.StringType
 import org.antlr.v4.runtime.Token
 
 abstract class TypeError protected constructor(

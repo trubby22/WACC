@@ -5,9 +5,11 @@ import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
+import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.visitor.AssemblyGenerator
 import ic.doc.group15.visitor.ParseTreeVisitor
+import ic.doc.group15.visitor.ReturnChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.BufferedInputStream
@@ -54,9 +56,21 @@ fun main(args: ArgsList) {
     log("\nPerforming semantic analysis...\n")
     val st = SymbolTable()
     val ast = AST(st)
+    val syntacticErrors = SyntacticErrorList()
     val semanticErrors = SemanticErrorList()
-    val visitor = ParseTreeVisitor(ast, st, semanticErrors, enableLogging = enableLogging)
+    val visitor = ParseTreeVisitor(
+        ast,
+        st,
+        syntacticErrors,
+        semanticErrors,
+        enableLogging = enableLogging
+    )
     visitor.visit(program)
+    syntacticErrors.checkErrors()
+
+    val returnChecker = ReturnChecker(ast, syntacticErrors, enableLogging = enableLogging)
+    syntacticErrors.checkErrors()
+
     semanticErrors.checkErrors()
 
     // Close input resources

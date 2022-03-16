@@ -19,6 +19,10 @@ import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
 import ic.doc.group15.type.*
 import ic.doc.group15.type.BasicType.*
+import ic.doc.group15.type.BasicType.Companion.BoolType
+import ic.doc.group15.type.BasicType.Companion.CharType
+import ic.doc.group15.type.BasicType.Companion.IntType
+import ic.doc.group15.type.BasicType.Companion.StringType
 import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
 import java.io.BufferedWriter
@@ -121,13 +125,11 @@ class AssemblyGenerator(
         resultRegister = R4
 
         // Translate all function blocks into assembly
-        val functionASTs = program.statements.filterIsInstance<FunctionDeclarationAST>()
-        functionASTs.forEach { translate(it) }
+        program.getFuncs().forEach { translate(it) }
 
         // Translate main instructions into assembly
         mainPrologue(program.symbolTable)
-        val statementASTs = program.statements.filter { it !is FunctionDeclarationAST }
-        statementASTs.forEach { translate(it) }
+        program.getMain().forEach { translate(it) }
         mainEpilogue(program.symbolTable)
     }
 
@@ -146,7 +148,7 @@ class AssemblyGenerator(
         // Sets up the environment for a function
         functionPrologue(node, node.paramSymbolTable)
 
-        node.statements.map { translate(it) }
+        node.getStatements().map { translate(it) }
 
         // Restore the state so that the program can resume from where it left off
         functionEpilogue(node)
@@ -164,7 +166,7 @@ class AssemblyGenerator(
         node.actuals.reversed().forEach {
             // Load variable to resultRegister
             translate(it)
-            val size = it.type.size()
+            val size = it.type.size
             callStackSize += size
             addLines(
                 // Allocate space in stack
@@ -230,10 +232,12 @@ class AssemblyGenerator(
     @TranslatorMethod(ReturnStatementAST::class)
     private fun translateReturnStatement(node: ReturnStatementAST) {
         log("Translating ReturnStatementAST")
-        translate(node.expr)
-        addLines(
-            Move(R0, resultRegister)
-        )
+        if (node.expr != null) {
+            translate(node.expr!!)
+            addLines(
+                Move(R0, resultRegister)
+            )
+        }
         unwindStack(node.parent!!.symbolTable)
         addLines(
             Pop(PC)
@@ -378,13 +382,13 @@ class AssemblyGenerator(
 
         // add sequence of instructions in THEN block under if label
         blockPrologue(stat)
-        stat.statements.forEach(::translate)
+        stat.getStatements().forEach(::translate)
         blockEpilogue(stat)
 
         // add sequence of instructions in ELSE block under else label
         currentLabel = elseLabel
         blockPrologue(stat.elseBlock)
-        stat.elseBlock.statements.forEach(::translate)
+        stat.elseBlock.getStatements().forEach(::translate)
         blockEpilogue(stat.elseBlock)
 
         currentLabel = oldLabel
@@ -426,7 +430,7 @@ class AssemblyGenerator(
         val loopLabel = newBranchLabel()
         currentLabel = loopLabel
         blockPrologue(node)
-        node.statements.forEach { translate(it) }
+        node.getStatements().forEach { translate(it) }
         blockEpilogue(node)
 
         val checkLabel = newBranchLabel()
@@ -460,7 +464,7 @@ class AssemblyGenerator(
         val loopLabel = newBranchLabel()
         currentLabel = loopLabel
         blockPrologue(node)
-        node.statements.forEach { translate(it) }
+        node.getStatements().forEach { translate(it) }
         translate(node.incrementStat)
         blockEpilogue(node)
 
@@ -487,7 +491,7 @@ class AssemblyGenerator(
     private fun translateBeginEndBlock(node: BeginEndBlockAST) {
         log("Translating BeginEndBlockAST")
         blockPrologue(node)
-        node.statements.forEach { translate(it) }
+        node.getStatements().forEach { translate(it) }
         blockEpilogue(node)
     }
 
@@ -515,13 +519,13 @@ class AssemblyGenerator(
             resultRegister = resultRegister.nextReg() // R_n+1
             translate(expr) // result stored in // R_n+1
             addLines(
-                LoadWord(R0, PseudoImmediateOperand(expr.type.size())),
+                LoadWord(R0, PseudoImmediateOperand(expr.type.size)),
                 BranchLink(MALLOC)
             )
 
             // Store the value of the item of the pair in the address received from malloc
             addLines(
-                when (expr.type.size()) {
+                when (expr.type.size) {
                     WORD -> StoreWord(resultRegister, ZeroOffset(R0)) // R_n+1
                     else -> StoreByte(resultRegister, ZeroOffset(R0))
                 }
@@ -610,7 +614,7 @@ class AssemblyGenerator(
         log("Translating ArrayLiteralAST")
         val elems = node.elems
         val elemSize: Int = if (node.elems.isNotEmpty()) {
-            elems[0].type.size()
+            elems[0].type.size
         } else {
             0
         }
@@ -640,13 +644,13 @@ class AssemblyGenerator(
             translate(expr)
             resultRegister = src // R_n
             currentLabel.addLines(
-                if (expr.type.size() == WORD) {
+                if (expr.type.size == WORD) {
                     StoreWord(dest, ImmediateOffset(src, offset))
                 } else {
                     StoreByte(dest, ImmediateOffset(src, offset))
                 }
             )
-            offset += expr.type.size()
+            offset += expr.type.size
         }
 
         val dest = resultRegister.nextReg() // R_n+1
@@ -690,7 +694,7 @@ class AssemblyGenerator(
         // load address of value into resultRegister
         getAddress(node)
 
-        if (node.elemType.size() == WORD) {
+        if (node.elemType.size == WORD) {
             addLines(
                 // put whats at that index into result reg
                 LoadWord(resultRegister, ZeroOffset(resultRegister))
@@ -728,7 +732,7 @@ class AssemblyGenerator(
 
         val arrayElemAST = node.lhs
         val arrayVariable = node.lhs.arrayVar
-        val typeSize = (arrayVariable.type as ArrayType).elementType.size()
+        val typeSize = (arrayVariable.type as ArrayType).elementType.size
         val stackPointerOffset = arrayVariable.ident.stackPosition
 
         addLines(
@@ -789,11 +793,11 @@ class AssemblyGenerator(
         translatePairElem(node, node.elemType)
     }
 
-    private fun translatePairElem(node: PairElemAST, elemType: ReturnableType) {
+    private fun translatePairElem(node: PairElemAST, elemType: VariableType) {
         getAddress(node)
-        assert(node.expr.type.size() == WORD)
+        assert(node.expr.type.size == WORD)
         addLines(
-            if (elemType.size() == BYTE) {
+            if (elemType.size == BYTE) {
                 LoadByte(resultRegister, ZeroOffset(resultRegister))
             } else {
                 LoadWord(resultRegister, ZeroOffset(resultRegister))
@@ -821,7 +825,7 @@ class AssemblyGenerator(
 
         // Write the expression result to the pair element address
         addLines(
-            if (node.rhs.type.size() == BYTE) {
+            if (node.rhs.type.size == BYTE) {
                 StoreByte(rhsResultRegister, ZeroOffset(resultRegister))
             } else {
                 StoreWord(rhsResultRegister, ZeroOffset(resultRegister))
@@ -1042,7 +1046,7 @@ class AssemblyGenerator(
             // Calculate the stack position for each variable
             val variables = symbolTable.getValuesByType(Variable::class)
             for (v in variables) {
-                currentStackPosition -= v.type.size()
+                currentStackPosition -= v.type.size
                 v.stackPosition = currentStackPosition
             }
         }
@@ -1106,7 +1110,7 @@ class AssemblyGenerator(
             val params = paramSymbolTable.getValuesByType(Param::class)
             params.forEach {
                 it.stackPosition = currentStackPos
-                currentStackPos += it.type.size()
+                currentStackPos += it.type.size
             }
             assert(currentStackPos == paramSymbolTable.getStackSize() + WORD)
         }
@@ -1211,7 +1215,7 @@ class AssemblyGenerator(
         store: Boolean
     ) {
         val scopeOffset = currentScope.calcScopeOffset(variable)
-        val size = variable.type.size()
+        val size = variable.type.size
 
         // Consider the case where intermediate results are pushed on the stack
         val pos = variable.stackPosition + offsetStackStore[0] + scopeOffset

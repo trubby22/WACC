@@ -2,17 +2,16 @@ package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
 import ic.doc.group15.type.*
-import java.util.*
 
 abstract class AssignRhsAST protected constructor(
     symbolTable: SymbolTable = SymbolTable.emptyTable,
-    val type: ReturnableType
+    val type: VariableType
 ) : ASTNode(symbolTable)
 
 abstract class AssignmentAST<T : ASTNode> protected constructor(
     parent: BlockAST,
     val lhs: T,
-    val type: ReturnableType,
+    val type: VariableType,
 ) : StatementAST(parent) {
     lateinit var rhs: AssignRhsAST
 }
@@ -34,7 +33,7 @@ class AssignToPairElemAST(
 
 class ArrayLiteralAST(
     symbolTable: SymbolTable,
-    elemType: ReturnableType,
+    elemType: VariableType,
     val elems: List<ExpressionAST>
 ) : AssignRhsAST(symbolTable, ArrayType(elemType, 1))
 
@@ -46,7 +45,7 @@ class NewPairAST(
 
 abstract class PairElemAST protected constructor(
     symbolTable: SymbolTable,
-    val elemType: ReturnableType,
+    val elemType: VariableType,
     val expr: ExpressionAST
 ) : AssignRhsAST(symbolTable, elemType)
 
@@ -65,5 +64,5 @@ class CallAST(
     val funcName: String,
     val funcIdent: FunctionType,
     val actuals: MutableList<ExpressionAST>
-) : AssignRhsAST(symbolTable, funcIdent.returnType)
+) : AssignRhsAST(symbolTable, funcIdent.returnType as VariableType)
 
