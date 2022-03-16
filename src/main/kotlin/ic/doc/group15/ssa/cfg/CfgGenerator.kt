@@ -8,6 +8,7 @@ import ic.doc.group15.ssa.tac.*
 import ic.doc.group15.translator.AssemblyGenerator
 import ic.doc.group15.translator.TranslatorMethod
 import ic.doc.group15.type.BasicType.*
+import ic.doc.group15.type.PairType
 import ic.doc.group15.type.ReturnableType
 import ic.doc.group15.util.WORD
 
@@ -425,12 +426,36 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateFstPairElem(node: FstPairElemAST, cfgState: CfgState) {
-        TODO()
+        // Get base address of pair variable
+        translate(node.expr, cfgState)
+        val addrReg = cfgState.resultRegister
+        // For backend analysis to insert null check before loading the address
+        assert(addrReg.type is PairType)
+
+        // Load the value in memory into variable
+        val reg = cfgState.newVar(IntType)
+        val inst = Load(reg, addrReg)
+
+        cfgState.currentBlock.addInstructions(inst)
     }
 
     @TranslatorMethod
     private fun translateSndPairElem(node: SndPairElemAST, cfgState: CfgState) {
-        TODO()
+        // Get base address of pair variable
+        translate(node.expr, cfgState)
+        val addrReg = cfgState.resultRegister
+        // For backend analysis to insert null check before loading the address
+        assert(addrReg.type() is PairType)
+
+        // Find the base address of second element of pair
+        val secondElemAddrReg = cfgState.newVar(addrReg.type())
+        val addrInst = AssignBinOp(secondElemAddrReg, BinaryOp.PLUS, secondElemAddrReg, IntImm(WORD))
+
+        // Load the value in memory into variable
+        val reg = cfgState.newVar(IntType)
+        val inst = Load(reg, addrReg)
+
+        cfgState.currentBlock.addInstructions(addrInst, inst)
     }
 
     @TranslatorMethod
