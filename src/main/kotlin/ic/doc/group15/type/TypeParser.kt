@@ -7,6 +7,28 @@ class TypeParser {
 
     companion object {
 
+        fun parse(ctx: Return_typeContext): Type {
+            return when {
+                ctx.type() != null -> {
+                    Type.ANY
+                }
+                else -> {
+                    ReturnableType.VOID
+                }
+            }
+        }
+
+        fun parse(symbolTable: SymbolTable, ctx: Return_typeContext): Type {
+            return when {
+                ctx.type() != null -> {
+                    parse(symbolTable, ctx.type())
+                }
+                else -> {
+                    ReturnableType.VOID
+                }
+            }
+        }
+
         fun parse(symbolTable: SymbolTable, ctx: TypeContext): Type {
             return when {
                 ctx.base_type() != null -> {

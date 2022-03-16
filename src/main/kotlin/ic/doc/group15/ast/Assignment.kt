@@ -63,4 +63,3 @@ class CallAssignAST(
     symbolTable: SymbolTable,
     val callStat: CallStatementAST
 ) : AssignRhsAST(symbolTable, callStat.funcIdent.returnType as VariableType)
-

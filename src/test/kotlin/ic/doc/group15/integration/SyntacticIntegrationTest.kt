@@ -3,7 +3,6 @@ package ic.doc.group15.integration
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.error.SyntacticErrorList
-import ic.doc.group15.error.syntactic.SyntacticError
 import ic.doc.group15.visitor.ReturnChecker
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
@@ -129,6 +128,21 @@ class SyntacticIntegrationTest {
             )
             fun testSyntacticallyValid(fileName: String) {
                 assertTrue(isSyntacticallyValid("$simpleFunctionsFolderPath/$fileName.wacc"))
+            }
+        }
+
+        @Nested
+        inner class VoidFunctionValidFiles {
+            private val voidFunctionFolderPath = "$functionsFolderPath/void_functions"
+
+            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ValueSource(
+                strings = [
+                    "voidSimple", "voidReturn", "voidCall", "voidExit"
+                ]
+            )
+            fun testSemanticallyValid(fileName: String) {
+                assertTrue(isSyntacticallyValid("$voidFunctionFolderPath/$fileName.wacc"))
             }
         }
     }
@@ -377,8 +391,7 @@ class SyntacticIntegrationTest {
                     "badlyNamed", "badlyPlaced", "funcExpr", "funcExpr2", "functionConditionalNoReturn",
                     "functionEndingNotReturn", "functionLateDefine", "functionMissingCall", "functionMissingParam",
                     "functionMissingPType", "functionNoReturn", "functionReturnInLoop", "functionScopeDef",
-                    "mutualRecursionNoReturn", "noBodyAfterFuncs", "thisIsNotC",
-                    "functionVoidNoReturn", "functionVoidConditionalNoReturn"
+                    "mutualRecursionNoReturn", "noBodyAfterFuncs", "thisIsNotC"
                 ]
             )
             fun testSyntacticallyValid(fileName: String) {

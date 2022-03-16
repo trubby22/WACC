@@ -6,7 +6,7 @@ import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.SyntacticErrorList
-import ic.doc.group15.visitor.AssemblyGenerator
+import ic.doc.group15.visitor.AstAssemblyGenerator
 import ic.doc.group15.visitor.ParseTreeVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -572,7 +572,7 @@ class SemanticIntegrationTest {
             return false
         }
 
-        val asm = AssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
+        val asm = AstAssemblyGenerator(ast, enableLogging = ENABLE_LOGGING)
         val writer = System.out.bufferedWriter()
         asm.generate(writer)
         writer.flush()
