@@ -2,6 +2,8 @@ package ic.doc.group15.ssa.optimisations
 
 import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.ssa.tac.*
+import ic.doc.group15.type.BasicType
+import java.util.*
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
@@ -480,4 +482,112 @@ class LocalConstantPropagation {
             return Store(v, addr)
         }
     }
+}
+
+/**
+ * Join two statements where a variable is assigned the result of a temporary.
+ * t = a + b; v = t => v = a + b
+ *
+ * The current implementation allows a list of redundant assignments to collapse
+ * down into a single assignment; ie:
+ * t1 = a + b; t2 = t1; t3 = t2; ... ; v = tn => v = a + b
+ */
+class RemoveTemporaries {
+    companion object {
+        fun apply(instructions: List<ThreeAddressCode>): List<ThreeAddressCode> {
+            if (instructions.size < 2) return instructions
+
+            val simplifiedInstructions = LinkedList(instructions)
+
+            val it = simplifiedInstructions.listIterator()
+            // Previous instruction
+            var prev = it.next()
+
+            // Traverse and combine redundant assignments
+            while (it.hasNext()) {
+                // Current instruction
+                val curr = it.next()
+
+                if (curr is AssignValue) {
+                    val (v, t) = curr
+                    when (prev) {
+                        is Allocate -> {
+                            val (reg, amount) = prev
+                            if (reg == t) {
+                                val combineInst = Allocate(v, amount)
+                                removeLastTwoElements(it)
+                                it.add(combineInst)
+                            }
+                        }
+                        is AssignBinOp -> {
+                            val (reg, op, lhs, rhs) = prev
+                            if (reg == t) {
+                                val combineInst = AssignBinOp(v, op, lhs, rhs)
+                                removeLastTwoElements(it)
+                                it.add(combineInst)
+                            }
+                        }
+                        is AssignCall -> {
+                            if (prev.reg == t) {
+                                val combineInst = AssignCall(v, prev.f, *prev.args)
+                                removeLastTwoElements(it)
+                                it.add(combineInst)
+                            }
+                        }
+                        is AssignValue -> {
+                            val (reg, value) = prev
+                            if (reg == t) {
+                                val combineInst = AssignValue(v, value)
+                                removeLastTwoElements(it)
+                                it.add(combineInst)
+                            }
+                        }
+                        is Load -> {
+                            val (reg, value) = prev
+                            if (reg == t) {
+                                val combineInst = Load(v, value)
+                                removeLastTwoElements(it)
+                                it.add(combineInst)
+                            }
+                        }
+                        is Store -> {
+                            val (from, to) = prev
+                            if (to == t) {
+                                val combineInst = Load(from, v)
+                                removeLastTwoElements(it)
+                                it.add(combineInst)
+                            }
+                        }
+                    }
+                }
+
+                prev = curr
+            }
+
+            return simplifiedInstructions
+        }
+
+        private fun <T> removeLastTwoElements(it: MutableListIterator<T>) {
+            it.previous()
+            it.previous()
+            it.remove()
+            it.next()
+            it.remove()
+        }
+    }
+}
+
+fun main() {
+    val var1 = Var(1, BasicType.IntType)
+    val var2 = Var(2, BasicType.IntType)
+    val var3 = Var(3, BasicType.IntType)
+    val var4 = Var(4, BasicType.IntType)
+    val instructions = listOf(
+        AssignBinOp(var1, BinaryOp.PLUS, IntImm(1), IntImm(1)),
+        AssignValue(var2, var1),
+        AssignValue(var3, var2),
+        AssignValue(var4, var3)
+    )
+    val simplify = RemoveTemporaries.apply(instructions)
+    println(simplify)
 }
