@@ -353,3 +353,131 @@ class OperatorStrengthReduction {
         }
     }
 }
+
+/**
+ * Apply constant propagation within a basic block.
+ */
+class LocalConstantPropagation {
+    companion object {
+        fun apply(instructions: List<ThreeAddressCode>): List<ThreeAddressCode> {
+            // Store a mapping of variables to immediate values
+            val assignedMemo = mutableMapOf<Var, Imm>()
+            val simplifiedInstructions = mutableListOf<ThreeAddressCode>()
+
+            for (inst in instructions) {
+                // Check if operands of an instruction are defined and substitute if so,
+                // while updating the variable in assignedMemo
+                val simplifiedInst = when (inst) {
+                    is AssignBinOp -> propagateBinOp(inst, assignedMemo)
+                    is Allocate -> propagateAlloc(inst, assignedMemo)
+                    is AssignCall -> propagateAssignCall(inst, assignedMemo)
+                    is AssignValue -> propagateAssignValue(inst, assignedMemo)
+                    is BranchIf -> propagateBranchIf(inst, assignedMemo)
+                    is Call -> propagateCall(inst, assignedMemo)
+                    is Load -> propagateLoad(inst, assignedMemo)
+                    is Store -> propagateStore(inst, assignedMemo)
+                    else -> inst
+                }
+
+                // Add (potentially constant propagated) instruction
+                simplifiedInstructions.add(simplifiedInst)
+            }
+
+            return simplifiedInstructions
+        }
+
+        private fun propagateBinOp(
+            instruction: AssignBinOp,
+            assignedMemo: Map<Var, Imm>
+        ): ThreeAddressCode {
+            var (v, op, lhs, rhs) = instruction
+
+            // Pattern match LHS
+            if (lhs is Var && assignedMemo[lhs] is Imm) {
+                lhs = assignedMemo[lhs] as Imm
+            }
+
+            // Pattern match RHS
+            if (rhs is Var && assignedMemo[rhs] is Imm) {
+                rhs = assignedMemo[rhs] as Imm
+            }
+
+            return AssignBinOp(v, op, lhs, rhs)
+        }
+
+        private fun propagateAlloc(instruction: Allocate, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+            var (v, amount) = instruction
+
+            if (amount is Var && assignedMemo[amount] is Imm) {
+                amount = assignedMemo[amount] as Imm
+            }
+
+            return Allocate(v, amount)
+        }
+
+        private fun propagateAssignCall(
+            instruction: AssignCall,
+            assignedMemo: Map<Var, Imm>
+        ): ThreeAddressCode {
+            val simplifiedArgs = mutableListOf<Operand>()
+
+            for (arg in instruction.args) {
+                if (arg is Var && assignedMemo[arg] is Imm) {
+                    simplifiedArgs.add(assignedMemo[arg] as Imm)
+                } else {
+                    simplifiedArgs.add(arg)
+                }
+            }
+
+            return AssignCall(instruction.reg, instruction.f, *simplifiedArgs.toTypedArray())
+        }
+
+        private fun propagateAssignValue(instruction: AssignValue, assignedMemo: MutableMap<Var, Imm>): ThreeAddressCode {
+            val (reg, value) = instruction
+            if (value is Imm) assignedMemo[reg] = value
+            return instruction
+        }
+
+        private fun propagateBranchIf(instruction: BranchIf, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+            var (cond, block) = instruction
+            if (cond is Var && assignedMemo[cond] is BoolImm) {
+                cond = assignedMemo[cond] as BoolImm
+            }
+            return BranchIf(cond, block)
+        }
+
+        private fun propagateCall(instruction: Call, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+            val simplifiedArgs = mutableListOf<Operand>()
+
+            for (arg in instruction.args) {
+                if (arg is Var && assignedMemo[arg] is Imm) {
+                    simplifiedArgs.add(assignedMemo[arg] as Imm)
+                } else {
+                    simplifiedArgs.add(arg)
+                }
+            }
+
+            return Call(instruction.f, *simplifiedArgs.toTypedArray())
+        }
+
+        private fun propagateLoad(instruction: Load, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+            var (v, addr) = instruction
+
+            if (addr is Var && assignedMemo[addr] is Imm) {
+                addr = assignedMemo[addr] as Imm
+            }
+
+            return Load(v, addr)
+        }
+
+        private fun propagateStore(instruction: Store, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+            var (v, addr) = instruction
+
+            if (addr is Var && assignedMemo[addr] is Imm) {
+                addr = assignedMemo[addr] as Imm
+            }
+
+            return Store(v, addr)
+        }
+    }
+}

@@ -8,19 +8,21 @@ sealed interface Operand {
     fun type(): Type
 }
 
-data class CharImm(val value: Char) : Operand {
+interface Imm: Operand
+
+data class CharImm(val value: Char) : Imm {
     override fun type(): Type = CharType
 }
 
-data class StrImm(val value: String) : Operand {
+data class StrImm(val value: String) : Imm {
     override fun type(): Type = StringType
 }
 
-data class IntImm(val value: Int) : Operand {
+data class IntImm(val value: Int) : Imm {
     override fun type(): Type = IntType
 }
 
-data class BoolImm(val value: Boolean) : Operand {
+data class BoolImm(val value: Boolean) : Imm {
     override fun type(): Type = BoolType
 }
 
@@ -31,10 +33,6 @@ data class Var(
     // Can store WORD sized value by default, but can also be BYTE: check
     // assignment for actual type
     override fun type(): Type = type
-}
-
-data class Label(val block: String) : Operand {
-    override fun type(): Type = IntType
 }
 
 interface Func {
