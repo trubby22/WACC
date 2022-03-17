@@ -43,7 +43,7 @@ class ReadStatementAST(
 class FreeStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val expr: ExpressionAST
+    val expr: AssignRhsAST
 ) : StatementAST(parent, symbolTable)
 
 class PrintStatementAST(

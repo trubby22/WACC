@@ -25,7 +25,6 @@ import ic.doc.group15.type.BasicType.Companion.StringType
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
-import java.util.function.Consumer
 
 private const val MAX_STACK_CHANGE = 1024
 
@@ -158,8 +157,7 @@ class AstAssemblyGenerator(
     private fun translateFreeStatement(node: FreeStatementAST) {
         log("Translating FreeStatementAST")
         defineUtilFuncs(P_FREE_PAIR)
-        val variable = node.expr as VariableIdentifierAST
-        transRetrieve(variable.ident, node.symbolTable)
+        getAddress(node.expr)
         addLines(
             Move(R0, resultRegister),
             BranchLink(P_FREE_PAIR)
@@ -264,22 +262,11 @@ class AstAssemblyGenerator(
     private fun translateReadStatement(node: ReadStatementAST) {
         log("Translating ReadStatementAST")
 
-        val assignTo = node.target.lhs
+        val assignTo = node.target
         val readFunc = if (node.target.type == IntType) P_READ_INT else P_READ_CHAR
 
         defineUtilFuncs(readFunc)
-        when (assignTo) {
-            is VariableIdentifierAST -> {
-                getAddress(assignTo)
-            }
-            is ArrayElemAST -> {
-                getAddress(assignTo)
-            }
-            is PairElemAST -> {
-                getAddress(assignTo)
-            }
-            else -> { throw IllegalArgumentException("cannot read into expression of this type") }
-        }
+        getAddress(assignTo.lhs)
         addLines(
             Move(R0, resultRegister),
             BranchLink(readFunc)
@@ -527,7 +514,7 @@ class AstAssemblyGenerator(
     @TranslatorMethod
     private fun translateDeref(node: DerefPointerAST) {
         log("Translating DerefPointerAST")
-        getAddress(node)
+        getAddressDeref(node)
         addLines(
             Move(R0, resultRegister),
             BranchLink(P_CHECK_NULL_POINTER),
@@ -661,7 +648,7 @@ class AstAssemblyGenerator(
         }
 
         // load address of value into resultRegister
-        getAddress(node)
+        getAddressArrayElem(node)
 
         addLines(
             Load(node.type.size, resultRegister, ZeroOffset(resultRegister))
@@ -749,7 +736,7 @@ class AstAssemblyGenerator(
     }
 
     private fun translatePairElem(node: PairElemAST, elemType: VariableType) {
-        getAddress(node)
+        getAddressPairElem(node)
         assert(node.expr.type.size == WORD)
         addLines(
             Load(elemType.size, resultRegister, ZeroOffset(resultRegister))
@@ -759,23 +746,16 @@ class AstAssemblyGenerator(
     @TranslatorMethod
     private fun translateAssignToPairElem(node: AssignToPairElemAST) {
         log("Translating AssignToPairElemAST")
-        translateAssignToPointer(node) {
-            getAddress(it as PairElemAST)
-        }
+        translateAssignToPointer(node)
     }
 
     @TranslatorMethod
     private fun translateAssignToDeref(node: AssignToDerefAST) {
         log("Translating AssignToDerefAST")
-        translateAssignToPointer(node) {
-            getAddress(it as DerefPointerAST)
-        }
+        translateAssignToPointer(node)
     }
 
-    private fun <T : AssignmentAST<*>> translateAssignToPointer(
-        node: T,
-        getAddress: Consumer<ASTNode>
-    ) {
+    private fun translateAssignToPointer(node: AssignmentAST<*>) {
         val oldResultRegister = resultRegister
 
         // Translate the expression to assign
@@ -785,7 +765,7 @@ class AstAssemblyGenerator(
         resultRegister = resultRegister.nextReg()
 
         // Get the address in memory at which we will store the rhs
-        getAddress.accept(node.lhs)
+        getAddress(node.lhs)
 
         // Write the expression result to the address
         addLines(
@@ -1154,13 +1134,35 @@ class AstAssemblyGenerator(
         }
     }
 
-    private fun getAddress(variable: VariableIdentifierAST) {
+    private fun getAddress(assignTo: AssignRhsAST) {
+        when (assignTo) {
+            is VariableIdentifierAST -> {
+                getAddressIdent(assignTo)
+            }
+            is ArrayElemAST -> {
+                getAddressArrayElem(assignTo)
+            }
+            is PairElemAST -> {
+                getAddressPairElem(assignTo)
+            }
+            is DerefPointerAST -> {
+                getAddressDeref(assignTo)
+            }
+            is BinaryOpExprAST -> {
+                assert(assignTo.type is PointerType)
+                translate(assignTo)
+            }
+            else -> { throw IllegalArgumentException("cannot get address of this type") }
+        }
+    }
+
+    private fun getAddressIdent(variable: VariableIdentifierAST) {
         addLines(
             Add(resultRegister, SP, IntImmediateOperand(variable.ident.stackPosition))
         )
     }
 
-    private fun getAddress(arrayElem: ArrayElemAST) {
+    private fun getAddressArrayElem(arrayElem: ArrayElemAST) {
         val variable = arrayElem.arrayVar.ident
 
         addLines(Add(resultRegister, SP, IntImmediateOperand(variable.stackPosition)))
@@ -1191,7 +1193,7 @@ class AstAssemblyGenerator(
         }
     }
 
-    private fun getAddress(pairElemAST: PairElemAST) {
+    private fun getAddressPairElem(pairElemAST: PairElemAST) {
         defineUtilFuncs(
             P_CHECK_NULL_POINTER
         )
@@ -1208,7 +1210,7 @@ class AstAssemblyGenerator(
         )
     }
 
-    private fun getAddress(derefPointerAST: DerefPointerAST) {
+    private fun getAddressDeref(derefPointerAST: DerefPointerAST) {
         defineUtilFuncs(
             P_CHECK_NULL_POINTER
         )

@@ -8,7 +8,7 @@ import ic.doc.group15.type.VariableType
 
 private val intOnly = setOf<VariableType>(IntType)
 private val addables = intOnly + PointerType.ANY_POINTER
-private val comparables = setOf<VariableType>(IntType, CharType)
+private val comparables = addables + CharType
 private val boolOnly = setOf<VariableType>(BoolType)
 
 /**

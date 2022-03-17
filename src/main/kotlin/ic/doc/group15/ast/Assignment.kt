@@ -8,7 +8,7 @@ abstract class AssignRhsAST protected constructor(
     val type: VariableType
 ) : ASTNode(symbolTable)
 
-abstract class AssignmentAST<T : ASTNode> protected constructor(
+abstract class AssignmentAST<T : AssignRhsAST> protected constructor(
     parent: BlockAST,
     val lhs: T,
     val type: VariableType,

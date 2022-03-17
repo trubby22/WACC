@@ -9,8 +9,13 @@ abstract class SemanticError protected constructor(
     token: Token,
     message: String
 ) : WaccError(SEMANTIC_ERROR_CODE, token, message) {
+
     override fun toString(): String {
-        return "Semantic error (line $line, column $column): $message"
+        return "Semantic error (line $line, column $column): $message [${getErrorName(this)}]"
+    }
+
+    protected companion object {
+        fun getErrorName(obj: SemanticError): String = obj::class.toString().split('.').last()
     }
 }
 
@@ -48,4 +53,18 @@ class PairElemNullError(
 ) : SemanticError(
     nullExprToken,
     "Cannot access element of null pair"
+)
+
+class PointerAdditionError(
+    pointerAdditionToken: Token
+) : SemanticError(
+    pointerAdditionToken,
+    "Cannot add two pointers together"
+)
+
+class PointerNotFirstInBinOpError(
+    binOpToken: Token
+) : SemanticError(
+    binOpToken,
+    "Pointer value must be first when performing pointer arithmetic"
 )

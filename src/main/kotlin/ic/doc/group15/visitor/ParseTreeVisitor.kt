@@ -791,40 +791,49 @@ class ParseTreeVisitor(
         }!!
         log("Found binary operator $binOp")
         val expr1 = visit(ctx.expr(0)) as ExpressionAST
-        val expr2 = visit(ctx.expr(1)) as ExpressionAST
+        var expr2 = visit(ctx.expr(1)) as ExpressionAST
 
         if (binOp.allowedTypes != null) {
-            if (!binOp.allowedTypes.contains(expr1.type)) {
+            if (binOp.allowedTypes.none { it.compatible(expr1.type) }) {
                 addError(BinaryOpTypeError(ctx.start, binOp, expr1.type))
             }
-            if (!binOp.allowedTypes.contains(expr1.type)) {
-                addError(BinaryOpTypeError(ctx.start, binOp, expr1.type))
+        }
+
+        val type: VariableType
+        if (expr1.type is PointerType) {
+            type = expr1.type
+            when (binOp) {
+                BinaryOp.GT, BinaryOp.GTE, BinaryOp.LT, BinaryOp.LTE -> {
+                    if (expr2.type !is PointerType) {
+                        addError(
+                            ComparingPointerWithNonPointerError(ctx.start, expr1.type, expr2.type)
+                        )
+                    }
+                }
+                else -> if (expr2.type is PointerType) {
+                    addError(PointerAdditionError(ctx.start))
+                }
+            }
+            // We're doing pointer arithmetic where expr1 is the pointer
+            // Therefore, multiply expr2 by the size of the data that expr1 is pointing to
+            expr2 = BinaryOpExprAST(
+                symbolTable,
+                expr2,
+                IntLiteralAST(expr1.type.elementType.size),
+                BinaryOp.MULT
+            )
+        } else {
+            type = binOp.returnType
+            if (expr2.type is PointerType) {
+                addError(PointerNotFirstInBinOpError(ctx.start))
             }
         }
 
         if (!expr1.type.compatible(expr2.type)) {
-            addError(BinaryOpDifferentTypesError(ctx.start, expr1.type, expr2.type))
+            addError(BinaryOpIncompatibleTypesError(ctx.start, expr1.type, expr2.type))
         }
 
-//        if (arrayOf(BinaryOp.AND, BinaryOp.OR).any { it == node.operator }) {
-//            if (!node.expr1.type.compatible(BasicType.BoolType) ||
-//                !node.expr2.type.compatible(BasicType.BoolType)
-//            ) {
-//                throw TypeError(
-//                    "boolean operands expected in expression but " +
-//                        "found operands of type ${node.expr1.type} and ${node.expr2.type} instead"
-//                )
-//            }
-//        }
-//
-//        if (!node.expr1.type.compatible(node.expr2.type)) {
-//            throw TypeError(
-//                "left operand of type ${node.expr1.type} is incompatible " +
-//                    "with right operand of type ${node.expr2.type}"
-//            )
-//        }
-
-        return BinaryOpExprAST(symbolTable, expr1, expr2, binOp)
+        return BinaryOpExprAST(symbolTable, expr1, expr2, binOp, type)
     }
 
     override fun visitBracketExpr(ctx: BracketExprContext): ASTNode {
