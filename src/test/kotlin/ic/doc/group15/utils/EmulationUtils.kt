@@ -198,38 +198,6 @@ class EmulationUtils {
             return emulationOutput
         }
 
-        private fun appendExpectedAssemblyToModelOutput(
-            waccPath: String,
-            txtPath: String
-        ) {
-            val output = compileAndEmulateExpected(waccPath)
-            val assemblyIntermediate = output
-                .split("contents are:\n" +
-                        "===========================================================\n")[1]
-                .split("===========================================================")[0]
-            val assembly = Regex("^[0-9]+\t", RegexOption.MULTILINE)
-                .replace(assemblyIntermediate, "").trim()
-
-            val textToAppend = "\nAssembly:\n$assembly"
-            log(textToAppend)
-            File(txtPath).appendText(textToAppend)
-        }
-
-        private fun compileAndEmulateExpected(waccPath: String): String {
-            val modelSolution =
-                ProcessBuilder(
-                    bash, options,
-                    "echo '' | ./wacc_examples/refCompile -ax $waccPath 2>&1"
-                ).start()
-            val exitCode = modelSolution.waitFor()
-            val output = IOUtils.toString(
-                modelSolution.inputStream,
-                StandardCharsets.UTF_8.name()
-            ).trim()
-            assertTrue(0 == exitCode, "refCompile failed\n. Output: $output")
-            return output
-        }
-
         private fun log(message: String) {
             if (ENABLE_LOGGING) {
                 println(message)
