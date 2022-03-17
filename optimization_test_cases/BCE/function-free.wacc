@@ -1,0 +1,11 @@
+begin
+  int f(int[] x) is
+    free x;
+    return 0
+  end
+  int[] y = [1, 2, 3, 4, 5];
+  println y[5];
+  println y[4];
+  int x = call f(y);
+  println y[3]
+end

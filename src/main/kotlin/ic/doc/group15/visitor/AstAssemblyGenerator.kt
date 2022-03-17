@@ -648,8 +648,7 @@ class AstAssemblyGenerator(
         val oldReg = resultRegister
 
         defineUtilFuncs(
-            P_CHECK_ARRAY_BOUNDS,
-            P_THROW_RUNTIME_ERROR
+            P_CHECK_ARRAY_BOUNDS
         )
 
         // Allocate two registers for arrayElem
@@ -689,8 +688,7 @@ class AstAssemblyGenerator(
         val oldReg = resultRegister
 
         defineUtilFuncs(
-            P_CHECK_ARRAY_BOUNDS,
-            P_THROW_RUNTIME_ERROR
+            P_CHECK_ARRAY_BOUNDS
         )
 
         val arrayElemAST = node.lhs
@@ -705,15 +703,20 @@ class AstAssemblyGenerator(
         translate(node.rhs)
 
         resultRegister = resultRegister.nextReg()
-        for (indexExpr in arrayElemAST.indexExpr) {
+        for (i in arrayElemAST.indexExpr.indices) {
             resultRegister = resultRegister.nextReg()
-            translate(indexExpr)
+            translate(arrayElemAST.indexExpr[i])
             resultRegister = resultRegister.prevReg()
             addLines(
                 Load(WORD, resultRegister, ZeroOffset(resultRegister)),
                 Move(R0, resultRegister.nextReg()),
-                Move(R1, resultRegister),
-                BranchLink(P_CHECK_ARRAY_BOUNDS),
+                Move(R1, resultRegister)
+            )
+            if (node.lhs.noBoundCheckRequired == null ||
+                !node.lhs.noBoundCheckRequired!![i]) {
+                addLines(BranchLink(P_CHECK_ARRAY_BOUNDS))
+            }
+            addLines(
                 Add(
                     resultRegister,
                     resultRegister,
@@ -1177,11 +1180,15 @@ class AstAssemblyGenerator(
                 Load(WORD, resultRegister, ZeroOffset(resultRegister)),
                 // check bounds of array
                 Move(R0, resultRegister.nextReg()),
-                Move(R1, resultRegister),
-                BranchLink(P_CHECK_ARRAY_BOUNDS),
-                Add(resultRegister, resultRegister, IntImmediateOperand(WORD))
+                Move(R1, resultRegister)
             )
+
+            if (arrayElem.noBoundCheckRequired == null ||
+                !arrayElem.noBoundCheckRequired!![i]) {
+                addLines(BranchLink(P_CHECK_ARRAY_BOUNDS))
+            }
             addLines(
+                Add(resultRegister, resultRegister, IntImmediateOperand(WORD)),
                 // get address of desired index into result reg
                 Add(
                     resultRegister,

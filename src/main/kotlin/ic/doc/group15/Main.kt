@@ -4,10 +4,13 @@ import ic.doc.group15.Option.* // ktlint-disable no-unused-imports
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.ast.AST
+import ic.doc.group15.error.BCEErrorList
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.visitor.AstAssemblyGenerator
+import ic.doc.group15.visitor.AssemblyGenerator
+import ic.doc.group15.visitor.BCEOptimizerSeq
 import ic.doc.group15.visitor.ParseTreeVisitor
 import ic.doc.group15.visitor.ReturnChecker
 import org.antlr.v4.runtime.CharStreams
@@ -61,7 +64,7 @@ fun main(args: ArgsList) {
     // Perform semantic analysis and build the AST
     log("\nPerforming semantic analysis...\n")
     val st = SymbolTable()
-    val ast = AST(st)
+    var ast = AST(st)
     val semanticErrors = SemanticErrorList()
     val visitor = ParseTreeVisitor(
         ast,
@@ -78,6 +81,16 @@ fun main(args: ArgsList) {
     // Close input resources
     inputStream.close()
     sourceFile.close()
+
+    // Run BCE optimization
+    val bceErrors = BCEErrorList()
+    val astCopy = ast
+    val bceOptimizerSeq = BCEOptimizerSeq(ast, bceErrors, enableLogging =
+            enableLogging)
+//    bceOptimizerSeq.removeArrayBoundChecking()
+    if (bceErrors.hasErrors()) {
+        ast = astCopy
+    }
 
     // Create assembly file
     val filename = sourceFilePath.split("/").last()

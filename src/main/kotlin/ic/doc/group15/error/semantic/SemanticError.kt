@@ -1,14 +1,14 @@
 package ic.doc.group15.error.semantic
 
 import ic.doc.group15.error.SEMANTIC_ERROR_CODE
-import ic.doc.group15.error.WaccError
+import ic.doc.group15.error.CompilationError
 import ic.doc.group15.type.*
 import org.antlr.v4.runtime.Token
 
 abstract class SemanticError protected constructor(
     token: Token,
     message: String
-) : WaccError(SEMANTIC_ERROR_CODE, token, message) {
+) : CompilationError(SEMANTIC_ERROR_CODE, token, message) {
     override fun toString(): String {
         return "Semantic error (line $line, column $column): $message"
     }

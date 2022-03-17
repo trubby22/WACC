@@ -1,3 +1,16 @@
 Exit code:
 42
 Output:
+
+Assembly:
+.text
+
+.global main
+main:
+	PUSH {lr}
+	LDR r4, =42
+	MOV r0, r4
+	BL exit
+	LDR r0, =0
+	POP {pc}
+	.ltorg

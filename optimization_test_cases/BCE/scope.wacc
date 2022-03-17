@@ -1,0 +1,18 @@
+begin
+  int[] x = [1, 2, 3, 4, 5];
+  begin
+    println x[4];
+    begin
+      println x[3];
+      begin
+        println x[2];
+        begin
+          println x[1];
+          begin
+            println x[0]
+          end
+        end
+      end
+    end
+  end
+end

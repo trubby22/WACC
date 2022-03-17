@@ -1,0 +1,9 @@
+begin
+  int f() is
+    int[] x = [1, 2, 3, 4, 5];
+    println x[4];
+    println x[4];
+    return 0
+  end
+  int x = call f()
+end
