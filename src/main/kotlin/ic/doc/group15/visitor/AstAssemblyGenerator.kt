@@ -22,7 +22,6 @@ import ic.doc.group15.type.BasicType.Companion.BoolType
 import ic.doc.group15.type.BasicType.Companion.CharType
 import ic.doc.group15.type.BasicType.Companion.IntType
 import ic.doc.group15.type.BasicType.Companion.StringType
-import ic.doc.group15.util.BYTE
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
@@ -121,11 +120,7 @@ class AstAssemblyGenerator(
                 // Allocate space in stack
                 Sub(SP, SP, IntImmediateOperand(size)),
                 // Move value from resultRegister to stack
-                if (size == BYTE) {
-                    StoreByte(resultRegister, ZeroOffset(SP))
-                } else {
-                    StoreWord(resultRegister, ZeroOffset(SP))
-                }
+                Store(size, resultRegister, ZeroOffset(SP))
             )
             offsetStackStore[0] += size
         }
@@ -229,7 +224,7 @@ class AstAssemblyGenerator(
                 defineUtilFuncs(P_PRINT_BOOL)
                 addLines(BranchLink(P_PRINT_BOOL))
             }
-            is PairType -> {
+            is PairType, is PointerType -> {
                 defineUtilFuncs(P_PRINT_REFERENCE)
                 addLines(BranchLink(P_PRINT_REFERENCE))
             }
@@ -455,7 +450,7 @@ class AstAssemblyGenerator(
         }
 
         addLines(
-            LoadWord(R0, PseudoImmediateOperand(2 * WORD)),
+            Load(WORD, R0, PseudoImmediateOperand(2 * WORD)),
             BranchLink(MALLOC),
             Move(resultRegister, R0) // R_n
         )
@@ -465,21 +460,19 @@ class AstAssemblyGenerator(
             resultRegister = resultRegister.nextReg() // R_n+1
             translate(expr) // result stored in // R_n+1
             addLines(
-                LoadWord(R0, PseudoImmediateOperand(expr.type.size)),
+                Load(WORD, R0, PseudoImmediateOperand(expr.type.size)),
                 BranchLink(MALLOC)
             )
 
             // Store the value of the item of the pair in the address received from malloc
             addLines(
-                when (expr.type.size) {
-                    WORD -> StoreWord(resultRegister, ZeroOffset(R0)) // R_n+1
-                    else -> StoreByte(resultRegister, ZeroOffset(R0))
-                }
+                Store(expr.type.size, resultRegister, ZeroOffset(R0))
             )
 
             // Store the address of the pair item into the actual pairs memory
             addLines(
-                StoreWord(
+                Store(
+                    WORD,
                     R0,
                     if (index == 0) {
                         ZeroOffset(resultRegister.prevReg())
@@ -504,15 +497,37 @@ class AstAssemblyGenerator(
         }
     }
 
+    @TranslatorMethod
+    private fun translateAlloc(node: AllocAST) {
+        log("Translating AllocAST")
+
+        translate(node.expr)
+
+        addLines(
+            Move(R0, resultRegister),
+            BranchLink(MALLOC),
+            Move(resultRegister, R0)
+        )
+    }
+
     //endregion
 
     //region translateExpr
 
     @TranslatorMethod
+    private fun translateSizeOf(node: SizeOfAST) {
+        log("Translating SizeOfAST")
+        val size = node.sizeOfType.size
+        addLines(
+            Load(size, resultRegister, PseudoImmediateOperand(size))
+        )
+    }
+
+    @TranslatorMethod
     private fun translateIntLiteral(node: IntLiteralAST) {
         log("Translating IntLiteralAST")
         addLines(
-            LoadWord(resultRegister, PseudoImmediateOperand(node.intValue))
+            Load(IntType.size, resultRegister, PseudoImmediateOperand(node.intValue))
         )
     }
 
@@ -536,7 +551,7 @@ class AstAssemblyGenerator(
     private fun translateStringLiteral(node: StringLiteralAST) {
         log("Translating StringLiteralAST")
         addLines(
-            LoadWord(resultRegister, DataLabelOperand(newStringLabel(node.stringValue)))
+            Load(WORD, resultRegister, DataLabelOperand(newStringLabel(node.stringValue)))
         )
     }
 
@@ -551,7 +566,7 @@ class AstAssemblyGenerator(
     private fun translateNullPairLiteralAST(node: NullPairLiteralAST) {
         log("Translating NullPairLiteralAST")
         addLines(
-            LoadWord(resultRegister, PseudoImmediateOperand(0))
+            Load(WORD, resultRegister, PseudoImmediateOperand(0))
         )
     }
 
@@ -576,11 +591,11 @@ class AstAssemblyGenerator(
         }
 
         currentLabel.addLines(
-            LoadWord(R0, PseudoImmediateOperand(size)),
+            Load(WORD, R0, PseudoImmediateOperand(size)),
             BranchLink(MALLOC),
             Move(resultRegister, R0)
         )
-        // offset (in bytes) from the malloc'ed address to store the value at
+        // offset (in bytes) from the malloced address to store the value at
         // starts at addr + 4 because the first 4 bytes are dedicated to storing tha array's length
         var offset = WORD
         for (expr in elems) {
@@ -590,19 +605,15 @@ class AstAssemblyGenerator(
             translate(expr)
             resultRegister = src // R_n
             currentLabel.addLines(
-                if (expr.type.size == WORD) {
-                    StoreWord(dest, ImmediateOffset(src, offset))
-                } else {
-                    StoreByte(dest, ImmediateOffset(src, offset))
-                }
+                Store(expr.type.size, dest, ImmediateOffset(src, offset))
             )
             offset += expr.type.size
         }
 
         val dest = resultRegister.nextReg() // R_n+1
         currentLabel.addLines(
-            LoadWord(dest, PseudoImmediateOperand(elems.size)),
-            StoreWord(dest, ZeroOffset(resultRegister))
+            Load(WORD, dest, PseudoImmediateOperand(elems.size)),
+            Store(WORD, dest, ZeroOffset(resultRegister))
         )
 
         // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
@@ -640,16 +651,9 @@ class AstAssemblyGenerator(
         // load address of value into resultRegister
         getAddress(node)
 
-        if (node.type.size == WORD) {
-            addLines(
-                // put whats at that index into result reg
-                LoadWord(resultRegister, ZeroOffset(resultRegister))
-            )
-        } else {
-            addLines(
-                LoadByte(resultRegister, ZeroOffset(resultRegister))
-            )
-        }
+        addLines(
+            Load(node.type.size, resultRegister, ZeroOffset(resultRegister))
+        )
 
         // result stored in MAX_REG - 1, we move the result to MAX_REG and restore
         // original value in MAX_REG - 1
@@ -693,10 +697,7 @@ class AstAssemblyGenerator(
             translate(indexExpr)
             resultRegister = resultRegister.prevReg()
             addLines(
-                LoadWord(
-                    resultRegister,
-                    ZeroOffset(resultRegister)
-                ),
+                Load(WORD, resultRegister, ZeroOffset(resultRegister)),
                 Move(R0, resultRegister.nextReg()),
                 Move(R1, resultRegister),
                 BranchLink(P_CHECK_ARRAY_BOUNDS),
@@ -719,11 +720,7 @@ class AstAssemblyGenerator(
         resultRegister = oldReg
         val dest = ZeroOffset(resultRegister.nextReg())
         addLines(
-            if (typeSize == WORD) {
-                StoreWord(resultRegister, dest)
-            } else {
-                StoreByte(resultRegister, dest)
-            }
+            Store(typeSize, resultRegister, dest)
         )
     }
 
@@ -743,11 +740,7 @@ class AstAssemblyGenerator(
         getAddress(node)
         assert(node.expr.type.size == WORD)
         addLines(
-            if (elemType.size == BYTE) {
-                LoadByte(resultRegister, ZeroOffset(resultRegister))
-            } else {
-                LoadWord(resultRegister, ZeroOffset(resultRegister))
-            }
+            Load(elemType.size, resultRegister, ZeroOffset(resultRegister))
         )
     }
 
@@ -766,16 +759,12 @@ class AstAssemblyGenerator(
 
         resultRegister = resultRegister.nextReg()
 
-        // Get the adress in memory at the pair element is stored
+        // Get the address in memory at the pair element is stored
         getAddress(node.lhs)
 
         // Write the expression result to the pair element address
         addLines(
-            if (node.rhs.type.size == BYTE) {
-                StoreByte(rhsResultRegister, ZeroOffset(resultRegister))
-            } else {
-                StoreWord(rhsResultRegister, ZeroOffset(resultRegister))
-            }
+            Store(node.rhs.type.size, rhsResultRegister, ZeroOffset(resultRegister))
         )
 
         resultRegister = oldResultRegister
@@ -809,7 +798,7 @@ class AstAssemblyGenerator(
             }
             UnaryOp.LEN -> {
                 addLines(
-                    LoadWord(resultRegister, ZeroOffset(resultRegister))
+                    Load(WORD, resultRegister, ZeroOffset(resultRegister))
                 )
             }
             else -> { }
@@ -1085,7 +1074,7 @@ class AstAssemblyGenerator(
     private fun mainEpilogue(symbolTable: SymbolTable) {
         blockEpilogue(symbolTable)
         addLines(
-            LoadWord(R0, PseudoImmediateOperand(0)),
+            Load(WORD, R0, PseudoImmediateOperand(0)),
             Pop(PC),
             LTORG
         )
@@ -1131,19 +1120,11 @@ class AstAssemblyGenerator(
 
         if (store) {
             addLines(
-                if (size == BYTE) {
-                    StoreByte(resultRegister, addressOperand)
-                } else {
-                    StoreWord(resultRegister, addressOperand)
-                }
+                Store(size, resultRegister, addressOperand)
             )
         } else {
             addLines(
-                if (size == BYTE) {
-                    LoadByte(resultRegister, addressOperand)
-                } else {
-                    LoadWord(resultRegister, addressOperand)
-                }
+                Load(size, resultRegister, addressOperand)
             )
         }
     }
@@ -1167,7 +1148,7 @@ class AstAssemblyGenerator(
             resultRegister = resultRegister.prevReg()
 
             addLines(
-                LoadWord(resultRegister, ZeroOffset(resultRegister)),
+                Load(WORD, resultRegister, ZeroOffset(resultRegister)),
                 // check bounds of array
                 Move(R0, resultRegister.nextReg()),
                 Move(R1, resultRegister),
@@ -1198,7 +1179,7 @@ class AstAssemblyGenerator(
         addLines(
             Move(R0, resultRegister),
             BranchLink(P_CHECK_NULL_POINTER),
-            LoadWord(resultRegister, offset)
+            Load(WORD, resultRegister, offset)
         )
     }
 

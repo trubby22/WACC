@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
-private const val ENABLE_LOGGING = true
+private const val ENABLE_LOGGING = false
 
 class SemanticIntegrationTest {
     private val validFolderPath = "wacc_examples/valid"

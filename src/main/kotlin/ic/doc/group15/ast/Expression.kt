@@ -10,7 +10,7 @@ abstract class ExpressionAST protected constructor(
 
 class SizeOfAST(
     symbolTable: SymbolTable,
-    sizeOfType: VariableType
+    val sizeOfType: VariableType
 ) : ExpressionAST(symbolTable, BasicType.IntType)
 
 class IntLiteralAST(val intValue: Int) : ExpressionAST(type = BasicType.IntType)

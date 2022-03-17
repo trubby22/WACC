@@ -216,6 +216,23 @@ enum class UtilFunction(vararg val dependencies: UtilFunction) {
                 Pop(PC)
             )
         }
+    },
+    P_FREE_POINTER(
+        P_THROW_RUNTIME_ERROR
+    ) {
+        override val assembly by lazy {
+            listOf(
+                Push(LR),
+                Compare(R0, IntImmediateOperand(0)),
+                LoadWord(
+                    EQ, R0,
+                    generateStringData("NullReferenceError: dereference a null reference\n")
+                ),
+                Branch(EQ, P_THROW_RUNTIME_ERROR),
+                BranchLink(FREE),
+                Pop(PC)
+            )
+        }
     }
     ;
 

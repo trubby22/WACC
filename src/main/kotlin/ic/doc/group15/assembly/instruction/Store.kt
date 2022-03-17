@@ -3,6 +3,7 @@ package ic.doc.group15.assembly.instruction
 import ic.doc.group15.assembly.Instruction
 import ic.doc.group15.assembly.operand.AddressOperand
 import ic.doc.group15.assembly.operand.Register
+import ic.doc.group15.util.BYTE
 
 abstract class StoreInstruction protected constructor(
     instr: String,
@@ -10,6 +11,30 @@ abstract class StoreInstruction protected constructor(
     val src: Register,
     val addr: AddressOperand
 ) : Instruction(instr, conditionCode, src, addr)
+
+/**
+ * Returns an instance of LoadInstruction specific to the size of the data being loaded.
+ */
+fun Store(
+    size: Int,
+    dest: Register,
+    addr: AddressOperand
+): StoreInstruction {
+    return Store(size, null, dest, addr)
+}
+
+fun Store(
+    size: Int,
+    conditionCode: ConditionCode?,
+    dest: Register,
+    addr: AddressOperand
+): StoreInstruction {
+    return if (size == BYTE) {
+        StoreByte(conditionCode, dest, addr)
+    } else {
+        StoreWord(conditionCode, dest, addr)
+    }
+}
 
 /**
  * STR is a store register instruction that stores the particular value
