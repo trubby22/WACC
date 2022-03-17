@@ -1,11 +1,11 @@
 package ic.doc.group15.utils
 
 import org.apache.maven.surefire.shade.org.apache.commons.io.IOUtils
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-const val TIMEOUT: Long = 10
+const val TIMEOUT: Long = 5
 
 enum class TestMode {
     Online,
@@ -16,8 +16,9 @@ class EmulationUtils {
     companion object {
         const val validFolderPath = "wacc_examples/valid"
         const val validModelOutputFolderPath = "model_output/$validFolderPath"
-        private val bash = "/bin/bash"
-        private val options = "-c"
+        private const val ENABLE_LOGGING = true
+        private const val bash = "/bin/bash"
+        private const val options = "-c"
 
         /**
          * Compile a WACC program into assembly code compatible with ARM1176JZF-S processor,
@@ -29,16 +30,16 @@ class EmulationUtils {
             fileName: String,
             filePath: String,
             resultPath: String
-        ) : Boolean {
-            return exitCodeAndOutputMatches(fileName, filePath, resultPath, TestMode.Linux)
+        ) {
+            exitCodeAndOutputMatches(fileName, filePath, resultPath, TestMode.Linux)
         }
 
         fun exitCodeAndOutputMatchesLocal(
             fileName: String,
             filePath: String,
             resultPath: String
-        ) : Boolean {
-            return exitCodeAndOutputMatches(fileName, filePath, resultPath,
+        ) {
+            exitCodeAndOutputMatches(fileName, filePath, resultPath,
                 TestMode.Online)
         }
 
@@ -47,37 +48,61 @@ class EmulationUtils {
             filePath: String,
             resultPath: String,
             testMode: TestMode
-        ): Boolean {
+        ) {
             compile(filePath)
             val actualExitCode: Int
             val actualOutput: String
+            val actualAssembly: String
             when (testMode) {
                 TestMode.Online -> {
-                    val (fst, snd) = emulateOnline(fileName)
+                    val (fst, snd, third) = emulateOnline(fileName)
                     actualExitCode = fst
                     actualOutput = snd
+                    actualAssembly = third
                 }
                 TestMode.Linux -> {
-                    val (fst, snd) = emulateLinux(fileName)
+                    val (fst, snd, third) = emulateLinux(fileName)
                     actualExitCode = fst
                     actualOutput = snd
+                    actualAssembly = third
                 }
             }
-            val (expectedExitCode, expectedOutput) = getExpectedResult(resultPath)
+            val (expectedExitCode, expectedOutput, expectedAssembly) =
+                getExpectedResult(resultPath)
 
             val exitCodeMatches = (expectedExitCode == actualExitCode)
             val outputMatches = (expectedOutput == actualOutput)
 
-            return exitCodeMatches && outputMatches
+            log("Testing: $filePath")
+            log("Expected exit code: $expectedExitCode, actual: $actualExitCode")
+            log("Expected output:\n$expectedOutput\nActual output:\n$actualOutput")
+            log("Expected assembly:\n$expectedAssembly\nActual " +
+                    "assembly:\n$actualAssembly")
+            assertTrue(
+                exitCodeMatches && outputMatches,
+                "Our emulation produced results different than the reference " +
+                        "compiler for file: $filePath.\n" +
+                        "Exit code " +
+                        "matches: " +
+                        "$exitCodeMatches, output " +
+                        "matches: " +
+                        "$outputMatches.\n"
+            )
         }
 
-        private fun getExpectedResult(path: String): Pair<Int, String> {
-            val expectedList = File(path).readLines()
-            val expectedOutput = expectedList.subList(3, expectedList.size)
+        private fun getExpectedResult(path: String): Triple<Int, String,
+                String> {
+            val list = File(path).readLines()
+            val exitCode = list[1].trim().toInt()
+            val output = list
+                .subList(3, list.size)
                 .joinToString("\n")
-            val expectedExitCode = expectedList[1].trim().toInt()
+                .split("Assembly:")[0].trim()
+            val assembly = list
+                .joinToString("\n")
+                .split("Assembly:")[1].trim()
 
-            return Pair(expectedExitCode, expectedOutput)
+            return Triple(exitCode, output, assembly)
         }
 
         private fun compile(path: String) {
@@ -91,30 +116,32 @@ class EmulationUtils {
                 compilation.inputStream,
                 StandardCharsets.UTF_8.name()
             )
-            Assertions.assertTrue(
+            assertTrue(
                 setOf(0, 100, 200)
                     .contains(compilationExitStatus), "./compile failed with " +
-                        "exit status $compilationExitStatus\n"
+                        "exit status $compilationExitStatus and produced " +
+                        "the following output: \n${compilationOutput}\n"
             )
         }
 
         private fun emulateLinux(
             fileName: String
-        ): Pair<Int, String> {
+        ): Triple<Int, String, String> {
             
             val emulationOutput = emulateLinuxHelper(fileName)
 
-            val actualList = emulationOutput.split("\n")
-            val actualOutput =
-                actualList.subList(0, actualList.size - 1).joinToString("\n")
-            val actualExitCode = actualList[actualList.size - 1].trim().toInt()
+            val list = emulationOutput.split("\n")
+            val output =
+                list.subList(0, list.size - 1).joinToString("\n")
+            val exitCode = list[list.size - 1].trim().toInt()
+            val assembly = ""
 
-            return Pair(actualExitCode, actualOutput)
+            return Triple(exitCode, output, assembly)
         }
 
         private fun emulateOnline(
             fileName: String
-        ) : Pair<Int, String> {
+        ) : Triple<Int, String, String> {
 
             val emulationOutput = emulateOnlineHelper(fileName)
 
@@ -124,8 +151,13 @@ class EmulationUtils {
                 .trim()
             val exitCode = Regex("(?<=The exit code is: )[0-9]+(?=\\.)")
                 .find(emulationOutput)?.value!!.toInt()
+            val assembly = emulationOutput
+            .split("-- Uploaded file:")[1]
+            .split("---------------------------------------------------------------\n")[1]
+            .split("---------------------------------------------------------------")[0]
+            .trim()
 
-            return Pair(exitCode, output)
+            return Triple(exitCode, output, assembly)
         }
 
         private fun emulateOnlineHelper(fileName: String): String {
@@ -140,7 +172,7 @@ class EmulationUtils {
                 emulate.inputStream,
                 StandardCharsets.UTF_8.name()
             ).trim()
-            Assertions.assertTrue(0 == exitCode, "refEmulate failed\n")
+            assertTrue(0 == exitCode, "refEmulate failed. Output: $output\n")
             return output
         }
 
@@ -159,11 +191,49 @@ class EmulationUtils {
                 emulation.inputStream,
                 StandardCharsets.UTF_8.name()
             ).trim()
-            Assertions.assertTrue(
+            assertTrue(
                 0 == emulationExitStatus,
-                "Emulating using qemu failed\n"
+                "Emulating using qemu failed. Output: $emulationOutput\n"
             )
             return emulationOutput
+        }
+
+        private fun appendExpectedAssemblyToModelOutput(
+            waccPath: String,
+            txtPath: String
+        ) {
+            val output = compileAndEmulateExpected(waccPath)
+            val assemblyIntermediate = output
+                .split("contents are:\n" +
+                        "===========================================================\n")[1]
+                .split("===========================================================")[0]
+            val assembly = Regex("^[0-9]+\t", RegexOption.MULTILINE)
+                .replace(assemblyIntermediate, "").trim()
+
+            val textToAppend = "\nAssembly:\n$assembly"
+            log(textToAppend)
+            File(txtPath).appendText(textToAppend)
+        }
+
+        private fun compileAndEmulateExpected(waccPath: String): String {
+            val modelSolution =
+                ProcessBuilder(
+                    bash, options,
+                    "echo '' | ./wacc_examples/refCompile -ax $waccPath 2>&1"
+                ).start()
+            val exitCode = modelSolution.waitFor()
+            val output = IOUtils.toString(
+                modelSolution.inputStream,
+                StandardCharsets.UTF_8.name()
+            ).trim()
+            assertTrue(0 == exitCode, "refCompile failed\n. Output: $output")
+            return output
+        }
+
+        private fun log(message: String) {
+            if (ENABLE_LOGGING) {
+                println(message)
+            }
         }
     }
 }

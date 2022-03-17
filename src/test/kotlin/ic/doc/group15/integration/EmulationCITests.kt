@@ -32,7 +32,7 @@ class EmulationCITests {
             val filePath = "$arrayFolderPath/$fileName.wacc"
             val resultPath = "$arrayResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 
@@ -54,7 +54,7 @@ class EmulationCITests {
                 val filePath = "$exitFolderPath/$fileName.wacc"
                 val resultPath = "$exitResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
 
@@ -70,7 +70,7 @@ class EmulationCITests {
                 val filePath = "$skipFolderPath/$fileName.wacc"
                 val resultPath = "$skipResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
     }
@@ -99,7 +99,7 @@ class EmulationCITests {
             val filePath = "$expressionsFolderPath/$fileName.wacc"
             val resultPath = "$expressionsResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 
@@ -130,7 +130,7 @@ class EmulationCITests {
                 val filePath = "$nestedFunctionsFolderPath/$fileName.wacc"
                 val resultPath = "$nestedFunctionsResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
 
@@ -155,7 +155,7 @@ class EmulationCITests {
                 val filePath = "$simpleFunctionsFolderPath/$fileName.wacc"
                 val resultPath = "$simpleFunctionsResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
     }
@@ -173,7 +173,7 @@ class EmulationCITests {
             val filePath = "$ifFolderPath/$fileName.wacc"
             val resultPath = "$ifResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 
@@ -192,7 +192,7 @@ class EmulationCITests {
             val filePath = "$ioFolderPath/$fileName.wacc"
             val resultPath = "$ioResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
 
         @Nested
@@ -213,7 +213,7 @@ class EmulationCITests {
                 val filePath = "$printFolderPath/$fileName.wacc"
                 val resultPath = "$printResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
 
@@ -234,7 +234,7 @@ class EmulationCITests {
                 val filePath = "$readFolderPath/$fileName.wacc"
                 val resultPath = "$readResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
     }
@@ -258,7 +258,7 @@ class EmulationCITests {
             val filePath = "$pairsFolderPath/$fileName.wacc"
             val resultPath = "$pairsResultFolderPah/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 
@@ -283,7 +283,7 @@ class EmulationCITests {
                 val filePath = "$arrayOutOfBoundsFolderPath/$fileName.wacc"
                 val resultPath = "$arrayOutOfBoundsResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
 
@@ -301,7 +301,7 @@ class EmulationCITests {
                 val filePath = "$divideByZeroFolderPath/$fileName.wacc"
                 val resultPath = "$divideByZeroResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
 
@@ -324,7 +324,7 @@ class EmulationCITests {
                 val filePath = "$integerOverflowFolderPath/$fileName.wacc"
                 val resultPath = "$integerOverflowResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
 
@@ -342,7 +342,7 @@ class EmulationCITests {
                 val filePath = "$nullDereferenceFolderPath/$fileName.wacc"
                 val resultPath = "$nullDereferenceResultFolderPath/$fileName.txt"
 
-                assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+                exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
             }
         }
     }
@@ -366,7 +366,7 @@ class EmulationCITests {
             val filePath = "$scopeFolderPath/$fileName.wacc"
             val resultPath = "$scopeResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 
@@ -389,7 +389,7 @@ class EmulationCITests {
             val filePath = "$sequenceFolderPath/$fileName.wacc"
             val resultPath = "$sequenceResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 
@@ -412,7 +412,7 @@ class EmulationCITests {
             val filePath = "$variablesFolderPath/$fileName.wacc"
             val resultPath = "$variablesResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 
@@ -434,7 +434,7 @@ class EmulationCITests {
             val filePath = "$whileFolderPath/$fileName.wacc"
             val resultPath = "$whileResultFolderPath/$fileName.txt"
 
-            assertTrue(exitCodeAndOutputMatchesCI(fileName, filePath, resultPath))
+            exitCodeAndOutputMatchesCI(fileName, filePath, resultPath)
         }
     }
 }
