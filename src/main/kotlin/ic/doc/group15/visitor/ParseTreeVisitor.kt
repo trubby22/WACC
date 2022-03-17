@@ -509,11 +509,11 @@ class ParseTreeVisitor(
     }
 
     override fun visitAssignmentStat(ctx: AssignmentStatContext): ASTNode {
+        log("Visiting assignment to ${ctx.assign_lhs().text}")
+
         val exprRhs = ctx.assign_rhs()
         val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST<*>
         val assignRhs = visit(exprRhs) as AssignRhsAST
-
-        log("Visiting variable assignment ${ctx.assign_lhs().text}")
 
         if (!assignLhs.type.compatible(assignRhs.type)) {
             addError(AssignTypeError(exprRhs.start, assignLhs.type, assignRhs.type))
@@ -612,13 +612,13 @@ class ParseTreeVisitor(
             addError(DereferencingNonPointerTypeError(exprCtx.start, expr.type))
             Type.ANY
         } else {
-            expr.type
+            expr.type.elementType
         }
 
         // Dereferencing too many times means that at one point we're dereferencing a non-pointer
         expr.type as PointerType
         if (numDerefs > expr.type.depth) {
-            addError(DereferencingNonPointerTypeError(ctx.start, expr.type.elementType))
+            addError(DereferencingNonPointerTypeError(ctx.start, elementType))
         }
 
         return DerefPointerAST(symbolTable, expr, numDerefs, elementType)

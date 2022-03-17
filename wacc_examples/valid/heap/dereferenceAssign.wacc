@@ -1,0 +1,16 @@
+begin
+  pointer(int) i = alloc(sizeof int) ;
+
+  print "Address of i: " ;
+  println i ;
+
+  $i = 1 ;
+
+  print "Value of i should be 1: " ;
+  println $ i ;
+
+  $i = 2 ;
+
+  print "Value of i should be 2: " ;
+  println $i
+end

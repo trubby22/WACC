@@ -30,10 +30,10 @@ stat: SKIP_STAT                                                     #skipStat
     | stat END_STAT stat                                            #sequenceStat
 ;
 
-assign_lhs: ident                                                   #identAssignLhs
+assign_lhs: pointer_deref                                           #derefAssignLhs
+          | ident                                                   #identAssignLhs
           | array_elem                                              #arrayElemAssignLhs
           | pair_elem                                               #pairElemAssignLhs
-          | pointer_deref                                           #derefAssignLhs
 ;
 
 assign_rhs: expr                                                    #exprAssignRhs

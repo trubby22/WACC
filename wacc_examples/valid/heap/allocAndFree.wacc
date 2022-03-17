@@ -1,0 +1,7 @@
+begin
+  pointer(int) i = alloc(sizeof int) ;
+  print "Address of i: " ;
+  println i ;
+  println "Free i" ;
+  free i
+end

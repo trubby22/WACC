@@ -25,6 +25,8 @@ import ic.doc.group15.type.BasicType.Companion.StringType
 import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
+import java.util.function.Consumer
+import java.util.function.Supplier
 
 private const val MAX_STACK_CHANGE = 1024
 
@@ -524,6 +526,17 @@ class AstAssemblyGenerator(
     }
 
     @TranslatorMethod
+    private fun translateDeref(node: DerefPointerAST) {
+        log("Translating DerefPointerAST")
+        getAddress(node)
+        addLines(
+            Move(R0, resultRegister),
+            BranchLink(P_CHECK_NULL_POINTER),
+            Load(WORD, resultRegister, ZeroOffset(resultRegister))
+        )
+    }
+
+    @TranslatorMethod
     private fun translateIntLiteral(node: IntLiteralAST) {
         log("Translating IntLiteralAST")
         addLines(
@@ -747,10 +760,23 @@ class AstAssemblyGenerator(
     @TranslatorMethod
     private fun translateAssignToPairElem(node: AssignToPairElemAST) {
         log("Translating AssignToPairElemAST")
-        defineUtilFuncs(
-            P_CHECK_NULL_POINTER
-        )
+        translateAssignToPointer(node) {
+            getAddress(it as PairElemAST)
+        }
+    }
 
+    @TranslatorMethod
+    private fun translateAssignToDeref(node: AssignToDerefAST) {
+        log("Translating AssignToDerefAST")
+        translateAssignToPointer(node) {
+            getAddress(it as DerefPointerAST)
+        }
+    }
+
+    private fun <T : AssignmentAST<*>> translateAssignToPointer(
+        node: T,
+        getAddress: Consumer<ASTNode>
+    ) {
         val oldResultRegister = resultRegister
 
         // Translate the expression to assign
@@ -759,10 +785,10 @@ class AstAssemblyGenerator(
 
         resultRegister = resultRegister.nextReg()
 
-        // Get the address in memory at the pair element is stored
-        getAddress(node.lhs)
+        // Get the address in memory at which we will store the rhs
+        getAddress.accept(node.lhs)
 
-        // Write the expression result to the pair element address
+        // Write the expression result to the address
         addLines(
             Store(node.rhs.type.size, rhsResultRegister, ZeroOffset(resultRegister))
         )
@@ -1181,6 +1207,20 @@ class AstAssemblyGenerator(
             BranchLink(P_CHECK_NULL_POINTER),
             Load(WORD, resultRegister, offset)
         )
+    }
+
+    private fun getAddress(derefPointerAST: DerefPointerAST) {
+        defineUtilFuncs(
+            P_CHECK_NULL_POINTER
+        )
+        translate(derefPointerAST.expr)
+        for (i in 0 until derefPointerAST.numDerefs - 1) {
+            addLines(
+                Move(R0, resultRegister),
+                BranchLink(P_CHECK_NULL_POINTER),
+                Load(WORD, resultRegister, ZeroOffset(resultRegister))
+            )
+        }
     }
 
     //endregion
