@@ -11,7 +11,7 @@ build-job:
     untracked: true
   script:
     - make clean
-    - mvn package -DskipTests
+    - make
 
 syntactic-test-job:
   stage: test
