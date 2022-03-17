@@ -485,6 +485,27 @@ class LocalConstantPropagation {
 }
 
 /**
+ * Remove x = x.
+ */
+class RemoveRedundantAssignments {
+    companion object {
+        fun apply(instructions: List<ThreeAddressCode>): List<ThreeAddressCode> {
+            val simplifiedInstructions = mutableListOf<ThreeAddressCode>()
+
+            for (inst in instructions) {
+                if (inst is AssignValue) {
+                    val (reg, value) = inst
+                    if (reg == value) continue
+                }
+                simplifiedInstructions.add(inst)
+            }
+
+            return simplifiedInstructions
+        }
+    }
+}
+
+/**
  * Join two statements where a variable is assigned the result of a temporary.
  * t = a + b; v = t => v = a + b
  *
@@ -517,6 +538,7 @@ class RemoveTemporaries {
                                 val combineInst = Allocate(v, amount)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
+                                it.previous()
                             }
                         }
                         is AssignBinOp -> {
@@ -525,6 +547,7 @@ class RemoveTemporaries {
                                 val combineInst = AssignBinOp(v, op, lhs, rhs)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
+                                it.previous()
                             }
                         }
                         is AssignCall -> {
@@ -532,6 +555,7 @@ class RemoveTemporaries {
                                 val combineInst = AssignCall(v, prev.f, *prev.args)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
+                                it.previous()
                             }
                         }
                         is AssignValue -> {
@@ -540,6 +564,7 @@ class RemoveTemporaries {
                                 val combineInst = AssignValue(v, value)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
+                                it.previous()
                             }
                         }
                         is Load -> {
@@ -548,6 +573,7 @@ class RemoveTemporaries {
                                 val combineInst = Load(v, value)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
+                                it.previous()
                             }
                         }
                         is Store -> {
@@ -556,6 +582,7 @@ class RemoveTemporaries {
                                 val combineInst = Load(from, v)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
+                                it.previous()
                             }
                         }
                     }
@@ -590,4 +617,10 @@ fun main() {
     )
     val simplify = RemoveTemporaries.apply(instructions)
     println(simplify)
+
+    val redundant = listOf(
+        AssignValue(var1, var1),
+        AssignValue(var2, var2)
+    )
+    println(RemoveRedundantAssignments.apply(redundant))
 }
