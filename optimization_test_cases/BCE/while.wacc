@@ -1,0 +1,8 @@
+begin
+  int[] x = [1, 2, 3, 4, 5];
+  println x[4];
+  while false do
+    free x
+  done;
+  println x[3]
+end

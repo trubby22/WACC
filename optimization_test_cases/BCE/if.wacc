@@ -1,0 +1,11 @@
+begin
+  int[] x = [1, 2, 3, 4, 5];
+  println x[4];
+  if false
+  then
+    free x
+  else
+    println 10
+  fi;
+  println x[3]
+end

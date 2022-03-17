@@ -7,6 +7,7 @@ import ic.doc.group15.error.optimization.CannotEvaluateIndicesError
 import ic.doc.group15.type.ArrayType
 import ic.doc.group15.type.Type
 import java.util.*
+import kotlin.collections.ArrayDeque
 
 class BCEOptimizerSeq (
     private val ast: AST,
@@ -14,7 +15,7 @@ class BCEOptimizerSeq (
     private val enableLogging: Boolean = true
 ) : ASTVisitor(ast, enableLogging) {
 
-    private val arrayUses: MutableMap<String, LinkedList<ArrayUse>> =
+    private val arrayUses: MutableMap<String, ArrayDeque<ArrayUse>> =
         mutableMapOf()
     private val functionDeclarations: MutableMap<String,
             FunctionDeclarationAST> = mutableMapOf()
@@ -55,7 +56,8 @@ class BCEOptimizerSeq (
     private fun translateVariableDeclaration(node: VariableDeclarationAST):
             VariableDeclarationAST {
         log("Translating ${node.javaClass}")
-        assignToArray(node.parent!!, node.rhs, node.varIdent.type, node.varName)
+        translate(node.rhs, node.parent!!)
+        assignToArray(node.parent, node.rhs, node.varIdent.type, node.varName)
         return node
     }
 
@@ -235,13 +237,13 @@ class BCEOptimizerSeq (
 //    endregion
 
     private fun addArrayUse(name: String, arrayUse: ArrayUse) {
-        val stack: LinkedList<ArrayUse>? = arrayUses[name]
+        val stack: ArrayDeque<ArrayUse>? = arrayUses[name]
         if (stack == null) {
-            val newStack: LinkedList<ArrayUse> = LinkedList()
-            newStack.push(arrayUse)
+            val newStack = ArrayDeque<ArrayUse>()
+            newStack.addFirst(arrayUse)
             arrayUses[name] = newStack
         } else {
-            stack.push(arrayUse)
+            stack.addFirst(arrayUse)
         }
     }
 
@@ -344,18 +346,16 @@ class BCEOptimizerSeq (
 
     private fun removeScopeArrayUses(scope: BlockAST) {
         for (key in arrayUses.keys) {
-            arrayUses[key] = arrayUses[key]!!
-                .takeLastWhile { !(it is ArrayDeclaration && it.scope == scope) }
-                    as LinkedList<ArrayUse>
+            arrayUses[key] = ArrayDeque(arrayUses[key]!!
+                .takeLastWhile { !(it is ArrayDeclaration && it.scope == scope) })
         }
     }
 
     private fun removeScopeArrayAccesses(scope: BlockAST) {
         for (key in arrayUses.keys) {
-            arrayUses[key] = arrayUses[key]!!
-                .filter { !(it is ArrayAccess && isSubscopeOf(it.scope, 
-                    scope)) }
-                    as LinkedList<ArrayUse>
+            arrayUses[key] = ArrayDeque(arrayUses[key]!!
+                .filter { !(it is ArrayAccess && isSubscopeOf(it.scope,
+                    scope)) })
         }
     }
 
