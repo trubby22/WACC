@@ -441,16 +441,26 @@ class AssemblyGenerator(
         node.endLabel = endLabel
     }
 
-    @TranslatorMethod(ForBlockAST::class)
-    private fun translateWhileBlock(node: ForBlockAST) {
-        log("Translating ForBlockAST")
+    @TranslatorMethod(ForBlockOuterScopeAST::class)
+    private fun translateForBlockOuterScope(node: ForBlockOuterScopeAST) {
+        log("Translating ForBlockOuterScopeAST")
 
+        blockPrologue(node)
         translate(node.varDecl)
+        translate(node.forBlock)
+        blockEpilogue(node)
+    }
+
+    @TranslatorMethod(ForBlockAST::class)
+    // one thing im not sure about is that i call translate node.forBlock in the
+    // translateForBlockOuterScope function so will the translator method go and visit each
+    // branch and then end up calling it again unnecessarily?
+    private fun translateForBlock(node: ForBlockAST) {
+        log("Translating ForBlockAST")
 
         val oldLabel = currentLabel
 
-        // Translate block statements and add to loop label
-        val loopLabel = newBranchLabel()
+        val loopLabel = newBranchLabel() // creating loop label
         currentLabel = loopLabel
         blockPrologue(node)
         node.statements.forEach { translate(it) }
@@ -460,8 +470,8 @@ class AssemblyGenerator(
         blockEpilogue(node)
 
         val checkLabel = newBranchLabel()
-        currentLabel = oldLabel
 
+        currentLabel = oldLabel
         // Add branch instruction
         addLines(
             Branch(BranchLabelOperand(checkLabel))
@@ -481,27 +491,34 @@ class AssemblyGenerator(
         node.endLabel = endLabel
     }
 
+    @TranslatorMethod(ForInRangeBlockOuterScopeAST::class)
+    private fun translateForInRangeBlockOuterScope(node: ForInRangeBlockOuterScopeAST) {
+        log("Translating ForInRangeBlockOuterScopeAST")
+
+        blockPrologue(node)
+        translate(node.varDecl)
+        translate(node.forInRangeBlock)
+        blockEpilogue(node)
+    }
+
     @TranslatorMethod(ForInRangeBlockAST::class)
     private fun transForInRangeBlock(node: ForInRangeBlockAST) {
         log("Translating ForInRangeBlockAST")
 
-        translate(node.varDecl)
-
         val oldLabel = currentLabel
 
-        // Translate block statements and add to loop label
-        val loopLabel = newBranchLabel()
+        val loopLabel = newBranchLabel() // creating loop label
         currentLabel = loopLabel
         blockPrologue(node)
         node.statements.forEach { translate(it) }
         val varIncrementLabel = newBranchLabel()
         node.loopVarIncrementLabel = varIncrementLabel
-        translate(node.incrementStat)
+        translate(node.loopVarIncrementStat)
         blockEpilogue(node)
 
         val checkLabel = newBranchLabel()
-        currentLabel = oldLabel
 
+        currentLabel = oldLabel
         // Add branch instruction
         addLines(
             Branch(BranchLabelOperand(checkLabel))

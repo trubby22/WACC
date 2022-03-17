@@ -422,21 +422,29 @@ class ParseTreeVisitor(
 
         log ("|| Visiting for block")
 
+        val forBlockOuterScope = ForBlockOuterScopeAST(scopeAST, symbolTable)
+
+        symbolTable = symbolTable.subScope()
+        scopeAST = forBlockOuterScope
+
         val forBlock = ForBlockAST(scopeAST, symbolTable)
+        forBlockOuterScope.forBlock = forBlock
+
+        val variable = Variable(TypeParser.parse(symbolTable, ctx.type()) as ReturnableType)
+        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, visit(ctx.assign_rhs()) as AssignRhsAST, variable)
+        forBlockOuterScope.varDecl = varDecl
+        symbolTable.add(ctx.ident().text, Variable(IntType))
 
         symbolTable = symbolTable.subScope()
         scopeAST = forBlock
 
-        val variable = Variable(TypeParser.parse(symbolTable, ctx.type()) as ReturnableType)
-        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, visit(ctx.assign_rhs()) as AssignRhsAST, variable)
         val condExpr = visit(ctx.expr()) as ExpressionAST
-        val loopVarUpdate = visit(ctx.stat(0)) as AssignToIdentAST
-
-        forBlock.varDecl = varDecl
         forBlock.condExpr = condExpr
-        forBlock.loopVarUpdate = loopVarUpdate
 
         visit(ctx.stat(1)) as StatementAST
+
+        val loopVarUpdate = visit(ctx.stat(0)) as AssignToIdentAST // check that when visiting assigning to idents we lookupAll rather than just lookup cus the for loops variable is in the scope above
+        forBlock.loopVarUpdate = loopVarUpdate
 
         symbolTable = oldSt
         scopeAST = oldScope
@@ -456,24 +464,31 @@ class ParseTreeVisitor(
 
         log("|| Visiting for in range block")
 
-        val forInRangeBlock = ForInRangeBlockAST(scopeAST, symbolTable)
+        val forInRangeBlockOuterScope = ForInRangeBlockOuterScopeAST(scopeAST, symbolTable)
 
         symbolTable = symbolTable.subScope()
-        scopeAST = forInRangeBlock
+        scopeAST = forInRangeBlockOuterScope
+
+        val forInRangeBlock = ForInRangeBlockAST(scopeAST, symbolTable)
+        forInRangeBlockOuterScope.forInRangeBlock = forInRangeBlock
 
         val loopVariable = VariableIdentifierAST(symbolTable, ctx.ident().text, Variable(IntType))
         val loopVarVal = IntLiteralAST(Integer.parseInt("0"))
         val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, loopVarVal, Variable(IntType))
-        val loopVarIncrement = AssignToIdentAST(scopeAST, loopVariable)
-        loopVarIncrement.rhs = BinaryOpExprAST(symbolTable, loopVarVal, IntLiteralAST(1), BinaryOp.PLUS)
+        forInRangeBlockOuterScope.varDecl = varDecl
         symbolTable.add(ctx.ident().text, Variable(IntType))
-        val expr = BinaryOpExprAST(symbolTable, loopVariable, IntLiteralAST(Integer.parseInt(ctx.POSITIVE_OR_NEGATIVE_INTEGER().text)), BinaryOp.LT)
 
-        forInRangeBlock.varDecl = varDecl
+        symbolTable = symbolTable.subScope()
+        scopeAST = forInRangeBlock
+
+        val expr = BinaryOpExprAST(symbolTable, loopVariable, IntLiteralAST(Integer.parseInt(ctx.POSITIVE_OR_NEGATIVE_INTEGER().text)), BinaryOp.LT)
         forInRangeBlock.condExpr = expr
-        forInRangeBlock.incrementStat = loopVarIncrement
 
         visit(ctx.stat()) as StatementAST
+
+        val loopVarIncrement = AssignToIdentAST(scopeAST, loopVariable)
+        loopVarIncrement.rhs = BinaryOpExprAST(symbolTable, loopVarVal, IntLiteralAST(1), BinaryOp.PLUS)
+        forInRangeBlock.loopVarIncrementStat = loopVarIncrement
 
         symbolTable = oldSt
         scopeAST = oldScope

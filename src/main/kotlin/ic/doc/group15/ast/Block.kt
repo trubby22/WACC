@@ -51,25 +51,39 @@ class WhileBlockAST(
     lateinit var endLabel : BranchLabel
 }
 
-class ForInRangeBlockAST(
+
+class ForBlockOuterScopeAST(
     parent: BlockAST,
-    symbolTable: SymbolTable
-) : BlockAST(parent, symbolTable) {
+    symbolTable: SymbolTable) : BlockAST(parent, symbolTable) {
+    lateinit var forBlock: ForBlockAST
     lateinit var varDecl: VariableDeclarationAST
-    lateinit var condExpr: ExpressionAST
-    lateinit var incrementStat: StatementAST
-    lateinit var loopVarIncrementLabel : BranchLabel
-    lateinit var endLabel : BranchLabel
 }
+
 
 class ForBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable
 ) : BlockAST(parent, symbolTable) {
-    lateinit var varDecl: VariableDeclarationAST
     lateinit var condExpr: ExpressionAST
     lateinit var loopVarUpdate: StatementAST
     lateinit var loopVarUpdateLabel : BranchLabel
+    lateinit var endLabel : BranchLabel
+}
+
+class ForInRangeBlockOuterScopeAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable) : BlockAST(parent, symbolTable) {
+    lateinit var forInRangeBlock: ForInRangeBlockAST
+    lateinit var varDecl: VariableDeclarationAST
+}
+
+class ForInRangeBlockAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable
+) : BlockAST(parent, symbolTable) {
+    lateinit var condExpr: ExpressionAST
+    lateinit var loopVarIncrementStat: StatementAST
+    lateinit var loopVarIncrementLabel : BranchLabel
     lateinit var endLabel : BranchLabel
 }
 
