@@ -69,6 +69,10 @@ data class Store(
     val x: Operand
 ) : ThreeAddressCode
 
+data class Argument(
+    val reg: Var
+) : ThreeAddressCode
+
 /**
  * Pseudo-instruction for SSA form
  */

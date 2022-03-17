@@ -593,6 +593,8 @@ class CfgGenerator(
         cfgState.currentBlock = BasicBlock(cfgState.irFunction)
         for (param in node.formals) {
             cfgState.newVar(param.type)
+            val argumentInst = Argument(cfgState.resultRegister)
+            cfgState.currentBlock.addInstructions(argumentInst)
         }
     }
 }

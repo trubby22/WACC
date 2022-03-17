@@ -10,6 +10,7 @@ import ic.doc.group15.ssa.tac.ThreeAddressCode
  */
 class IRFunction(val funcAST: FunctionDeclarationAST) {
     val entryBlock = EntryBasicBlock(*funcAST.formals.toTypedArray())
+
     // not strictly needed since can be obtained from entryBlock, but handy to have
     val basicBlocks = mutableListOf<BasicBlock>()
     val exitBlock = ExitBasicBlock()
@@ -39,8 +40,6 @@ class IRFunction(val funcAST: FunctionDeclarationAST) {
         TODO()
     }
 }
-
-interface Block
 
 interface Successor {
 
@@ -80,22 +79,16 @@ open class PredecessorBlock : Predecessor {
     override fun getSuccessors(): List<Successor> = successors.toList()
 }
 
-open class BidirectionalBlock protected constructor() : Successor, Predecessor {
+abstract class BidirectionalBlock protected constructor(
+) : Successor, Predecessor {
 
-    private val successor = SuccessorBlock()
-    private val predecessor = PredecessorBlock()
+    abstract override fun addPredecessors(vararg predecessors: Predecessor)
 
-    override fun addPredecessors(vararg predecessors: Predecessor) {
-        successor.addPredecessors(*predecessors)
-    }
+    abstract override fun getPredecessors(): List<Predecessor>
 
-    override fun getPredecessors(): List<Predecessor> = successor.getPredecessors()
+    abstract override fun addSuccessors(vararg successors: Successor)
 
-    override fun addSuccessors(vararg successors: Successor) {
-        predecessor.addSuccessors(*successors)
-    }
-
-    override fun getSuccessors(): List<Successor> = predecessor.getSuccessors()
+    abstract override fun getSuccessors(): List<Successor>
 }
 
 /**
@@ -127,23 +120,37 @@ class ExitBasicBlock : SuccessorBlock()
  **/
 class BasicBlock(val irFunction: IRFunction) : BidirectionalBlock() {
 
-    private val phis = mutableListOf<Phi>()
+//    private val phis = mutableListOf<Phi>()
     private val instructions = mutableListOf<ThreeAddressCode>()
+
     // control flow analysis
-    private val predecessors = LinkedHashSet<PredecessorBlock>()
-    private val successors = LinkedHashSet<SuccessorBlock>()
+    private val predecessors = LinkedHashSet<Predecessor>()
+    private val successors = LinkedHashSet<Successor>()
 
     init {
         irFunction.addBlocks(this)
     }
 
-    fun addPhis(vararg instructions: Phi) {
-        this.phis.addAll(instructions)
-    }
+//    fun addPhis(vararg instructions: Phi) {
+//        this.phis.addAll(instructions)
+//    }
 
     fun addInstructions(vararg instructions: ThreeAddressCode) {
         this.instructions.addAll(instructions)
     }
 
     fun getInstructionList(): List<ThreeAddressCode> = instructions
+    override fun addPredecessors(vararg predecessors: Predecessor) {
+        this.predecessors.addAll(predecessors)
+        predecessors.forEach { pred -> pred.addSuccessors(this) }
+    }
+
+    override fun getPredecessors(): List<Predecessor> = predecessors.toList()
+
+    override fun addSuccessors(vararg successors: Successor) {
+        successors.forEach { it.addPredecessors(this) }
+        this.successors.addAll(successors)
+    }
+
+    override fun getSuccessors(): List<Successor> = successors.toList()
 }

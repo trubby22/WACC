@@ -609,11 +609,15 @@ fun main() {
     val var2 = Var(2, BasicType.IntType)
     val var3 = Var(3, BasicType.IntType)
     val var4 = Var(4, BasicType.IntType)
+    val var5 = Var(5, BasicType.IntType)
+    val var6 = Var(6, BasicType.IntType)
     val instructions = listOf(
         AssignBinOp(var1, BinaryOp.PLUS, IntImm(1), IntImm(1)),
         AssignValue(var2, var1),
         AssignValue(var3, var2),
-        AssignValue(var4, var3)
+        AssignValue(var4, var3),
+        AssignBinOp(var5, BinaryOp.PLUS, IntImm(1), IntImm(1)),
+        AssignValue(var6, var5)
     )
     val simplify = RemoveTemporaries.apply(instructions)
     println(simplify)
