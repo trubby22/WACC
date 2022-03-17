@@ -9,7 +9,6 @@ import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
 import ic.doc.group15.visitor.AstAssemblyGenerator
-import ic.doc.group15.visitor.AssemblyGenerator
 import ic.doc.group15.visitor.BCEOptimizerSeq
 import ic.doc.group15.visitor.ParseTreeVisitor
 import ic.doc.group15.visitor.ReturnChecker

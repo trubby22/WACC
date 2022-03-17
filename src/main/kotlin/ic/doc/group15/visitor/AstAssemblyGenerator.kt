@@ -156,11 +156,15 @@ class AstAssemblyGenerator(
     @TranslatorMethod
     private fun translateFreeStatement(node: FreeStatementAST) {
         log("Translating FreeStatementAST")
-        defineUtilFuncs(P_FREE_PAIR)
-        getAddress(node.expr)
+        val utilFunc: UtilFunction = when (node.expr.type) {
+            is PairType -> P_FREE_PAIR
+            else -> P_FREE_POINTER
+        }
+        defineUtilFuncs(utilFunc)
+        translate(node.expr)
         addLines(
             Move(R0, resultRegister),
-            BranchLink(P_FREE_PAIR)
+            BranchLink(utilFunc)
         )
     }
 
