@@ -79,7 +79,7 @@ pointer_type: POINTER OPEN_PAREN type CLOSE_PAREN;
 
 expr: OPEN_PAREN expr CLOSE_PAREN                                   #bracketExpr
     | SIZEOF type                                                   #sizeofExpr
-    | reference                                                     #referenceExpr
+    | REF assign_lhs                                                #referenceExpr
     | pointer_deref                                                 #derefExpr
     | int_liter                                                     #singleElemExpr
     | bool_liter                                                    #singleElemExpr
@@ -109,8 +109,6 @@ expr: OPEN_PAREN expr CLOSE_PAREN                                   #bracketExpr
 ;
 
 ident: IDENT;
-
-reference: REF assign_lhs;
 
 pointer_deref: (DEREF)+ expr;
 

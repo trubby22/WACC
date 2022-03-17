@@ -290,7 +290,7 @@ class ParseTreeVisitor(
         log("Visiting read statement")
 
         val assignLhs = ctx.assign_lhs()
-        val target = visit(assignLhs) as AssignmentAST<*>
+        val target = visit(assignLhs) as AssignToLhsAST<*>
         if (target.type !is BasicType || target.type == BasicType.BoolType) {
             addError(ReadTypeError(assignLhs.start, target.type))
         }
@@ -512,7 +512,7 @@ class ParseTreeVisitor(
         log("Visiting assignment to ${ctx.assign_lhs().text}")
 
         val exprRhs = ctx.assign_rhs()
-        val assignLhs = visit(ctx.assign_lhs()) as AssignmentAST<*>
+        val assignLhs = visit(ctx.assign_lhs()) as AssignToLhsAST<*>
         val assignRhs = visit(exprRhs) as AssignRhsAST
 
         if (!assignLhs.type.compatible(assignRhs.type)) {
@@ -671,6 +671,14 @@ class ParseTreeVisitor(
         return SizeOfAST(symbolTable, t)
     }
 
+    override fun visitReferenceExpr(ctx: ReferenceExprContext): ASTNode {
+        log("Visiting & operator")
+
+        val item = visit(ctx.assign_lhs()) as AssignToLhsAST<*>
+
+        return ReferenceAST(symbolTable, item)
+    }
+
     override fun visitIdent(ctx: IdentContext): ASTNode {
         log("Visiting identifier with name ${ctx.text}")
         var ident = symbolTable.lookupAll(ctx.text)
@@ -810,18 +818,23 @@ class ParseTreeVisitor(
                         )
                     }
                 }
-                else -> if (expr2.type is PointerType) {
-                    addError(PointerAdditionError(ctx.start))
+                else -> {
+                    if (expr2.type is PointerType) {
+                        addError(PointerAdditionError(ctx.start))
+                    } else {
+                        // We're doing pointer arithmetic where expr1 is the pointer
+                        // Therefore, multiply expr2 by the size of the data that expr1 is pointing
+                        // to. Doesn't matter if expr2.type isn't IntLiteral, we will catch that
+                        // error later
+                        expr2 = BinaryOpExprAST(
+                            symbolTable,
+                            expr2,
+                            IntLiteralAST(expr1.type.elementType.size),
+                            BinaryOp.MULT
+                        )
+                    }
                 }
             }
-            // We're doing pointer arithmetic where expr1 is the pointer
-            // Therefore, multiply expr2 by the size of the data that expr1 is pointing to
-            expr2 = BinaryOpExprAST(
-                symbolTable,
-                expr2,
-                IntLiteralAST(expr1.type.elementType.size),
-                BinaryOp.MULT
-            )
         } else {
             type = binOp.returnType
             if (expr2.type is PointerType) {

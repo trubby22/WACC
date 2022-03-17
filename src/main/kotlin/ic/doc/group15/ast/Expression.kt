@@ -26,6 +26,11 @@ open class VariableIdentifierAST(
     open val ident: Variable
 ) : ExpressionAST(symbolTable, ident.type)
 
+class ReferenceAST(
+    symbolTable: SymbolTable,
+    val item: AssignToLhsAST<*>
+) : ExpressionAST(symbolTable, PointerType(item.type, 1))
+
 class DerefPointerAST(
     symbolTable: SymbolTable,
     val expr: ExpressionAST,

@@ -37,7 +37,7 @@ class SkipStatementAST(
 class ReadStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
-    val target: AssignmentAST<*>
+    val target: AssignToLhsAST<*>
 ) : StatementAST(parent, symbolTable)
 
 class FreeStatementAST(

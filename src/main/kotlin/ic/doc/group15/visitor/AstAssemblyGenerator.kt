@@ -512,9 +512,19 @@ class AstAssemblyGenerator(
     }
 
     @TranslatorMethod
+    private fun translateReference(node: ReferenceAST) {
+        log("Translating ReferenceAST")
+        getAddress(node.item.lhs)
+    }
+
+    @TranslatorMethod
     private fun translateDeref(node: DerefPointerAST) {
         log("Translating DerefPointerAST")
+        // Get the address of the data
+        // Essentially, perform n - 1 dereferences
+        // e.g. for $$$i, load $$i into R0
         getAddressDeref(node)
+        // Perform the final dereference, so find $R0
         addLines(
             Move(R0, resultRegister),
             BranchLink(P_CHECK_NULL_POINTER),
@@ -755,7 +765,7 @@ class AstAssemblyGenerator(
         translateAssignToPointer(node)
     }
 
-    private fun translateAssignToPointer(node: AssignmentAST<*>) {
+    private fun translateAssignToPointer(node: AssignToLhsAST<*>) {
         val oldResultRegister = resultRegister
 
         // Translate the expression to assign
