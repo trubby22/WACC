@@ -154,7 +154,8 @@ class SyntacticIntegrationTest {
         @ParameterizedTest(name = "check {0} source code is syntactically valid")
         @ValueSource(
             strings = [
-                "allocBasicTypes", "allocAndFree", "dereferenceAssign"
+                "allocBasicTypes", "allocAndFree", "dereferenceAssign", "allocToPointerOffset",
+                "pointerFuncParam", "pointerFuncParamReference"
             ]
         )
         fun testSyntacticallyValid(fileName: String) {

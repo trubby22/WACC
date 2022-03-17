@@ -55,6 +55,7 @@ NULL: 'null';
 SIZEOF: 'sizeof';
 POINTER: 'pointer';
 DEREF: '$';
+REF: '&';
 ALLOC: 'alloc';
 FREE: 'free';
 
