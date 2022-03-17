@@ -26,7 +26,6 @@ import ic.doc.group15.util.WORD
 import java.lang.IllegalArgumentException
 import java.util.*
 import java.util.function.Consumer
-import java.util.function.Supplier
 
 private const val MAX_STACK_CHANGE = 1024
 
