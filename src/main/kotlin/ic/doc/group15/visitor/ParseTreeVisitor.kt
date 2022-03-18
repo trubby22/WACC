@@ -460,7 +460,7 @@ class ParseTreeVisitor(
             addError(AssignTypeError(exprRhs.start, assignLhs.type, assignRhs.type))
         }
 
-        println("assignRhs: $assignRhs")
+        log("assignRhs: $assignRhs")
 
         assignLhs.rhs = assignRhs
 

@@ -14,6 +14,10 @@ abstract class AssignToLhsAST<T : AssignRhsAST> protected constructor(
     val type: VariableType,
 ) : StatementAST(parent) {
     lateinit var rhs: AssignRhsAST
+
+    fun rhsIsInitialized(): Boolean {
+        return ::rhs.isInitialized
+    }
 }
 
 class AssignToIdentAST(

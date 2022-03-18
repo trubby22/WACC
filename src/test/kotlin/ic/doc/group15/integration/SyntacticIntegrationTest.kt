@@ -22,7 +22,7 @@ class SyntacticIntegrationTest {
     inner class AdvancedValidFiles {
         private val advancedValidFileFolderPath = "$validFolderPath/advanced"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(strings = ["binarySortTree", "hashTable", "ticTacToe"])
         fun testSyntacticallyValid(fileName: String) {
             assertTrue(isSyntacticallyValid("$advancedValidFileFolderPath/$fileName.wacc"))
@@ -33,7 +33,7 @@ class SyntacticIntegrationTest {
     inner class ArrayValidFiles {
         private val arrayFolderPath = "$validFolderPath/array"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "array", "arrayBasic", "arrayEmpty", "arrayLength", "arrayLookup", "arrayNested",
@@ -53,7 +53,7 @@ class SyntacticIntegrationTest {
         inner class ExitValidFiles {
             private val exitFolderPath = "$basicFolderPath/exit"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(strings = ["exit-1", "exitBasic", "exitBasic2", "exitWrap"])
             fun testSyntacticallyValid(fileName: String) {
                 assertTrue(isSyntacticallyValid("$exitFolderPath/$fileName.wacc"))
@@ -64,7 +64,7 @@ class SyntacticIntegrationTest {
         inner class SkipValidFiles {
             private val skipFolderPath = "$basicFolderPath/skip"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(strings = ["comment", "commentInLine", "skip"])
             fun testSyntacticallyValid(fileName: String) {
                 assertTrue(isSyntacticallyValid("$skipFolderPath/$fileName.wacc"))
@@ -76,7 +76,7 @@ class SyntacticIntegrationTest {
     inner class ExpressionValidFiles {
         private val expressionsFolderPath = "$validFolderPath/expressions"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "andExpr", "andOverOrExpr", "boolCalc", "boolExpr1", "charComparisonExpr", "divExpr",
@@ -101,7 +101,7 @@ class SyntacticIntegrationTest {
         inner class NestedFunctionValidFiles {
             private val nestedFunctionsFolderPath = "$functionsFolderPath/nested_functions"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(
                 strings = [
                     "fibonacciFullRec", "fibonacciRecursive", "fixedPointRealArithmetic",
@@ -118,7 +118,7 @@ class SyntacticIntegrationTest {
         inner class SimpleFunctionValidFiles {
             private val simpleFunctionsFolderPath = "$functionsFolderPath/simple_functions"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(
                 strings = [
                     "asciiTable", "functionDeclaration", "functionDoubleReturn", "functionIfReturns",
@@ -136,7 +136,7 @@ class SyntacticIntegrationTest {
         inner class VoidFunctionValidFiles {
             private val voidFunctionFolderPath = "$functionsFolderPath/void_functions"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(
                 strings = [
                     "voidSimple", "voidReturn", "voidCall", "voidExit"
@@ -152,7 +152,7 @@ class SyntacticIntegrationTest {
     inner class HeapValidFiles {
         private val heapFolderPath = "$validFolderPath/heap"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "allocBasicTypes", "allocAndFree", "dereferenceAssign", "allocToPointerOffset",
@@ -168,7 +168,7 @@ class SyntacticIntegrationTest {
     inner class IfValidFiles {
         private val ifValidFileFolderPath = "$validFolderPath/if"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(strings = ["if1", "if2", "if3", "if4", "if5", "if6", "ifBasic", "ifFalse", "ifTrue", "whitespace"])
         fun testSyntacticallyValid(fileName: String) {
             assertTrue(isSyntacticallyValid("$ifValidFileFolderPath/$fileName.wacc"))
@@ -179,7 +179,7 @@ class SyntacticIntegrationTest {
     inner class IOValidFiles {
         private val ioValidFileFolderPath = "$validFolderPath/IO"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(strings = ["IOLoop", "IOSequence"])
         fun testSyntacticallyValid(fileName: String) {
             assertTrue(isSyntacticallyValid("$ioValidFileFolderPath/$fileName.wacc"))
@@ -189,7 +189,7 @@ class SyntacticIntegrationTest {
         inner class PrintValidFiles {
             private val printValidFileFolderPath = "$ioValidFileFolderPath/print"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(
                 strings = [
                     "hashInProgram", "multipleStringsAssignment", "print", "print-backspace",
@@ -206,7 +206,7 @@ class SyntacticIntegrationTest {
         inner class ReadValidFiles {
             private val readValidFileFolderPath = "$ioValidFileFolderPath/read"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(
                 strings = [
                     "echoBigInt", "echoBigNegInt", "echoChar", "echoInt", "echoNegInt", "echoPuncChar",
@@ -223,7 +223,7 @@ class SyntacticIntegrationTest {
     inner class PairValidFiles {
         private val pairsValidFileFolderPath = "$validFolderPath/pairs"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "checkRefPair", "createPair", "createPair02", "createPair03", "createRefPair", "free",
@@ -244,7 +244,7 @@ class SyntacticIntegrationTest {
         inner class ArrayOutOfBoundsValidFiles {
             private val arrayOutOfBoundsValidFileFolderPath = "$runtimeErrorValidFileFolderPath/arrayOutOfBounds"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(strings = ["arrayNegBounds", "arrayOutOfBounds", "arrayOutOfBoundsWrite"])
             fun testSyntacticallyValid(fileName: String) {
                 assertTrue(isSyntacticallyValid("$arrayOutOfBoundsValidFileFolderPath/$fileName.wacc"))
@@ -255,7 +255,7 @@ class SyntacticIntegrationTest {
         inner class DivideByZeroValidFiles {
             private val divideByZeroValidFileFolderPath = "$runtimeErrorValidFileFolderPath/divideByZero"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(strings = ["divideByZero", "divZero", "modByZero"])
             fun testSyntacticallyValid(fileName: String) {
                 assertTrue(isSyntacticallyValid("$divideByZeroValidFileFolderPath/$fileName.wacc"))
@@ -266,7 +266,7 @@ class SyntacticIntegrationTest {
         inner class IntegerOverflowValidFiles {
             private val integerOverflowValidFileFolderPath = "$runtimeErrorValidFileFolderPath/integerOverflow"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(
                 strings = [
                     "intJustOverflow", "intmultOverflow", "intnegateOverflow", "intnegateOverflow2",
@@ -282,7 +282,7 @@ class SyntacticIntegrationTest {
         inner class NullDereferenceValidFiles {
             private val nullDereferenceValidFileFolderPath = "$runtimeErrorValidFileFolderPath/nullDereference"
 
-            @ParameterizedTest(name = "check {0} source code is syntactically valid")
+            @ParameterizedTest(name = "{0}")
             @ValueSource(strings = ["freeNull", "readNull1", "readNull2", "setNull1", "setNull2", "useNull1", "useNull2"])
             fun testSyntacticallyValid(fileName: String) {
                 assertTrue(isSyntacticallyValid("$nullDereferenceValidFileFolderPath/$fileName.wacc"))
@@ -294,7 +294,7 @@ class SyntacticIntegrationTest {
     inner class ScopeValidFiles {
         private val scopeValidFileFolderPath = "$validFolderPath/scope"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "ifNested1", "ifNested2", "indentationNotImportant", "intsAndKeywords", "printAllTypes",
@@ -311,7 +311,7 @@ class SyntacticIntegrationTest {
     inner class SequenceValidFiles {
         private val sequenceValidFileFolderPath = "$validFolderPath/sequence"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "basicSeq", "basicSeq2", "boolAssignment", "charAssignment", "exitSimple",
@@ -327,7 +327,7 @@ class SyntacticIntegrationTest {
     inner class VariableValidFiles {
         private val variablesValidFileFolderPath = "$validFolderPath/variables"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "_VarNames", "boolDeclaration", "boolDeclaration2", "capCharDeclaration",
@@ -344,7 +344,7 @@ class SyntacticIntegrationTest {
     inner class WhileValidFiles {
         private val whileValidFileFolderPath = "$validFolderPath/while"
 
-        @ParameterizedTest(name = "check {0} source code is syntactically valid")
+        @ParameterizedTest(name = "{0}")
         @ValueSource(
             strings = [
                 "fibonacciFullIt", "fibonacciIterative", "loopCharCondition", "loopIntCondition", "max",
