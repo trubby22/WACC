@@ -1,0 +1,14 @@
+begin
+bool endLoop = true;
+int i = 0;
+while i < 10
+do
+if endLoop
+then
+break
+else
+skip
+fi;
+i = i + 1
+done
+end

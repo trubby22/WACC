@@ -1,0 +1,12 @@
+begin
+bool endLoop = true;
+for i in range 10
+do
+if endLoop
+then
+break
+else
+skip
+fi
+done
+end

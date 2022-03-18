@@ -1,0 +1,9 @@
+begin
+int a = 5;
+for i in range 10
+do
+a = a + 1;
+a = a - 1;
+a = a + 1
+done
+end

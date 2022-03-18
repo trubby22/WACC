@@ -1,0 +1,10 @@
+begin
+int sum = 0;
+for i in range 10
+do
+for j in range 10
+do
+sum = sum + i + j
+done
+done
+end

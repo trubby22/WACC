@@ -1,0 +1,12 @@
+begin
+bool fastForward = true;
+for (int i = 0; i < 10; i++)
+do
+if fastForward
+then
+continue
+else
+skip
+fi
+done
+end
