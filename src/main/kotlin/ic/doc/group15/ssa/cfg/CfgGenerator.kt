@@ -93,6 +93,9 @@ class CfgGenerator(
 
         // Form an edge between last instruction and function exit block
         cfgState.irFunction.sealBlock()
+
+        // Complete variable set
+        cfgState.irFunction.variableSet = cfgState.varSet()
     }
 
     /**

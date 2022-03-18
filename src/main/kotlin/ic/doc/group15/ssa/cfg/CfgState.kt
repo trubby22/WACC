@@ -36,4 +36,6 @@ class CfgState {
         varList.add(v)
         return v
     }
+
+    fun varSet(): Set<Var> = varList.toSet()
 }
