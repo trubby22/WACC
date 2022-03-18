@@ -2,15 +2,16 @@ package ic.doc.group15.ssa.cfg
 
 import ic.doc.group15.ast.*
 import ic.doc.group15.ssa.BasicBlock
+import ic.doc.group15.ssa.ControlFlowGraph
 import ic.doc.group15.ssa.IRFunction
 import ic.doc.group15.ssa.tac.*
-import ic.doc.group15.translator.AssemblyGenerator
 import ic.doc.group15.translator.TranslatorMethod
 import ic.doc.group15.type.ArrayType
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.PairType
 import ic.doc.group15.type.ReturnableType
 import ic.doc.group15.util.WORD
+import ic.doc.group15.visitor.TranslatorVisitor
 
 /**
  * Convert the AST representation of the program to three-address code and build a control flow
@@ -19,32 +20,39 @@ import ic.doc.group15.util.WORD
  * Assumption: All nodes (read: basic blocks) can have at most two successors
  */
 class CfgGenerator(
-    ast: AST,
+    private val ast: AST,
     enableLogging: Boolean = true
-) : AssemblyGenerator<ASTNode>(ast, enableLogging) {
+) : TranslatorVisitor<ASTNode>() {
+
+    private val cfg = ControlFlowGraph()
+
+    /**
+     * Generates the Control Flow Graph and returns it (should only be called once).
+     */
+    fun generate(): ControlFlowGraph {
+        translate(ast)
+        return cfg
+    }
 
     @TranslatorMethod
-    private fun buildCFGFromProgram(program: AST): List<IRFunction> {
+    private fun buildCFGFromProgram(program: AST) {
         log("Building CFG for program")
-        val (functions, statements) = program.statements.partition { it is FunctionDeclarationAST }
 
-        // Build SSA form for each function
-        val ssaIRFunctions = mutableListOf<IRFunction>()
+        // REWORK THIS LINE WHEN MERGING INTO MASTER
+        val (functions, statements) = program.statements.partition { it is FunctionDeclarationAST }
 
         // Note that each function state is independent of each other
         // TODO introduce concurrency
         for (funcNode in functions) {
             val funcState = CfgState()
             buildCFGFromFunctionDeclaration(funcNode as FunctionDeclarationAST, funcState)
-            ssaIRFunctions.add(funcState.irFunction)
+            cfg.addFunction(funcState.irFunction)
         }
 
         // Construct main function separately (due to WACC language design constraints)
         val mainState = CfgState()
         buildCFGFromMain(mainState, program, *statements.toTypedArray())
-        ssaIRFunctions.add(mainState.irFunction)
-
-        return ssaIRFunctions
+        cfg.addFunction(mainState.irFunction)
     }
 
     private fun buildCFGFromMain(cfgState: CfgState, program: AST, vararg stat: StatementAST) {

@@ -23,8 +23,8 @@ private fun BufferedWriter.writeAsm(vararg labels: Collection<Label<*>>) {
  */
 abstract class AssemblyGenerator<T : Any> protected constructor(
     private val start: T,
-    private val enableLogging: Boolean
-) : TranslatorVisitor<T>() {
+    enableLogging: Boolean
+) : TranslatorVisitor<T>(enableLogging) {
 
     /**
      * Represents the ".dataLabel" section of the assembly code.
@@ -119,15 +119,6 @@ abstract class AssemblyGenerator<T : Any> protected constructor(
                     utilData[it.name] = it
                 }
             }
-        }
-    }
-
-    /**
-     * Prints a log message to standard output if logging is enabled.
-     */
-    protected fun log(str: String) {
-        if (enableLogging) {
-            println(str)
         }
     }
 }

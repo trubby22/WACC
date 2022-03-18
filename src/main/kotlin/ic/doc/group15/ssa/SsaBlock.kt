@@ -1,14 +1,13 @@
 package ic.doc.group15.ssa
 
 import ic.doc.group15.ast.*
-import ic.doc.group15.ssa.tac.Phi
 import ic.doc.group15.ssa.tac.ThreeAddressCode
 
 /**
  * A function contains a list of basic blocks forming the control flow graph (CFG) for
  * the function.
  */
-class IRFunction(val funcAST: FunctionDeclarationAST) {
+class IRFunction(val funcAST: FunctionDeclarationAST) : SsaTranslatable {
     val entryBlock = EntryBasicBlock(*funcAST.formals.toTypedArray())
 
     // not strictly needed since can be obtained from entryBlock, but handy to have
@@ -79,8 +78,7 @@ open class PredecessorBlock : Predecessor {
     override fun getSuccessors(): List<Successor> = successors.toList()
 }
 
-abstract class BidirectionalBlock protected constructor(
-) : Successor, Predecessor {
+abstract class BidirectionalBlock : Successor, Predecessor {
 
     abstract override fun addPredecessors(vararg predecessors: Predecessor)
 
@@ -118,9 +116,8 @@ class ExitBasicBlock : SuccessorBlock()
  * different basic block. This defines the execution behaviour such that every instruction
  * in a basic block is executed in sequence.
  **/
-class BasicBlock(val irFunction: IRFunction) : BidirectionalBlock() {
+class BasicBlock(val irFunction: IRFunction) : BidirectionalBlock(), SsaTranslatable {
 
-//    private val phis = mutableListOf<Phi>()
     private val instructions = mutableListOf<ThreeAddressCode>()
 
     // control flow analysis
@@ -130,10 +127,6 @@ class BasicBlock(val irFunction: IRFunction) : BidirectionalBlock() {
     init {
         irFunction.addBlocks(this)
     }
-
-//    fun addPhis(vararg instructions: Phi) {
-//        this.phis.addAll(instructions)
-//    }
 
     fun addInstructions(vararg instructions: ThreeAddressCode) {
         this.instructions.addAll(instructions)

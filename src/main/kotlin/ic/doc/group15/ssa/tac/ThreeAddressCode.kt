@@ -1,13 +1,15 @@
 package ic.doc.group15.ssa.tac
 
 import ic.doc.group15.ast.BinaryOp
+import ic.doc.group15.ssa.SsaTranslatable
 import ic.doc.group15.ssa.Successor
 
 /**
  * Quadruple form - three address code maintains an unlimited amount of registers,
  * representing either declared variables or temporaries
  */
-sealed interface ThreeAddressCode {
+sealed interface ThreeAddressCode : SsaTranslatable {
+
     /**
      * Set of variables used by the current instruction.
      */
@@ -112,8 +114,3 @@ data class Argument(
     override fun usesSet(): Set<Var> = emptySet()
     override fun definesSet(): Set<Var> = setOf(reg)
 }
-
-///**
-// * Pseudo-instruction for SSA form
-// */
-//data class Phi(val reg: Var, val args: Collection<Operand>) : ThreeAddressCode

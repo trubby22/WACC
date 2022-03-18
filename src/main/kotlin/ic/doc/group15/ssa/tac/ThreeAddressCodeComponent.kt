@@ -8,7 +8,7 @@ sealed interface Operand {
     fun type(): Type
 }
 
-interface Imm: Operand
+interface Imm : Operand
 
 data class CharImm(val value: Char) : Imm {
     override fun type(): Type = CharType

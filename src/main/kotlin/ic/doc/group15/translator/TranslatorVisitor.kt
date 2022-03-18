@@ -15,12 +15,14 @@ interface Translatable
  *
  * Uses the annotation [TranslatorMethod] to determine which method is used to visit a particular type.
  */
-abstract class TranslatorVisitor<T : Any> protected constructor() {
+abstract class TranslatorVisitor<T : Any> protected constructor(enableLogging: Boolean = false) {
 
     private val klass: VisitorClass
+    private val enableLogging: Boolean
 
     init {
         klass = this::class
+        this.enableLogging = enableLogging
     }
 
     /**
@@ -52,6 +54,15 @@ abstract class TranslatorVisitor<T : Any> protected constructor() {
                 assert(klass is KClass<*>)
                 klass as KClass<*>
             }
+        }
+    }
+
+    /**
+     * Prints a log message to standard output if logging is enabled.
+     */
+    protected fun log(str: String) {
+        if (enableLogging) {
+            println(str)
         }
     }
 }
