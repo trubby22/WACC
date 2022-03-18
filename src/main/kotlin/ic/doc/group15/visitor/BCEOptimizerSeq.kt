@@ -41,7 +41,7 @@ class BCEOptimizerSeq(
         log("Translating ${node.javaClass}")
         functionDeclarations[node.funcName] = node
         node.formals.forEach { translate(it, node) }
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
         removeScopeArrayUses(node)
         return node
     }
@@ -185,7 +185,7 @@ class BCEOptimizerSeq(
     @TranslatorMethod
     private fun translateBeginEnd(node: BeginEndBlockAST): BeginEndBlockAST {
         log("Translating ${node.javaClass}")
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
         removeScopeArrayUses(node)
         return node
     }
@@ -194,7 +194,7 @@ class BCEOptimizerSeq(
     private fun translateIfBlock(node: IfBlockAST): IfBlockAST {
         log("Translating ${node.javaClass}")
         translate(node.condExpr, node)
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
         removeScopeArrayUses(node)
         removeScopeArrayAccesses(node)
         return node
@@ -203,7 +203,7 @@ class BCEOptimizerSeq(
     @TranslatorMethod
     private fun translateElseBlock(node: ElseBlockAST): ElseBlockAST {
         log("Translating ${node.javaClass}")
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
         removeScopeArrayUses(node)
         removeScopeArrayAccesses(node)
         return node
@@ -213,7 +213,7 @@ class BCEOptimizerSeq(
     private fun translateWhile(node: WhileBlockAST): WhileBlockAST {
         log("Translating ${node.javaClass}")
         translate(node.condExpr, node)
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
         removeScopeArrayUses(node)
         removeScopeArrayAccesses(node)
         return node
@@ -390,12 +390,6 @@ class BCEOptimizerSeq(
             node.intValue
         } else {
             null
-        }
-    }
-
-    private fun log(message: String) {
-        if (enableLogging) {
-            println(message)
         }
     }
 }

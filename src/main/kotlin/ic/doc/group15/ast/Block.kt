@@ -11,8 +11,6 @@ abstract class BlockAST protected constructor(
 
     var statements: MutableList<StatementAST> = LinkedList()
 
-    fun getStatements(): List<StatementAST> = statements
-
     open fun addStatement(stat: StatementAST): StatementAST {
         statements.add(stat)
         return stat

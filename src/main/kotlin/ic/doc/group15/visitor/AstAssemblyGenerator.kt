@@ -89,7 +89,7 @@ class AstAssemblyGenerator(
         // Sets up the environment for a function
         functionPrologue(node, node.paramSymbolTable)
 
-        node.getStatements().map { translate(it) }
+        node.statements.map { translate(it) }
 
         // Restore the state so that the program can resume from where it left off
         functionEpilogue(node)
@@ -318,13 +318,13 @@ class AstAssemblyGenerator(
 
         // add sequence of instructions in THEN block under if label
         blockPrologue(stat)
-        stat.getStatements().forEach(::translate)
+        stat.statements.forEach(::translate)
         blockEpilogue(stat)
 
         // add sequence of instructions in ELSE block under else label
         currentLabel = elseLabel
         blockPrologue(stat.elseBlock)
-        stat.elseBlock.getStatements().forEach(::translate)
+        stat.elseBlock.statements.forEach(::translate)
         blockEpilogue(stat.elseBlock)
 
         currentLabel = oldLabel
@@ -379,7 +379,7 @@ class AstAssemblyGenerator(
         // Translate block statements and add to loop label
         currentLabel = loopLabel
         blockPrologue(node)
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
         blockEpilogue(node)
 
         currentLabel = oldLabel
@@ -438,7 +438,7 @@ class AstAssemblyGenerator(
 
         // Translate the loop block statements
         currentLabel = loopLabel
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
 
         // Add the loop update statement right after the loop label
         addToText(updateLabel)
@@ -481,7 +481,7 @@ class AstAssemblyGenerator(
     private fun translateBeginEndBlock(node: BeginEndBlockAST) {
         log("Translating BeginEndBlockAST")
         blockPrologue(node)
-        node.getStatements().forEach { translate(it) }
+        node.statements.forEach { translate(it) }
         blockEpilogue(node)
     }
 

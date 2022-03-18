@@ -75,7 +75,8 @@ class CfgGenerator(
         if (statements.isEmpty() ||
             statements.last() !is ReturnStatementAST ||
             statements.last() !is ExitStatementAST) {
-            val returnNode = ReturnStatementAST(mainNode, mainNode.symbolTable, IntLiteralAST(0))
+            val returnNode = ReturnStatementAST(mainNode, mainNode.symbolTable, IntLiteralAST(0),
+                IntType)
             statements.add(returnNode)
         }
 
