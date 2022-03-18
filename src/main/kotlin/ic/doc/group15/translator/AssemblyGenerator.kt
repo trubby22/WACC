@@ -27,6 +27,11 @@ abstract class AssemblyGenerator<T : Any> protected constructor(
 ) : TranslatorVisitor<T>(enableLogging) {
 
     /**
+     * The current label that the generator is adding instructions to as it translates them.
+     */
+    protected lateinit var currentLabel: BranchLabel
+
+    /**
      * Represents the ".dataLabel" section of the assembly code.
      *
      * Contains info for raw dataLabel in memory, such as string literals.

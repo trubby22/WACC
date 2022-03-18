@@ -16,14 +16,22 @@ class TacAssemblyGenerator(
         cfg.getFunctions().forEach { translate(it) }
     }
 
-    @TranslatorMethod
     private fun translateIRFunction(func: IRFunction) {
-
+        val funcName = func.funcAST.funcName
+        translateBasicBlock(func.basicBlocks.first(), funcName)
+        for (block in func.basicBlocks.drop(1)) {
+            translateBasicBlock(block)
+        }
     }
 
-    @TranslatorMethod
-    private fun translateBasicBlock(block: BasicBlock) {
-
+    private fun translateBasicBlock(block: BasicBlock, name: String? = null) {
+        val label = if (name != null) {
+            newBranchLabel(name)
+        } else {
+            newBranchLabel()
+        }
+        currentLabel = label
+        block.getInstructionList().forEach { translate(it) }
     }
 
     @TranslatorMethod

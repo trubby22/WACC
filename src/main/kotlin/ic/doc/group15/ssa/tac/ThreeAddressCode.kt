@@ -1,6 +1,7 @@
 package ic.doc.group15.ssa.tac
 
 import ic.doc.group15.ast.BinaryOp
+import ic.doc.group15.ssa.BasicBlock
 import ic.doc.group15.ssa.SsaTranslatable
 import ic.doc.group15.ssa.Successor
 
@@ -68,14 +69,14 @@ class Call(
 
 data class BranchIf(
     val cond: Operand,
-    val block: Successor
+    val block: BasicBlock
 ) : ThreeAddressCode {
     override fun usesSet(): Set<Var> = setOf(cond).filterIsInstance<Var>().toSet()
     override fun definesSet(): Set<Var> = emptySet()
 }
 
 data class Branch(
-    val block: Successor
+    val block: BasicBlock
 ) : ThreeAddressCode {
     override fun usesSet(): Set<Var> = emptySet()
     override fun definesSet(): Set<Var> = emptySet()

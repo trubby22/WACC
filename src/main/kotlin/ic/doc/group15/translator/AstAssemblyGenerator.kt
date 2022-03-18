@@ -33,11 +33,6 @@ class AstAssemblyGenerator(
 ) : AssemblyGenerator<ASTNode>(ast, enableLogging) {
 
     /**
-     * The current label that the generator is adding instructions to as it translates them.
-     */
-    private lateinit var currentLabel: BranchLabel
-
-    /**
      * The next available register to write intermediate results to.
      */
     private lateinit var resultRegister: ArmRegister
