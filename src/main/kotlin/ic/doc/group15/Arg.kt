@@ -32,6 +32,10 @@ enum class Option(val alt: String, val description: String) : OptionArg {
     OPTIMISATION_LEVEL_1(
         "O1",
         "Performs BCE optimisation and removes array bound checking."
+    ),
+    OPTIMISATION_LEVEL_2(
+        "O2",
+        "Khemi's optimisation suite"
     )
     ;
 

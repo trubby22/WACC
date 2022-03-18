@@ -8,6 +8,9 @@ import ic.doc.group15.error.BCEErrorList
 import ic.doc.group15.error.SemanticErrorList
 import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.syntactic.SyntacticErrorListener
+import ic.doc.group15.ssa.cfg.CfgGenerator
+import ic.doc.group15.ssa.cfg.CfgState
+import ic.doc.group15.translator.TacAssemblyGenerator
 import ic.doc.group15.visitor.AstAssemblyGenerator
 import ic.doc.group15.visitor.BCEOptimizerSeq
 import ic.doc.group15.visitor.ParseTreeVisitor
@@ -110,10 +113,12 @@ fun main(args: ArgsList) {
     val writer = assemblyFile.bufferedWriter()
 
     if (args.hasOption(OPTIMISATION_LEVEL_2)) {
-        val cfgGen = CFGGenerator(ast, enableLogging = enableLogging)
+        val cfgGen = CfgGenerator(ast, enableLogging = enableLogging)
         val cfg = cfgGen.generate()
 
-        val tacGen = TACAssemblyGenerator(cfg, CFGState(), enableLogging = enableLogging, enableOptimisation = true)
+        val tacGen = TacAssemblyGenerator(cfg, CfgState(), enableLogging = enableLogging,
+            enableOptimisation =
+        true)
         tacGen.generate(writer)
         writer.close()
     } else {
