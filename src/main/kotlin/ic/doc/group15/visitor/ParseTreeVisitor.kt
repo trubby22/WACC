@@ -10,6 +10,7 @@ import ic.doc.group15.error.SyntacticErrorList
 import ic.doc.group15.error.semantic.*
 import ic.doc.group15.error.syntactic.SyntacticError
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
+import ic.doc.group15.type.BasicType.Companion.BoolType
 import ic.doc.group15.type.BasicType.Companion.IntType
 import ic.doc.group15.util.EscapeChar
 import java.util.*
@@ -177,6 +178,62 @@ class ParseTreeVisitor(
         return parameterAST
     }
 
+    override fun visitReturnStat(ctx: ReturnStatContext): ASTNode {
+        log("Visiting return statement")
+
+        var func: BlockAST? = scopeAST
+
+        while (func != null && func !is FunctionDeclarationAST) {
+            func = func.parent
+        }
+
+        if (func == null) {
+            addError(IllegalReturnStatementError(ctx.start))
+            return SkipStatementAST(scopeAST)
+        }
+
+        func as FunctionDeclarationAST
+        val funcReturnType = func.returnType
+
+        val expr: ExpressionAST?
+        val returnType: ReturnableType
+        if (ctx.expr() != null) {
+            expr = visit(ctx.expr()) as ExpressionAST
+            returnType = expr.type
+        } else {
+            expr = null
+            returnType = ReturnableType.VOID
+        }
+
+        log("We're in return stat")
+        log("asserted return type: $funcReturnType")
+        log("actual return type: $returnType")
+
+        if (!funcReturnType.compatible(returnType)) {
+            addError(
+                ReturnTypeError(ctx.expr()?.start ?: ctx.start, funcReturnType, returnType)
+            )
+        }
+
+        return addStatement(ReturnStatementAST(func, symbolTable, expr, returnType))
+    }
+
+    override fun visitReadStat(ctx: ReadStatContext): ASTNode {
+        log("Visiting read statement")
+
+        val assignLhs = ctx.assign_lhs()
+        val target = visit(assignLhs) as AssignToLhsAST<*>
+        if (target.type !is BasicType || target.type == BoolType) {
+            addError(
+                ReadTypeError(assignLhs.start, target.type)
+            )
+        }
+
+        log("|| Target type: ${target.type}")
+
+        return addStatement(ReadStatementAST(scopeAST, symbolTable, target))
+    }
+
     override fun visitPrintStat(ctx: PrintStatContext): ASTNode {
         log("Visiting print statement")
 
@@ -313,6 +370,75 @@ class ParseTreeVisitor(
         scopeAST = oldScope
 
         return addStatement(node)
+    }
+
+    override fun visitIfStat(ctx: IfStatContext): ASTNode {
+        log("Visiting if block")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
+        val thenSt = oldSt.subScope()
+        val elseSt = oldSt.subScope()
+
+        log("Visiting if block condition expression")
+        val condExpr = visit(ctx.expr()) as ExpressionAST
+        if (condExpr.type != BoolType) {
+            addError(
+                CondTypeError(ctx.expr().start, condExpr.type)
+            )
+        }
+
+        val ifBlock = IfBlockAST(scopeAST, thenSt, condExpr)
+
+        scopeAST = ifBlock
+        symbolTable = thenSt
+        log("|| Visiting then block")
+        visit(ctx.stat_sequence(0))
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        val elseBlock = ElseBlockAST(ifBlock, elseSt)
+
+        scopeAST = elseBlock
+        symbolTable = elseSt
+        log("|| Visiting else block")
+        visit(ctx.stat_sequence(1))
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        ifBlock.elseBlock = elseBlock
+
+        return addStatement(ifBlock)
+    }
+
+    override fun visitWhileStat(ctx: WhileStatContext): ASTNode {
+        log("Visiting while block")
+        log("Visiting if block")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
+        val whileSt = oldSt.subScope()
+
+        log("|| Visiting while block condition expression")
+        val condExpr = visit(ctx.expr()) as ExpressionAST
+        if (condExpr.type != BoolType) {
+            addError(
+                CondTypeError(ctx.expr().start, condExpr.type)
+            )
+        }
+
+        val whileBlock = WhileBlockAST(scopeAST, whileSt, condExpr)
+
+        scopeAST = whileBlock
+        symbolTable = whileSt
+        log("|| Visiting while loop block")
+        visit(ctx.stat_sequence())
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        return addStatement(whileBlock)
     }
 
     override fun visitFor_stat(ctx: For_statContext): ASTNode {

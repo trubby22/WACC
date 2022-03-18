@@ -55,8 +55,8 @@ class AstAssemblyGenerator(
      * Set by translation functions for loop blocks, so that continue and break translation
      * functions can use them.
      */
-    private lateinit var continueLabel: BranchLabel
-    private lateinit var breakLabel: BranchLabel
+    private var continueLabel: BranchLabel? = null
+    private var breakLabel: BranchLabel? = null
 
     /**
      * Per WACC language specification, a program matches the grammar "begin func* stat end".
@@ -457,15 +457,17 @@ class AstAssemblyGenerator(
 
     @TranslatorMethod
     fun translateContinueStatement(node: ContinueStatementAST) {
+        assert(continueLabel != null)
         addLines(
-            Branch(BranchLabelOperand(continueLabel))
+            Branch(BranchLabelOperand(continueLabel!!))
         )
     }
 
     @TranslatorMethod
     fun translateBreakStatement(node: BreakStatementAST) {
+        assert(breakLabel != null)
         addLines(
-            Branch(BranchLabelOperand(breakLabel))
+            Branch(BranchLabelOperand(breakLabel!!))
         )
     }
 
