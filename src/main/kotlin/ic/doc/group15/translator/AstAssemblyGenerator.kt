@@ -823,9 +823,7 @@ class AstAssemblyGenerator(
         when (expr.operator) {
             PLUS, MINUS, MULT, DIV, MOD -> {
                 defineUtilFuncs(
-                    P_THROW_RUNTIME_ERROR,
-                    P_THROW_OVERFLOW_ERROR,
-                    P_PRINT_STRING
+                    P_THROW_OVERFLOW_ERROR
                 )
 
                 when (expr.operator) {

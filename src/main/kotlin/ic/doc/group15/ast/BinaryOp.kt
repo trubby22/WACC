@@ -17,12 +17,12 @@ enum class BinaryOp(
     MOD("%", returnType = IntType),
     PLUS("+", returnType = IntType),
     MINUS("-", returnType = IntType),
-    GT(">", comparables),
-    GTE(">=", comparables),
-    LT("<", comparables),
-    LTE("<=", comparables),
-    EQUALS("=", null),
-    NOT_EQUALS("!=", null),
-    AND("&&", boolOnly),
-    OR("||", boolOnly);
+    GT(">", allowedTypes = comparables),
+    GTE(">=", allowedTypes = comparables),
+    LT("<", allowedTypes = comparables),
+    LTE("<=", allowedTypes = comparables),
+    EQUALS("=", allowedTypes = null),
+    NOT_EQUALS("!=", allowedTypes = null),
+    AND("&&", allowedTypes = boolOnly),
+    OR("||", allowedTypes = boolOnly);
 }
