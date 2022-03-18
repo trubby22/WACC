@@ -52,6 +52,6 @@ class Pop(
 
     constructor(vararg regs: Register) : this(null, *regs)
 
-    override fun usesSet(): Set<Register> = registers.toSet()
-    override fun definesSet(): Set<Register> = emptySet()
+    override fun usesSet(): Set<Register> = emptySet()
+    override fun definesSet(): Set<Register> = registers.toSet()
 }

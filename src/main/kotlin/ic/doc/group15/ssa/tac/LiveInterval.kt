@@ -2,6 +2,7 @@ package ic.doc.group15.ssa.tac
 
 import ic.doc.group15.assembly.BranchLabel
 import ic.doc.group15.assembly.Instruction
+import ic.doc.group15.assembly.operand.ArmRegister
 import ic.doc.group15.assembly.operand.Register
 import ic.doc.group15.ssa.BasicBlock
 import ic.doc.group15.ssa.ExitBasicBlock
@@ -22,19 +23,19 @@ data class LivenessResult(
 )
 
 data class RegAllocState(
-  val availableReg: ArrayDeque<Register>,
-  val regAssignment: MutableMap<LiveInterval, Register>,
+  val availableReg: ArrayDeque<ArmRegister>,
+  val regAssignment: MutableMap<LiveInterval, ArmRegister>,
   val stackAssignment: MutableMap<LiveInterval, Int>,
   val intervals: PriorityQueue<LiveInterval>,
   val active: PriorityQueue<LiveInterval>,
 )
 
 data class RegAllocResult(
-  val regAssignment: Map<PseudoRegister, Register>,
+  val regAssignment: Map<PseudoRegister, ArmRegister>,
   val stackAssignment: Map<PseudoRegister, Int>
 )
 
-class LivenessAnalysis {
+class LinearScanRegAlloc {
   companion object {
     private fun findPred(blockToLabelMap: Map<BasicBlock, BranchLabel>): Map<Instruction, Set<Instruction>> {
       val pred = mutableMapOf<Instruction, Set<Instruction>>()
@@ -142,7 +143,7 @@ class LivenessAnalysis {
      * Efficient worklist algorithm as defined in
      * https://groups.seas.harvard.edu/courses/cs153/2019fa/lectures/Lec20-Dataflow-analysis.pdf
      */
-    fun apply(blockToLabelMap: Map<BasicBlock, BranchLabel>): LivenessResult {
+    fun livenessAnalysis(blockToLabelMap: Map<BasicBlock, BranchLabel>): LivenessResult {
       val predOf = findPred(blockToLabelMap)
       val succOf = findSucc(blockToLabelMap)
 
@@ -210,7 +211,7 @@ class LivenessAnalysis {
     fun computeLivenessIntervals(
       blockToLabelMap: Map<BasicBlock, BranchLabel>
     ): Map<PseudoRegister, Interval> {
-      val (inOf, _, _, _) = apply(blockToLabelMap)
+      val (inOf, _, _, _) = livenessAnalysis(blockToLabelMap)
 
       val root = blockToLabelMap.keys.first()
       val dfsOrder = sortInDFSOrder(root)
@@ -248,7 +249,7 @@ class LivenessAnalysis {
 
     private fun linearScanRegAlloc(
       blockToLabelMap: Map<BasicBlock, BranchLabel>,
-      availableRegisters: ArrayDeque<Register>
+      availableRegisters: ArrayDeque<ArmRegister>
     ): RegAllocState {
       // Sort live intervals in order of increasing start point
       val state = RegAllocState(
@@ -304,9 +305,9 @@ class LivenessAnalysis {
       }
     }
 
-    fun registerAllocation(
+    fun apply(
       blockToLabelMap: Map<BasicBlock, BranchLabel>,
-      availableRegisters: ArrayDeque<Register>): RegAllocResult {
+      availableRegisters: ArrayDeque<ArmRegister>): RegAllocResult {
       val result = linearScanRegAlloc(blockToLabelMap, availableRegisters)
       val register = result.regAssignment.entries.associateBy({it.key.v}, {it.value})
       val stack = result.stackAssignment.entries.associateBy({it.key.v}, {it.value})

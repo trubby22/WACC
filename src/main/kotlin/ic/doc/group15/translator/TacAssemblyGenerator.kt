@@ -1,6 +1,7 @@
 package ic.doc.group15.translator
 
 import ic.doc.group15.assembly.BranchLabel
+import ic.doc.group15.assembly.Instruction
 import ic.doc.group15.assembly.LibraryFunction
 import ic.doc.group15.assembly.LibraryFunction.Companion.MALLOC
 import ic.doc.group15.assembly.UtilFunction.*
@@ -43,6 +44,113 @@ open class TacAssemblyGenerator(
         }
 
         // Allocate actual registers
+        val availableReg = ArrayDeque(listOf(R4, R5, R6, R7, R8, R9, R10, R11))
+        val regAllocMap = LinearScanRegAlloc.apply(blockToLabelMap, availableReg)
+
+        for ((block, label) in blockToLabelMap) {
+            // Replace pseudo register with arm registers
+            val instList = mutableListOf<Instruction>()
+            for (inst in label.getLines()) {
+                // Pattern match
+                when (inst) {
+                    is Sub -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val base = regAllocMap.regAssignment[inst.base]
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(Sub(inst.conditionCode!!, dest!!, base!!, op))
+                    }
+                    is ReverseSub -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val base = regAllocMap.regAssignment[inst.base]
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(ReverseSub(inst.conditionCode!!, dest!!, base!!, op))
+                    }
+                    is Mult -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val reg_n = regAllocMap.regAssignment[inst.reg_n]
+                        val reg_m = regAllocMap.regAssignment[inst.reg_m]
+                        instList.add(Mult(inst.conditionCode!!, dest!!, reg_n!!, reg_m!!))
+                    }
+                    is LongMult -> {
+                        val dest_lo = regAllocMap.regAssignment[inst.dest_lo]
+                        val dest_hi = regAllocMap.regAssignment[inst.dest_hi]
+                        val reg_n = regAllocMap.regAssignment[inst.reg_n]
+                        val reg_m = regAllocMap.regAssignment[inst.reg_m]
+                        instList.add(LongMult(inst.conditionCode!!, dest_lo!!, dest_hi!!, reg_n!!, reg_m!!))
+                    }
+                    is Branch -> {
+                        instList.add(inst)
+                    }
+                    is BranchLink -> {
+                        instList.add(inst)
+                    }
+                    is Compare -> {
+                        val base = regAllocMap.regAssignment[inst.base]!!
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(Compare(inst.conditionCode, base, op))
+                    }
+                    is LoadWord -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val addr = replaceOperandRegister(inst.addr, regAllocMap)
+                        instList.add(LoadWord(inst.conditionCode, dest!!, addr as AddressOperand))
+                    }
+                    is LoadByte -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val addr = replaceOperandRegister(inst.addr, regAllocMap)
+                        instList.add(LoadByte(inst.conditionCode, dest!!, addr as AddressOperand))
+                    }
+                    is And -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val base = regAllocMap.regAssignment[inst.base]
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(And(inst.conditionCode, inst.updateFlags, dest!!, base!!, op))
+                    }
+                    is Or -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val base = regAllocMap.regAssignment[inst.base]
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(Or(inst.conditionCode, inst.updateFlags, dest!!, base!!, op))
+                    }
+                    is Xor -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val base = regAllocMap.regAssignment[inst.base]
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(Xor(inst.conditionCode, inst.updateFlags, dest!!, base!!, op))
+                    }
+                    is Move -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(Move(inst.conditionCode,  dest!!, op, inst.updateFlags))
+                    }
+                    is MoveNot -> {
+                        val dest = regAllocMap.regAssignment[inst.dest]
+                        val op = replaceOperandRegister(inst.op, regAllocMap)
+                        instList.add(MoveNot(inst.conditionCode,  dest!!, op, inst.updateFlags))
+                    }
+                    is Push -> {
+                        val regs = replaceAllRegs(inst.registers.toList(), regAllocMap)
+                        instList.add(Push(inst.conditionCode, *regs.toTypedArray()))
+                    }
+                    is Pop -> {
+                        val regs = replaceAllRegs(inst.registers.toList(), regAllocMap)
+                        instList.add(Pop(inst.conditionCode, *regs.toTypedArray()))
+                    }
+                    is StoreWord -> {
+                        val src = regAllocMap.regAssignment[inst.src]
+                        val addr = replaceOperandRegister(inst.addr, regAllocMap)
+                        instList.add(StoreWord(inst.conditionCode, src!!, addr as AddressOperand))
+                    }
+                    is StoreByte -> {
+                        val src = regAllocMap.regAssignment[inst.src]
+                        val addr = replaceOperandRegister(inst.addr, regAllocMap)
+                        instList.add(StoreByte(inst.conditionCode, src!!, addr as AddressOperand))
+                    }
+                }
+            }
+
+            blockToLabelMap[block] = newBranchLabel(label.name)
+            blockToLabelMap[block]!!.addLines(instList)
+        }
     }
 
     private fun translateBasicBlock(block: BasicBlock, name: String? = null): BranchLabel {
@@ -232,7 +340,8 @@ open class TacAssemblyGenerator(
                     addLines(Move(destReg, ArithmeticShiftRight(destReg, (bits as IntImm).value)))
                 }
             }
-            else -> {}
+            else -> {
+            }
         }
     }
 
@@ -305,7 +414,8 @@ open class TacAssemblyGenerator(
                     BranchLink(UtilFunction.P_FREE_PAIR)
                 )
             }
-            else -> {}
+            else -> {
+            }
         }
     }
 
@@ -405,5 +515,48 @@ open class TacAssemblyGenerator(
 
     private fun translateVar(op: TacVar): Register {
         return PseudoRegister(op.id)
+    }
+
+    private fun replaceOperandRegister(op: Operand, regAllocMap: RegAllocResult): Operand {
+        return when (op) {
+            is RegisterList -> {
+                val actualRegs = replaceAllRegs(op.registers, regAllocMap)
+                RegisterList(*actualRegs.toTypedArray())
+            }
+            is LogicalShiftLeft -> {
+                val base = regAllocMap.regAssignment[op.base]!!
+                LogicalShiftLeft(base, op.bits)
+            }
+            is LogicalShiftRight -> {
+                val base = regAllocMap.regAssignment[op.base]!!
+                LogicalShiftRight(base, op.bits)
+            }
+            is ArithmeticShiftRight -> {
+                val base = regAllocMap.regAssignment[op.base]!!
+                ArithmeticShiftRight(base, op.bits)
+            }
+            is RotateRight -> {
+                val base = regAllocMap.regAssignment[op.base]!!
+                RotateRight(base, op.bits)
+            }
+            is ImmediateOffset -> {
+                val base = regAllocMap.regAssignment[op.base]!!
+                ImmediateOffset(base, op.offset)
+            }
+            is ZeroOffset -> {
+                val base = regAllocMap.regAssignment[op.base]!!
+                ZeroOffset(base)
+            }
+            is RegisterOffset -> {
+                val base = regAllocMap.regAssignment[op.base]!!
+                val offset = regAllocMap.regAssignment[op.offsetReg]!!
+                RegisterOffset(base, op.positiveOffset, offset)
+            }
+            else -> op
+        }
+    }
+
+    private fun replaceAllRegs(registers: List<Register>, regAllocMap: RegAllocResult): List<Register> {
+        return registers.map{ r -> regAllocMap.regAssignment[r]!! }
     }
 }

@@ -1,8 +1,7 @@
 package ic.doc.group15.assembly.instruction
 
 import ic.doc.group15.assembly.* // ktlint-disable no-wildcard-imports
-import ic.doc.group15.assembly.operand.AddressOperand
-import ic.doc.group15.assembly.operand.Register
+import ic.doc.group15.assembly.operand.*
 
 /**
  * Load operations present in ARM1176JZF-S, partly implemented.
@@ -29,7 +28,20 @@ class LoadWord(
 
     constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
 
-    override fun usesSet(): Set<Register> = setOf(addr).filterIsInstance<Register>().toSet()
+    override fun usesSet(): Set<Register> {
+        return when (addr) {
+            is ImmediateOffset -> {
+                setOf(addr.base)
+            }
+            is ZeroOffset -> {
+                setOf(addr.base)
+            }
+            is RegisterOffset -> {
+                setOf(addr.base, addr.offsetReg)
+            }
+            else -> emptySet()
+        }
+    }
     override fun definesSet(): Set<Register> = setOf(dest)
 }
 
@@ -49,7 +61,20 @@ class LoadByte(
 
     constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
 
-    override fun usesSet(): Set<Register> = setOf(addr).filterIsInstance<Register>().toSet()
+    override fun usesSet(): Set<Register> {
+        return when (addr) {
+            is ImmediateOffset -> {
+                setOf(addr.base)
+            }
+            is ZeroOffset -> {
+                setOf(addr.base)
+            }
+            is RegisterOffset -> {
+                setOf(addr.base, addr.offsetReg)
+            }
+            else -> emptySet()
+        }
+    }
     override fun definesSet(): Set<Register> = setOf(dest)
 }
 
