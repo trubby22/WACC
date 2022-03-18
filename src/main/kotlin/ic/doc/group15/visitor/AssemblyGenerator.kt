@@ -85,21 +85,35 @@ abstract class AssemblyGenerator<T : Any> protected constructor(
     /**
      * Creates a new instruction label and adds it to the text section.
      */
-    protected fun newBranchLabel(vararg lines: Instruction): BranchLabel {
-        return newBranchLabel(branchLabelGenerator.generate(), *lines)
+    protected fun newBranchLabel(
+        addToText: Boolean = true,
+        vararg lines: Instruction
+    ): BranchLabel {
+        return newBranchLabel(branchLabelGenerator.generate(), addToText, *lines)
     }
-    protected fun newBranchLabel(name: String, vararg lines: Instruction): BranchLabel {
+
+    protected fun newBranchLabel(
+        name: String,
+        addToText: Boolean = true,
+        vararg lines: Instruction
+    ): BranchLabel {
         log("Generating branch label: $name")
         val label = BranchLabel(name, *lines)
-        text[label.name] = label
+        if (addToText) {
+            addToText(label)
+        }
         return label
+    }
+
+    protected fun addToText(vararg label: BranchLabel) {
+        label.forEach { text[it.name] = it }
     }
 
     /**
      * Creates a new instruction label for a custom function and adds it to the text section.
      */
     protected fun newFunctionLabel(funcName: String, vararg lines: Instruction): BranchLabel {
-        return newBranchLabel("f_$funcName", *lines)
+        return newBranchLabel("f_$funcName", true, *lines)
     }
     protected fun branchToFunction(funcName: String): BranchLabelOperand {
         return BranchLabelOperand("f_$funcName")
