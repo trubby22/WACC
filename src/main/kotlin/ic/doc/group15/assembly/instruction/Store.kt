@@ -26,6 +26,9 @@ class StoreWord(
 ) : StoreInstruction("STR", conditionCode, src, addr) {
 
     constructor(src: Register, addr: AddressOperand) : this(null, src, addr)
+
+    override fun usesSet(): Set<Register> = setOf(src)
+    override fun definesSet(): Set<Register> = setOf(addr).filterIsInstance<Register>().toSet()
 }
 
 /**
@@ -43,4 +46,7 @@ class StoreByte(
 ) : StoreInstruction("STRB", conditionCode, src, addr) {
 
     constructor(src: Register, addr: AddressOperand) : this(null, src, addr)
+    override fun usesSet(): Set<Register> = setOf(src)
+    override fun definesSet(): Set<Register> = setOf(addr).filterIsInstance<Register>().toSet()
+
 }

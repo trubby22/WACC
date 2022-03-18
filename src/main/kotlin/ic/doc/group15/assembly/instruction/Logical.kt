@@ -42,6 +42,9 @@ class And(
     constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(conditionCode, false, dest, base, op)
     constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(null, updateFlags, dest, base, op)
     constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
+
+    override fun usesSet(): Set<Register> = setOf(base, op).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
 }
 
 class Or(
@@ -55,6 +58,9 @@ class Or(
     constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(conditionCode, false, dest, base, op)
     constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(null, updateFlags, dest, base, op)
     constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
+
+    override fun usesSet(): Set<Register> = setOf(base, op).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
 }
 
 class Xor(
@@ -68,4 +74,7 @@ class Xor(
     constructor(conditionCode: ConditionCode, dest: Register, base: Register, op: Operand) : this(conditionCode, false, dest, base, op)
     constructor(updateFlags: Boolean, dest: Register, base: Register, op: Operand) : this(null, updateFlags, dest, base, op)
     constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
+
+    override fun usesSet(): Set<Register> = setOf(base, op).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
 }

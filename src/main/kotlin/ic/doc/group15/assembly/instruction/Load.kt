@@ -28,6 +28,9 @@ class LoadWord(
 ) : LoadInstruction("LDR", conditionCode, dest, addr) {
 
     constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
+
+    override fun usesSet(): Set<Register> = setOf(addr).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
 }
 
 /**
@@ -45,6 +48,9 @@ class LoadByte(
 ) : LoadInstruction("LDRB", conditionCode, dest, addr) {
 
     constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
+
+    override fun usesSet(): Set<Register> = setOf(addr).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
 }
 
 ///**

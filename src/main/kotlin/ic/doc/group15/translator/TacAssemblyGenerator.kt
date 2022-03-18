@@ -21,14 +21,14 @@ import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.PairType
 import java.lang.IllegalArgumentException
 
-class TacAssemblyGenerator(
+open class TacAssemblyGenerator(
     cfg: ControlFlowGraph,
     val cfgState: CfgState,
     enableLogging: Boolean = false,
     val enableOptimisation: Boolean = false
 ) : AssemblyGenerator<SsaTranslatable>(cfg, enableLogging) {
 
-    private val blockToLabelMap: MutableMap<BasicBlock, BranchLabel> = HashMap()
+    private val blockToLabelMap: MutableMap<BasicBlock, BranchLabel> = LinkedHashMap()
 
     @TranslatorMethod
     private fun translateCfg(cfg: ControlFlowGraph) {
@@ -41,6 +41,8 @@ class TacAssemblyGenerator(
         for (block in func.basicBlocks.drop(1)) {
             translateBasicBlock(block)
         }
+
+        // Allocate actual registers
     }
 
     private fun translateBasicBlock(block: BasicBlock, name: String? = null): BranchLabel {

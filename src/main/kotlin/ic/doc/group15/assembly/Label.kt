@@ -26,6 +26,8 @@ abstract class Label<L : Line> protected constructor(val name: String) : Assembl
         this.lines.addAll(lines)
     }
 
+    fun getLines(): List<L> = lines.toList()
+
     override fun toString(): String {
         return "$name:\n$ASM_TAB" + lines.joinToString(separator = "\n$ASM_TAB")
     }

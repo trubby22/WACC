@@ -1,22 +1,24 @@
 package ic.doc.group15.ssa.tac
 
+import ic.doc.group15.assembly.BranchLabel
+import ic.doc.group15.assembly.Instruction
 import ic.doc.group15.assembly.operand.Register
 import ic.doc.group15.ssa.BasicBlock
 import ic.doc.group15.ssa.ExitBasicBlock
-import ic.doc.group15.ssa.IRFunction
+import ic.doc.group15.ssa.PseudoRegister
 import ic.doc.group15.util.WORD
 import java.util.*
 import kotlin.collections.ArrayDeque
 import kotlin.collections.set
 
 typealias Interval = Pair<Int, Int>
-data class LiveInterval(val v: TacVar, val interval: Interval)
+data class LiveInterval(val v: PseudoRegister, val interval: Interval)
 
 data class LivenessResult(
-  val inOfVar: Map<ThreeAddressCode, Set<TacVar>>,
-  val outOfVar: Map<ThreeAddressCode, Set<TacVar>>,
-  val predOfInst: Map<ThreeAddressCode, Set<ThreeAddressCode>>,
-  val succOfInst: Map<ThreeAddressCode, Set<ThreeAddressCode>>
+  val inOfVar: Map<Instruction, Set<PseudoRegister>>,
+  val outOfVar: Map<Instruction, Set<PseudoRegister>>,
+  val predOfInst: Map<Instruction, Set<Instruction>>,
+  val succOfInst: Map<Instruction, Set<Instruction>>
 )
 
 data class RegAllocState(
@@ -28,39 +30,40 @@ data class RegAllocState(
 )
 
 data class RegAllocResult(
-  val regAssignment: Map<TacVar, Register>,
-  val stackAssignment: Map<TacVar, Int>
+  val regAssignment: Map<PseudoRegister, Register>,
+  val stackAssignment: Map<PseudoRegister, Int>
 )
 
 class LivenessAnalysis {
   companion object {
-    private fun findPred(function: IRFunction): Map<ThreeAddressCode, Set<ThreeAddressCode>> {
-      val pred = mutableMapOf<ThreeAddressCode, Set<ThreeAddressCode>>()
-      if (function.basicBlocks.isEmpty()) return pred
+    private fun findPred(blockToLabelMap: Map<BasicBlock, BranchLabel>): Map<Instruction, Set<Instruction>> {
+      val pred = mutableMapOf<Instruction, Set<Instruction>>()
+      if (blockToLabelMap.isEmpty()) return pred
 
-      val root = function.basicBlocks[0]
+      val root = blockToLabelMap.keys.first()
 
-      val rootInstList = root.getInstructionList()
+      val rootInstList = blockToLabelMap[root]!!.getLines()
       if (rootInstList.isEmpty()) return pred
 
       // First instruction has no pred
-      findPred(root, pred, emptySet())
+      findPred(root, blockToLabelMap, pred, emptySet())
 
       return pred
     }
 
     private fun findPred(
       block: BasicBlock,
-      pred: MutableMap<ThreeAddressCode, Set<ThreeAddressCode>>,
-      predOfFirstInst: Set<ThreeAddressCode>
+      blockToLabelMap: Map<BasicBlock, BranchLabel>,
+      pred: MutableMap<Instruction, Set<Instruction>>,
+      predOfFirstInst: Set<Instruction>
     ) {
       // Pass pred to first instruction in next block if current block is
       // empty
-      val instList = block.getInstructionList()
+      val instList = blockToLabelMap[block]!!.getLines()
       if (instList.isEmpty()) {
         for (succ in block.getSuccessors()) {
           if (succ is ExitBasicBlock) continue
-          findPred(succ as BasicBlock, pred, predOfFirstInst)
+          findPred(succ as BasicBlock, blockToLabelMap, pred, predOfFirstInst)
         }
       }
 
@@ -79,35 +82,36 @@ class LivenessAnalysis {
 
       for (succ in block.getSuccessors()) {
         if (succ is ExitBasicBlock) continue
-        findPred(succ as BasicBlock, pred, pred[instList.last()]!!)
+        findPred(succ as BasicBlock, blockToLabelMap, pred, pred[instList.last()]!!)
       }
     }
 
-    private fun findSucc(function: IRFunction): Map<ThreeAddressCode, Set<ThreeAddressCode>> {
-      val succ = mutableMapOf<ThreeAddressCode, Set<ThreeAddressCode>>()
-      if (function.basicBlocks.isEmpty()) return succ
+    private fun findSucc(blockToLabelMap: Map<BasicBlock, BranchLabel>): Map<Instruction, Set<Instruction>> {
+      val succ = mutableMapOf<Instruction, Set<Instruction>>()
+      if (blockToLabelMap.isEmpty()) return succ
 
-      val root = function.basicBlocks[0]
+      val root = blockToLabelMap.keys.first()
 
-      val rootInstList = root.getInstructionList()
+      val rootInstList = blockToLabelMap[root]!!.getLines()
       if (rootInstList.isEmpty()) return succ
 
-      findSucc(root, succ, null)
+      findSucc(root, blockToLabelMap, succ, null)
 
       return succ
     }
 
     private fun findSucc(
       block: BasicBlock,
-      succMap: MutableMap<ThreeAddressCode, Set<ThreeAddressCode>>,
-      lastInstToFindSucc: ThreeAddressCode?
+      blockToLabelMap: Map<BasicBlock, BranchLabel>,
+      succMap: MutableMap<Instruction, Set<Instruction>>,
+      lastInstToFindSucc: Instruction?
     ) {
-      val instList = block.getInstructionList()
+      val instList = blockToLabelMap[block]!!.getLines()
 
       if (instList.isEmpty()) {
         for (succ in block.getSuccessors()) {
           if (succ is ExitBasicBlock) continue
-          findSucc(succ as BasicBlock, succMap, lastInstToFindSucc)
+          findSucc(succ as BasicBlock, blockToLabelMap, succMap, lastInstToFindSucc)
         }
       }
 
@@ -130,7 +134,7 @@ class LivenessAnalysis {
 
       for (succ in block.getSuccessors()) {
         if (succ is ExitBasicBlock) continue
-        findSucc(succ as BasicBlock, succMap, instList.last())
+        findSucc(succ as BasicBlock, blockToLabelMap, succMap, instList.last())
       }
     }
 
@@ -138,9 +142,9 @@ class LivenessAnalysis {
      * Efficient worklist algorithm as defined in
      * https://groups.seas.harvard.edu/courses/cs153/2019fa/lectures/Lec20-Dataflow-analysis.pdf
      */
-    fun apply(function: IRFunction): LivenessResult {
-      val predOf = findPred(function)
-      val succOf = findSucc(function)
+    fun apply(blockToLabelMap: Map<BasicBlock, BranchLabel>): LivenessResult {
+      val predOf = findPred(blockToLabelMap)
+      val succOf = findSucc(blockToLabelMap)
 
       // Confirm the number of instructions is same
       assert(predOf.size == succOf.size)
@@ -149,7 +153,7 @@ class LivenessAnalysis {
 
       // Initialise set of variables live on entry for each instruction
       val inOf = allInsts.associateBy({ it },
-        { emptySet<TacVar>() }).toMutableMap()
+        { emptySet<PseudoRegister>() }).toMutableMap()
       // Initialise set of variables live on exit for each instruction
       val outOf = HashMap(inOf)
 
@@ -164,12 +168,12 @@ class LivenessAnalysis {
 
         // out[inst] := for all inst' in succ[inst], the result of union of in[inst']
         val newOut =
-          succOf[inst]!!.fold(emptySet<TacVar>()) { acc, elem -> acc union inOf[elem]!! }
+          succOf[inst]!!.fold(emptySet<PseudoRegister>()) { acc, elem -> acc union inOf[elem]!! }
         outOf[inst] = newOut
 
         // in[inst] := use[inst] union (out[inst] - def[inst])
         val newIn = inst.usesSet() union (newOut subtract inst.definesSet())
-        inOf[inst] = newIn
+        inOf[inst] = newIn.map { r -> r as PseudoRegister }.toSet()
 
         // If worklist has changed, add new work to worklist
         if (oldIn != inOf[inst]) {
@@ -182,10 +186,7 @@ class LivenessAnalysis {
       return LivenessResult(inOf, outOf, predOf, succOf)
     }
 
-    private fun sortInDFSOrder(function: IRFunction): List<BasicBlock> {
-      if (function.basicBlocks.isEmpty()) return emptyList()
-
-      val root = function.basicBlocks[0]
+    private fun sortInDFSOrder(root: BasicBlock): List<BasicBlock> {
       val visited = LinkedHashSet<BasicBlock>()
 
       dfs(root, visited)
@@ -206,22 +207,39 @@ class LivenessAnalysis {
      * Compute the smallest subrange of the IR code containing all of
      * a variable's live ranges.
      */
-    fun computeLivenessIntervals(function: IRFunction): Map<TacVar, Interval> {
-      val (inOf, _, _, _) = apply(function)
+    fun computeLivenessIntervals(
+      blockToLabelMap: Map<BasicBlock, BranchLabel>
+    ): Map<PseudoRegister, Interval> {
+      val (inOf, _, _, _) = apply(blockToLabelMap)
 
-      // Initialise interval of all variables
-      val intervals: MutableMap<TacVar, Interval> =
-        function.variableSet.associateBy({ it },
-          { Pair(Int.MAX_VALUE, Int.MIN_VALUE) }).toMutableMap()
+      val root = blockToLabelMap.keys.first()
+      val dfsOrder = sortInDFSOrder(root)
+
+      // Initialise interval of all variables in DFS order; add line number to inst
+      val instLineNum = mutableMapOf<Int, Instruction>()
+      val intervals: MutableMap<PseudoRegister, Interval> = LinkedHashMap()
+      var currLineNum = 1
+      for (b in dfsOrder) {
+        for (inst in blockToLabelMap[b]!!.getLines()) {
+          // Add line number of instruction in DFS order
+          instLineNum[currLineNum++] = inst
+          val definedRegs = inst.definesSet()
+          if (definedRegs.isEmpty()) continue
+
+          val defReg = definedRegs.first() as PseudoRegister
+
+          val pseudoReg = PseudoRegister(defReg.id)
+          intervals[pseudoReg] = Pair(Int.MAX_VALUE, Int.MIN_VALUE)
+        }
+      }
 
       // Update interval of variables appearing in each instruction
       // TODO: Check correctness
-      val varsInOf = inOf.values.toList()
-      for (i in varsInOf.indices) {
+      for ((line, inst) in instLineNum) {
         // Update define and uses variable
-        for (v in varsInOf[i]) {
+        for (v in inOf[inst]!!) {
           val (min, max) = intervals[v]!!
-          intervals[v] = Pair(min.coerceAtMost(i), max.coerceAtLeast(i + 1))
+          intervals[v] = Pair(min.coerceAtMost(line), max.coerceAtLeast(line + 1))
         }
       }
 
@@ -229,7 +247,7 @@ class LivenessAnalysis {
     }
 
     private fun linearScanRegAlloc(
-      function: IRFunction,
+      blockToLabelMap: Map<BasicBlock, BranchLabel>,
       availableRegisters: ArrayDeque<Register>
     ): RegAllocState {
       // Sort live intervals in order of increasing start point
@@ -242,7 +260,7 @@ class LivenessAnalysis {
       )
 
       state.intervals.addAll(
-        computeLivenessIntervals(function).map { LiveInterval(it.key, it.value) }
+        computeLivenessIntervals(blockToLabelMap).map { LiveInterval(it.key, it.value) }
       )
 
       for (interval in state.intervals) {
@@ -286,8 +304,10 @@ class LivenessAnalysis {
       }
     }
 
-    fun registerAllocation(function: IRFunction, availableReg: ArrayDeque<Register>): RegAllocResult {
-      val result = linearScanRegAlloc(function, availableReg)
+    fun registerAllocation(
+      blockToLabelMap: Map<BasicBlock, BranchLabel>,
+      availableRegisters: ArrayDeque<Register>): RegAllocResult {
+      val result = linearScanRegAlloc(blockToLabelMap, availableRegisters)
       val register = result.regAssignment.entries.associateBy({it.key.v}, {it.value})
       val stack = result.stackAssignment.entries.associateBy({it.key.v}, {it.value})
 
