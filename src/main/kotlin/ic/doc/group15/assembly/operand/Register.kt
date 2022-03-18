@@ -1,9 +1,11 @@
 package ic.doc.group15.assembly.operand
 
+interface Register : Operand
+
 /**
  * Registers present in ARM1176JZF-S.
  */
-enum class Register : Operand {
+enum class ArmRegister : Register {
 
     /**
      * By convention, R0 is a general purpose register. It is used to
@@ -131,14 +133,14 @@ enum class Register : Operand {
         return name.lowercase()
     }
 
-    fun nextReg(): Register {
+    fun nextReg(): ArmRegister {
         if (this == MAX_REG) {
             throw InstantiationException("Max register limit reached!")
         }
         return values()[this.ordinal + 1]
     }
 
-    fun prevReg(): Register {
+    fun prevReg(): ArmRegister {
         if (this == MIN_REG) {
             throw InstantiationException("Min register limit reached!")
         }

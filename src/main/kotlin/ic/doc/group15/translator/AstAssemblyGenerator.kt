@@ -14,6 +14,7 @@ import ic.doc.group15.assembly.instruction.ConditionCode.GT
 import ic.doc.group15.assembly.instruction.ConditionCode.LT
 import ic.doc.group15.assembly.instruction.Directive.Companion.LTORG
 import ic.doc.group15.assembly.operand.* // ktlint-disable no-unused-imports
+import ic.doc.group15.assembly.operand.ArmRegister.*
 import ic.doc.group15.assembly.operand.Register.*
 import ic.doc.group15.ast.*
 import ic.doc.group15.ast.BinaryOp.*
@@ -39,7 +40,7 @@ class AstAssemblyGenerator(
     /**
      * The next available register to write intermediate results to.
      */
-    private lateinit var resultRegister: Register
+    private lateinit var resultRegister: ArmRegister
 
     /**
      * Store the total stack space used to store intermediate results of
@@ -437,7 +438,7 @@ class AstAssemblyGenerator(
 
         // Allocate two registers for newPair
         var accumulatorState = false
-        if (resultRegister == Register.MAX_REG) {
+        if (resultRegister == ArmRegister.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -558,7 +559,7 @@ class AstAssemblyGenerator(
 
         // Allocate two registers for ArrayLiteral
         var accumulatorState = false
-        if (resultRegister == Register.MAX_REG) {
+        if (resultRegister == ArmRegister.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
@@ -620,7 +621,7 @@ class AstAssemblyGenerator(
 
         // Allocate two registers for arrayElem
         var accumulatorState = false
-        if (resultRegister == Register.MAX_REG) { // R10
+        if (resultRegister == ArmRegister.MAX_REG) { // R10
             resultRegister = resultRegister.prevReg() // R9
             addLines(Push(resultRegister)) // Spare R9
             offsetStackStore[0] += WORD
@@ -812,7 +813,7 @@ class AstAssemblyGenerator(
 
         // Allocate two registers for BinOp
         var accumulatorState = false
-        if (resultRegister == Register.MAX_REG) {
+        if (resultRegister == ArmRegister.MAX_REG) {
             resultRegister = resultRegister.prevReg()
             addLines(Push(resultRegister))
             offsetStackStore[0] += WORD
