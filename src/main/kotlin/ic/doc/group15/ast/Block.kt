@@ -1,6 +1,7 @@
 package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
+import ic.doc.group15.assembly.BranchLabel
 import ic.doc.group15.type.*
 import java.util.*
 
@@ -52,15 +53,45 @@ class WhileBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable,
     val condExpr: ExpressionAST
-) : BlockAST(parent, symbolTable)
+) : BlockAST(parent, symbolTable) {
+    lateinit var checkLabel: BranchLabel
+    lateinit var endLabel: BranchLabel
+}
+
+class ForBlockOuterScopeAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable
+) : BlockAST(parent, symbolTable) {
+    lateinit var forBlock: ForBlockAST
+    lateinit var varDecl: VariableDeclarationAST
+}
 
 class ForBlockAST(
     parent: BlockAST,
     symbolTable: SymbolTable
 ) : BlockAST(parent, symbolTable) {
     lateinit var condExpr: ExpressionAST
+    lateinit var loopVarUpdate: StatementAST
+    lateinit var loopVarUpdateLabel: BranchLabel
+    lateinit var endLabel: BranchLabel
+}
+
+class ForInRangeBlockOuterScopeAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable
+) : BlockAST(parent, symbolTable) {
+    lateinit var forInRangeBlock: ForInRangeBlockAST
     lateinit var varDecl: VariableDeclarationAST
-    lateinit var incrementStat: StatementAST
+}
+
+class ForInRangeBlockAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable
+) : BlockAST(parent, symbolTable) {
+    lateinit var condExpr: ExpressionAST
+    lateinit var loopVarIncrementStat: StatementAST
+    lateinit var loopVarIncrementLabel: BranchLabel
+    lateinit var endLabel: BranchLabel
 }
 
 open class BeginEndBlockAST(

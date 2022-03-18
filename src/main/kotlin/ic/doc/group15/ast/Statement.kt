@@ -40,6 +40,14 @@ class ReadStatementAST(
     val target: AssignToLhsAST<*>
 ) : StatementAST(parent, symbolTable)
 
+class ContinueStatementAST(
+    parent: BlockAST,
+) : StatementAST(parent)
+
+class BreakStatementAST(
+    parent: BlockAST,
+) : StatementAST(parent)
+
 class FreeStatementAST(
     parent: BlockAST,
     symbolTable: SymbolTable,

@@ -12,7 +12,6 @@ import ic.doc.group15.error.syntactic.SyntacticError
 import ic.doc.group15.type.* // ktlint-disable no-unused-imports
 import ic.doc.group15.type.BasicType.Companion.IntType
 import ic.doc.group15.util.EscapeChar
-import org.antlr.v4.runtime.ParserRuleContext
 import java.util.*
 
 class ParseTreeVisitor(
@@ -53,7 +52,7 @@ class ParseTreeVisitor(
         }
 
         log("Visiting main program")
-        visit(ctx.stat())
+        visit(ctx.stat_sequence())
 
         log(
             """Semantic analysis complete!
@@ -133,7 +132,7 @@ class ParseTreeVisitor(
 
         symbolTable = funcSt
         log("|| Visiting $funcName function body")
-        visit(ctx.stat())
+        visit(ctx.stat_sequence())
         symbolTable = oldSt
         scopeAST = oldScope
 
@@ -286,68 +285,19 @@ class ParseTreeVisitor(
         return stat
     }
 
-    override fun visitReadStat(ctx: ReadStatContext): ASTNode {
-        log("Visiting read statement")
+    override fun visitContinueStat(ctx: ContinueStatContext?): ASTNode {
+        log("Visiting continue statement")
 
-        val assignLhs = ctx.assign_lhs()
-        val target = visit(assignLhs) as AssignToLhsAST<*>
-        if (target.type !is BasicType || target.type == BasicType.BoolType) {
-            addError(ReadTypeError(assignLhs.start, target.type))
-        }
-
-        log("|| Target type: ${target.type}")
-
-        return scopeAST.addStatement(ReadStatementAST(scopeAST, symbolTable, target))
+        return scopeAST.addStatement(ContinueStatementAST(scopeAST))
     }
 
-    override fun visitReturnStat(ctx: ReturnStatContext): ASTNode {
-        log("Visiting return statement")
+    override fun visitBreakStat(ctx: BreakStatContext?): ASTNode {
+        log("Visiting break statement")
 
-        var enclosingAST: BlockAST? = scopeAST
-
-        while (enclosingAST != null && enclosingAST !is FunctionDeclarationAST) {
-            enclosingAST = enclosingAST.parent
-        }
-
-        if (enclosingAST == null) {
-            addError(IllegalReturnStatementError(ctx.start))
-            return SkipStatementAST(scopeAST)
-        }
-
-        val func = enclosingAST as FunctionDeclarationAST
-        val funcReturnType = func.returnType
-
-        log(" || return statement is under function ${func.funcName}")
-
-        val expr: ExpressionAST?
-        val returnType: ReturnableType
-        if (ctx.expr() != null) {
-            expr = visit(ctx.expr()) as ExpressionAST
-            returnType = expr.type
-        } else {
-            expr = null
-            returnType = ReturnableType.VOID
-        }
-
-        log("we're in return stat")
-        log("asserted return type: $funcReturnType")
-        log("actual return type: $returnType")
-
-        if (!funcReturnType.compatible(returnType)) {
-            addError(ReturnTypeError(ctx.expr()?.start ?: ctx.start, funcReturnType, returnType))
-        }
-
-        val returnStat = ReturnStatementAST(func, symbolTable, expr, returnType)
-        func.returnStat = returnStat
-
-        return scopeAST.addStatement(returnStat)
+        return scopeAST.addStatement(BreakStatementAST(scopeAST))
     }
 
     override fun visitBeginEndStat(ctx: BeginEndStatContext): ASTNode {
-        return visitBeginEnd(ctx.stat())
-    }
-
-    private fun visitBeginEnd(statCtx: ParserRuleContext): ASTNode {
         val oldScope = scopeAST
         val oldSt = symbolTable
 
@@ -356,80 +306,14 @@ class ParseTreeVisitor(
 
         scopeAST = node
         symbolTable = beginEndSt
-        visit(statCtx)
+        visit(ctx.stat_sequence())
         symbolTable = oldSt
         scopeAST = oldScope
 
         return scopeAST.addStatement(node)
     }
 
-    override fun visitIfStat(ctx: IfStatContext): ASTNode {
-        log("Visiting if statement")
-
-        val oldScope = scopeAST
-        val oldSt = symbolTable
-
-        val thenSt = oldSt.subScope()
-        val elseSt = oldSt.subScope()
-
-        log("Visiting if statement condition expression")
-        val condExpr = visit(ctx.expr()) as ExpressionAST
-
-        if (condExpr.type != BasicType.BoolType) {
-            addError(CondTypeError(ctx.expr().start, condExpr.type))
-        }
-
-        val ifBlock = IfBlockAST(scopeAST, thenSt, condExpr)
-
-        scopeAST = ifBlock
-        symbolTable = thenSt
-        log("|| Visiting then block")
-        visit(ctx.stat(0))
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        val elseBlock = ElseBlockAST(ifBlock, elseSt)
-
-        scopeAST = elseBlock
-        symbolTable = elseSt
-        log("|| Visiting else block")
-        visit(ctx.stat(1))
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        ifBlock.elseBlock = elseBlock
-
-        return scopeAST.addStatement(ifBlock)
-    }
-
-    override fun visitWhileStat(ctx: WhileStatContext): ASTNode {
-        log("Visiting while statement")
-
-        val oldScope = scopeAST
-        val oldSt = symbolTable
-
-        val whileSt = oldSt.subScope()
-
-        log("|| Visiting while condition expression")
-        val condExpr = visit(ctx.expr()) as ExpressionAST
-
-        if (condExpr.type != BasicType.BoolType) {
-            addError(CondTypeError(ctx.expr().start, condExpr.type))
-        }
-
-        val whileBlock = WhileBlockAST(scopeAST, whileSt, condExpr)
-
-        scopeAST = whileBlock
-        symbolTable = whileSt
-        log("|| Visiting while block")
-        visit(ctx.stat()) as StatementAST
-        symbolTable = oldSt
-        scopeAST = oldScope
-
-        return scopeAST.addStatement(whileBlock)
-    }
-
-    override fun visitForStat(ctx: ForStatContext): ASTNode {
+    override fun visitFor_stat(ctx: For_statContext): ASTNode {
         log("Visiting for statement")
 
         val oldScope = scopeAST
@@ -437,24 +321,23 @@ class ParseTreeVisitor(
 
         log("|| Visiting for block")
 
+        val forBlockOuterScope = ForBlockOuterScopeAST(scopeAST, symbolTable)
+
+        symbolTable = symbolTable.subScope()
+        scopeAST = forBlockOuterScope
+
         val forBlock = ForBlockAST(scopeAST, symbolTable)
+        forBlockOuterScope.forBlock = forBlock
+
+        visit(ctx.decl()) as VariableDeclarationAST
 
         symbolTable = symbolTable.subScope()
         scopeAST = forBlock
 
-        val loopVariable = VariableIdentifierAST(symbolTable, ctx.IDENT().text, Variable(IntType))
-        val loopVarVal = IntLiteralAST(Integer.parseInt("0"))
-        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.IDENT().text, loopVarVal, Variable(IntType))
-        val loopVarIncrement = AssignToIdentAST(scopeAST, loopVariable)
-        loopVarIncrement.rhs = BinaryOpExprAST(symbolTable, loopVarVal, IntLiteralAST(1), BinaryOp.PLUS)
-        symbolTable.add(ctx.IDENT().text, Variable(IntType))
-        val expr = BinaryOpExprAST(symbolTable, loopVariable, IntLiteralAST(Integer.parseInt(ctx.POSITIVE_OR_NEGATIVE_INTEGER().text)), BinaryOp.LT)
+        val condExpr = visit(ctx.expr()) as ExpressionAST
+        forBlock.condExpr = condExpr
 
-        forBlock.varDecl = varDecl
-        forBlock.condExpr = expr
-        forBlock.incrementStat = loopVarIncrement
-
-        visit(ctx.stat()) as StatementAST
+        forBlock.loopVarUpdate = visit(ctx.stat()) as StatementAST
 
         symbolTable = oldSt
         scopeAST = oldScope
@@ -462,11 +345,60 @@ class ParseTreeVisitor(
         return scopeAST.addStatement(forBlock)
     }
 
+    override fun visitForInRangeStat(ctx: ForInRangeStatContext): ASTNode {
+        return visitForInRange(ctx)
+    }
+
+    private fun visitForInRange(ctx: ForInRangeStatContext): ASTNode {
+        log("Visiting for in range statement")
+
+        val oldScope = scopeAST
+        val oldSt = symbolTable
+
+        log("|| Visiting for in range block")
+
+        val forInRangeBlockOuterScope = ForInRangeBlockOuterScopeAST(scopeAST, symbolTable)
+
+        symbolTable = symbolTable.subScope()
+        scopeAST = forInRangeBlockOuterScope
+
+        val forInRangeBlock = ForInRangeBlockAST(scopeAST, symbolTable)
+        forInRangeBlockOuterScope.forInRangeBlock = forInRangeBlock
+
+        val loopVariable = VariableIdentifierAST(symbolTable, ctx.ident().text, Variable(IntType))
+        val loopVarVal = IntLiteralAST(Integer.parseInt("0"))
+        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, loopVarVal, Variable(IntType))
+        forInRangeBlockOuterScope.varDecl = varDecl
+        symbolTable.add(ctx.ident().text, Variable(IntType))
+
+        symbolTable = symbolTable.subScope()
+        scopeAST = forInRangeBlock
+
+        val expr = BinaryOpExprAST(
+            symbolTable,
+            loopVariable,
+            visit(ctx.int_liter()) as IntLiteralAST,
+            BinaryOp.LT
+        )
+        forInRangeBlock.condExpr = expr
+
+        visit(ctx.stat_sequence())
+
+        val loopVarIncrement = AssignToIdentAST(scopeAST, loopVariable)
+        loopVarIncrement.rhs = BinaryOpExprAST(symbolTable, loopVarVal, IntLiteralAST(1), BinaryOp.PLUS)
+        forInRangeBlock.loopVarIncrementStat = loopVarIncrement
+
+        symbolTable = oldSt
+        scopeAST = oldScope
+
+        return scopeAST.addStatement(forInRangeBlock)
+    }
+
     //endregion
 
     //region assign_and_declare
 
-    override fun visitDeclarationStat(ctx: DeclarationStatContext): ASTNode {
+    override fun visitDecl(ctx: DeclContext): ASTNode {
         val type = ctx.type()
         val typeName = type.text
         val ident = ctx.ident()
