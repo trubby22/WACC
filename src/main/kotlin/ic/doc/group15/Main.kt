@@ -89,13 +89,14 @@ fun main(args: ArgsList) {
     sourceFile.close()
 
     // Run BCE optimization
-    val bceErrors = BCEErrorList()
-    val astCopy = ast
-    val bceOptimizerSeq = BCEOptimizerSeq(ast, bceErrors, enableLogging =
-            enableLogging)
-    bceOptimizerSeq.removeArrayBoundChecking()
-    if (bceErrors.hasErrors()) {
-        ast = astCopy
+    if (args.hasOption(OPTIMISATION_LEVEL_1)) {
+        val bceErrors = BCEErrorList()
+        val astCopy = ast
+        val bceOptimizerSeq = BCEOptimizerSeq(ast, bceErrors, enableLogging = enableLogging)
+        bceOptimizerSeq.removeArrayBoundChecking()
+        if (bceErrors.hasErrors()) {
+            ast = astCopy
+        }
     }
 
     // Create assembly file

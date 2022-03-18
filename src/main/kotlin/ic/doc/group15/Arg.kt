@@ -29,6 +29,10 @@ enum class Option(val alt: String, val description: String) : OptionArg {
         "P",
         "Prints the generated assembly code to standard output."
     ),
+    OPTIMISATION_LEVEL_1(
+        "O1",
+        "Performs BCE optimisation and removes array bound checking."
+    )
     ;
 
     override fun string(): String {
