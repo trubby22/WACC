@@ -31,4 +31,7 @@ class Compare(
 ) : CompareInstruction("CMP", conditionCode, base, op) {
 
     constructor(base: Register, op: Operand) : this(null, base, op)
+
+    override fun usesSet(): Set<Register> = setOf(base, op).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = emptySet()
 }

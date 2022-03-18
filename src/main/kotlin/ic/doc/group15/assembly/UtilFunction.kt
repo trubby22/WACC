@@ -8,11 +8,8 @@ import ic.doc.group15.assembly.LibraryFunction.Companion.PUTS
 import ic.doc.group15.assembly.LibraryFunction.Companion.SCANF
 import ic.doc.group15.assembly.instruction.* // ktlint-disable no-unused-imports
 import ic.doc.group15.assembly.instruction.ConditionCode.*
-import ic.doc.group15.assembly.operand.DataLabelOperand
-import ic.doc.group15.assembly.operand.ImmediateOffset
-import ic.doc.group15.assembly.operand.IntImmediateOperand
-import ic.doc.group15.assembly.operand.Register.*
-import ic.doc.group15.assembly.operand.ZeroOffset
+import ic.doc.group15.assembly.operand.* // ktlint-disable no-unused-imports
+import ic.doc.group15.assembly.operand.ArmRegister.*
 import java.util.*
 
 enum class UtilFunction(vararg val dependencies: UtilFunction) {

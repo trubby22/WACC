@@ -2,6 +2,7 @@ package ic.doc.group15.assembly
 
 import ic.doc.group15.assembly.instruction.ConditionCode
 import ic.doc.group15.assembly.operand.Operand
+import ic.doc.group15.assembly.operand.Register
 
 const val ASM_TAB_SIZE = 8
 val ASM_TAB = " ".repeat(ASM_TAB_SIZE)
@@ -19,4 +20,7 @@ abstract class Instruction protected constructor(
         return "$instr${conditionCode ?: ""}${if (params.isNotEmpty()) " " else ""}" +
             params.joinToString(separator = ", ")
     }
+
+    abstract fun usesSet(): Set<Register>
+    abstract fun definesSet(): Set<Register>
 }

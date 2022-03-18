@@ -22,8 +22,13 @@ private fun BufferedWriter.writeAsm(vararg labels: Collection<Label<*>>) {
  */
 abstract class AssemblyGenerator<T : Any> protected constructor(
     private val start: T,
-    private val enableLogging: Boolean
-) : TranslatorVisitor<T>() {
+    enableLogging: Boolean
+) : TranslatorVisitor<T>(enableLogging) {
+
+    /**
+     * The current label that the generator is adding instructions to as it translates them.
+     */
+    protected lateinit var currentLabel: BranchLabel
 
     /**
      * Represents the ".dataLabel" section of the assembly code.
@@ -120,6 +125,17 @@ abstract class AssemblyGenerator<T : Any> protected constructor(
     }
 
     /**
+     * Add the provided assembly instructions to the current label.
+     */
+    protected fun addLines(vararg lines: Instruction) {
+        currentLabel.addLines(*lines)
+    }
+
+    protected fun addLines(lines: Collection<Instruction>) {
+        currentLabel.addLines(lines)
+    }
+
+    /**
      * Adds a utility function to the generated assembly file.
      */
     protected fun defineUtilFuncs(vararg funcs: UtilFunction) {
@@ -132,15 +148,6 @@ abstract class AssemblyGenerator<T : Any> protected constructor(
                     utilData[it.name] = it
                 }
             }
-        }
-    }
-
-    /**
-     * Prints a log message to standard output if logging is enabled.
-     */
-    protected fun log(str: String) {
-        if (enableLogging) {
-            println(str)
         }
     }
 }

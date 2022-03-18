@@ -71,6 +71,9 @@ class Add(
     )
 
     constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
+
+    override fun usesSet(): Set<Register> = setOf(base, op).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
 }
 
 /**
@@ -115,6 +118,10 @@ class Sub(
     )
 
     constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
+
+    override fun usesSet(): Set<Register> = setOf(base, op).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
+
 }
 
 class ReverseSub(
@@ -142,6 +149,10 @@ class ReverseSub(
     )
 
     constructor(dest: Register, base: Register, op: Operand) : this(null, false, dest, base, op)
+
+    override fun usesSet(): Set<Register> = setOf(base, op).filterIsInstance<Register>().toSet()
+    override fun definesSet(): Set<Register> = setOf(dest)
+
 }
 
 abstract class RegisterIntArithmetic protected constructor(
@@ -193,6 +204,10 @@ class Mult(
     )
 
     constructor(dest: Register, reg_n: Register, reg_m: Register) : this(null, false, dest, reg_n, reg_m)
+
+    override fun usesSet(): Set<Register> = setOf(reg_n, reg_m)
+    override fun definesSet(): Set<Register> = setOf(dest)
+
 }
 
 abstract class LongArithmetic protected constructor(
@@ -249,4 +264,7 @@ class LongMult(
 
     constructor(dest_lo: Register, dest_hi: Register, reg_n: Register, reg_m: Register) :
             this(null, false, dest_lo, dest_hi, reg_n, reg_m)
+
+    override fun usesSet(): Set<Register> = setOf(reg_n, reg_m)
+    override fun definesSet(): Set<Register> = setOf(dest_lo, dest_hi)
 }

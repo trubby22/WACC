@@ -3,6 +3,7 @@ package ic.doc.group15.assembly.instruction
 import ic.doc.group15.assembly.Instruction
 import ic.doc.group15.assembly.UtilFunction
 import ic.doc.group15.assembly.operand.BranchLabelOperand
+import ic.doc.group15.assembly.operand.Register
 
 /**
  * Branch operations present in ARM1176JZF-S, partly implemented.
@@ -28,6 +29,9 @@ class Branch(
     constructor(conditionCode: ConditionCode?, utilFunc: UtilFunction) :
             this(conditionCode, BranchLabelOperand(utilFunc.labelBlock))
     constructor(utilFunc: UtilFunction) : this(null, utilFunc)
+
+    override fun usesSet(): Set<Register> = emptySet()
+    override fun definesSet(): Set<Register> = emptySet()
 }
 
 /**
@@ -48,4 +52,7 @@ class BranchLink(
     constructor(conditionCode: ConditionCode?, utilFunc: UtilFunction) :
         this(conditionCode, BranchLabelOperand(utilFunc.labelBlock))
     constructor(utilFunc: UtilFunction) : this(null, utilFunc)
+
+    override fun usesSet(): Set<Register> = emptySet()
+    override fun definesSet(): Set<Register> = emptySet()
 }

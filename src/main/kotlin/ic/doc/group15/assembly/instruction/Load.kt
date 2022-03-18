@@ -4,6 +4,7 @@ import ic.doc.group15.assembly.* // ktlint-disable no-wildcard-imports
 import ic.doc.group15.assembly.operand.AddressOperand
 import ic.doc.group15.assembly.operand.Register
 import ic.doc.group15.util.BYTE
+import ic.doc.group15.assembly.operand.*
 
 /**
  * Load operations present in ARM1176JZF-S, partly implemented.
@@ -53,6 +54,22 @@ class LoadWord(
 ) : LoadInstruction("LDR", conditionCode, dest, addr) {
 
     constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
+
+    override fun usesSet(): Set<Register> {
+        return when (addr) {
+            is ImmediateOffset -> {
+                setOf(addr.base)
+            }
+            is ZeroOffset -> {
+                setOf(addr.base)
+            }
+            is RegisterOffset -> {
+                setOf(addr.base, addr.offsetReg)
+            }
+            else -> emptySet()
+        }
+    }
+    override fun definesSet(): Set<Register> = setOf(dest)
 }
 
 /**
@@ -70,4 +87,20 @@ class LoadByte(
 ) : LoadInstruction("LDRB", conditionCode, dest, addr) {
 
     constructor(dest: Register, addr: AddressOperand) : this(null, dest, addr)
+
+    override fun usesSet(): Set<Register> {
+        return when (addr) {
+            is ImmediateOffset -> {
+                setOf(addr.base)
+            }
+            is ZeroOffset -> {
+                setOf(addr.base)
+            }
+            is RegisterOffset -> {
+                setOf(addr.base, addr.offsetReg)
+            }
+            else -> emptySet()
+        }
+    }
+    override fun definesSet(): Set<Register> = setOf(dest)
 }
