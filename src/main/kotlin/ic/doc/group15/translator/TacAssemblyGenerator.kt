@@ -7,12 +7,14 @@ import ic.doc.group15.assembly.operand.*
 import ic.doc.group15.assembly.operand.ArmRegister.R0
 import ic.doc.group15.assembly.operand.Operand
 import ic.doc.group15.ssa.*
+import ic.doc.group15.ssa.optimisations.*
 import ic.doc.group15.ssa.tac.*
 import java.lang.IllegalArgumentException
 
 class TacAssemblyGenerator(
     cfg: ControlFlowGraph,
-    enableLogging: Boolean = false
+    enableLogging: Boolean = false,
+    val enableOptimisation: Boolean = false
 ) : AssemblyGenerator<SsaTranslatable>(cfg, enableLogging) {
 
     private val blockToLabelMap: MutableMap<BasicBlock, BranchLabel> = HashMap()
@@ -38,6 +40,21 @@ class TacAssemblyGenerator(
         }
         blockToLabelMap[block] = label
         currentLabel = label
+
+        if (enableOptimisation) {
+            val instructions = block.getInstructionList()
+            val optimiseStatements = instructions
+                .map(OperationIdentity::apply)
+                .map(ConstantFolding::apply)
+                .map(OperatorStrengthReduction::apply)
+
+            val constPropOpt = LocalConstantPropagation.apply(optimiseStatements)
+            val removeRedunAssignOpt = RemoveRedundantAssignments.apply(constPropOpt)
+            val removeTempOpt = RemoveTemporaries.apply(removeRedunAssignOpt)
+
+            block.setInstructionList(removeTempOpt)
+        }
+
         block.getInstructionList().forEach { translate(it) }
         return label
     }
@@ -53,13 +70,9 @@ class TacAssemblyGenerator(
         var operand: Operand = translateOperand(node.x)
         if (operand is IntImmediateOperand) {
             operand = PseudoImmediateOperand(operand.value)
-            addLines(
-                LoadWord(v, operand)
-            )
+            addLines(LoadWord(v, operand))
         } else {
-            addLines(
-                Move(v, operand)
-            )
+            addLines(Move(v, operand))
         }
     }
 
@@ -70,7 +83,7 @@ class TacAssemblyGenerator(
 
     @TranslatorMethod
     private fun translateCall(node: TacCall) {
-        
+
     }
 
     @TranslatorMethod
@@ -94,13 +107,9 @@ class TacAssemblyGenerator(
         var operand: Operand = translateOperand(node.amount)
         if (operand is IntImmediateOperand) {
             operand = PseudoImmediateOperand(operand.value)
-            addLines(
-                LoadWord(R0, operand)
-            )
+            addLines(LoadWord(R0, operand))
         } else {
-            addLines(
-                Move(R0, operand)
-            )
+            addLines(Move(R0, operand))
         }
         addLines(
             Branch(MALLOC),

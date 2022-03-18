@@ -121,7 +121,7 @@ class ExitBasicBlock : SuccessorBlock()
  **/
 class BasicBlock(val irFunction: IRFunction) : BidirectionalBlock(), SsaTranslatable {
 
-    private val instructions = mutableListOf<ThreeAddressCode>()
+    private var instructions = mutableListOf<ThreeAddressCode>()
 
     // control flow analysis
     private val predecessors = LinkedHashSet<Predecessor>()
@@ -136,6 +136,11 @@ class BasicBlock(val irFunction: IRFunction) : BidirectionalBlock(), SsaTranslat
     }
 
     fun getInstructionList(): List<ThreeAddressCode> = instructions
+
+    fun setInstructionList(instructions: List<ThreeAddressCode>) {
+        this.instructions = instructions.toMutableList()
+    }
+
     override fun addPredecessors(vararg predecessors: Predecessor) {
         this.predecessors.addAll(predecessors)
         predecessors.forEach { pred -> pred.addSuccessors(this) }
