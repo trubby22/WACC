@@ -4,6 +4,7 @@ import ic.doc.group15.assembly.BranchLabel
 import ic.doc.group15.assembly.LibraryFunction
 import ic.doc.group15.assembly.LibraryFunction.Companion.MALLOC
 import ic.doc.group15.assembly.UtilFunction.*
+import ic.doc.group15.assembly.UtilFunction
 import ic.doc.group15.assembly.instruction.*
 import ic.doc.group15.assembly.instruction.ConditionCode.*
 import ic.doc.group15.assembly.operand.*
@@ -15,6 +16,9 @@ import ic.doc.group15.ssa.*
 import ic.doc.group15.ssa.cfg.CfgState
 import ic.doc.group15.ssa.optimisations.*
 import ic.doc.group15.ssa.tac.*
+import ic.doc.group15.type.ArrayType
+import ic.doc.group15.type.BasicType
+import ic.doc.group15.type.PairType
 import java.lang.IllegalArgumentException
 
 class TacAssemblyGenerator(
@@ -180,10 +184,127 @@ class TacAssemblyGenerator(
 
     @TranslatorMethod
     private fun translateAssignCall(node: TacAssignCall) {
+        val destReg = translateVar(node.dest)
+        when (node.f) {
+            Functions.BANG -> {
+                val arg = node.args[0]
+                val operand = translateOperand(arg)
+                if (operand is PseudoRegister) {
+                    addLines(Xor(destReg, operand, IntImmediateOperand(1)))
+                } else {
+                    translate(TacAssignValue(node.dest, arg))
+                    addLines(Xor(destReg, destReg, IntImmediateOperand(1)))
+                }
+            }
+            Functions.LEN -> {
+                val arg = node.args[0]
+                val operand = translateOperand(node.args[0])
+                if (operand is PseudoRegister) {
+                    addLines(LoadWord(destReg, ZeroOffset(operand)))
+                } else {
+                    translate(TacAssignValue(node.dest, arg))
+                    addLines(LoadWord(destReg, ZeroOffset(destReg)))
+                }
+            }
+            Functions.LSL -> {
+                val num = node.args[0]
+                val operand = translateOperand(num)
+                val bits = node.args[1]
+                assert(bits is IntImm)
+                if (operand is PseudoRegister) {
+                    addLines(Move(destReg, LogicalShiftLeft(operand, (bits as IntImm).value)))
+                } else {
+                    translate(TacAssignValue(node.dest, num))
+                    addLines(Move(destReg, LogicalShiftLeft(destReg, (bits as IntImm).value)))
+                }
+            }
+            Functions.ASR -> {
+                val num = node.args[0]
+                val operand = translateOperand(num)
+                val bits = node.args[1]
+                assert(bits is IntImm)
+                if (operand is PseudoRegister) {
+                    addLines(Move(destReg, ArithmeticShiftRight(operand, (bits as IntImm).value)))
+                } else {
+                    translate(TacAssignValue(node.dest, num))
+                    addLines(Move(destReg, ArithmeticShiftRight(destReg, (bits as IntImm).value)))
+                }
+            }
+            else -> {}
+        }
     }
 
     @TranslatorMethod
     private fun translateCall(node: TacCall) {
+        when (node.f) {
+            Functions.EXIT -> {
+                addLines(
+                    Move(R0, translateOperand(node.args[0])),
+                    BranchLink(LibraryFunction.EXIT)
+                )
+            }
+            Functions.RETURN -> {
+                addLines(Move(R0, translateOperand(node.args[0])))
+                // TODO unwind stack
+                addLines(Pop(ArmRegister.PC))
+            }
+            Functions.READ -> {
+                val targetReg = node.args[0]
+                val readFunc =
+                    if (targetReg.type() == BasicType.IntType) UtilFunction.P_READ_INT else UtilFunction.P_READ_CHAR
+                defineUtilFuncs(readFunc)
+                addLines(
+                    Move(R0, translateOperand(targetReg)),
+                    BranchLink(readFunc)
+                )
+            }
+            Functions.PRINT -> {
+                when (val type = node.args[0].type()) {
+                    BasicType.StringType -> {
+                        defineUtilFuncs(UtilFunction.P_PRINT_STRING)
+                        addLines(BranchLink(UtilFunction.P_PRINT_STRING))
+                    }
+                    BasicType.CharType -> {
+                        addLines(BranchLink(LibraryFunction.PUTCHAR))
+                    }
+                    BasicType.IntType -> {
+                        defineUtilFuncs(UtilFunction.P_PRINT_INT)
+                        addLines(BranchLink(UtilFunction.P_PRINT_INT))
+                    }
+                    BasicType.BoolType -> {
+                        defineUtilFuncs(UtilFunction.P_PRINT_BOOL)
+                        addLines(BranchLink(UtilFunction.P_PRINT_BOOL))
+                    }
+                    is PairType -> {
+                        defineUtilFuncs(UtilFunction.P_PRINT_REFERENCE)
+                        addLines(BranchLink(UtilFunction.P_PRINT_REFERENCE))
+                    }
+                    is ArrayType -> {
+                        if (type.elementType == BasicType.CharType) {
+                            defineUtilFuncs(UtilFunction.P_PRINT_STRING)
+                            addLines(BranchLink(UtilFunction.P_PRINT_STRING))
+                        } else {
+                            defineUtilFuncs(UtilFunction.P_PRINT_REFERENCE)
+                            addLines(BranchLink(UtilFunction.P_PRINT_REFERENCE))
+                        }
+                    }
+                }
+            }
+            Functions.PRINTLN -> {
+                val printTAC = TacCall(Functions.PRINT, node.args[0])
+                translate(printTAC)
+                defineUtilFuncs(UtilFunction.P_PRINT_LN)
+                addLines(BranchLink(UtilFunction.P_PRINT_LN))
+            }
+            Functions.FREE -> {
+                defineUtilFuncs(UtilFunction.P_FREE_PAIR)
+                addLines(
+                    Move(R0, translateOperand(node.args[0])),
+                    BranchLink(UtilFunction.P_FREE_PAIR)
+                )
+            }
+            else -> {}
+        }
     }
 
     @TranslatorMethod
@@ -195,9 +316,7 @@ class TacAssemblyGenerator(
         val label = blockToLabelMap.computeIfAbsent(node.block) {
             translateBasicBlock(it)
         }
-        addLines(
-            Branch(BranchLabelOperand(label))
-        )
+        addLines(Branch(BranchLabelOperand(label)))
     }
 
     @TranslatorMethod
