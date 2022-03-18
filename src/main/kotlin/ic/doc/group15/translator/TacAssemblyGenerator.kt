@@ -309,13 +309,37 @@ class TacAssemblyGenerator(
 
     @TranslatorMethod
     private fun translateBranchIf(node: TacBranchIf) {
+        // CMP resultReg, 1
+        // BEQ loop
+        // short circuiting
+        val currBlock = currentLabel
+        val label = blockToLabelMap.computeIfAbsent(node.block) {
+            translateBasicBlock(it)
+        }
+        currentLabel = currBlock
+
+        if (node.cond is BoolImm) {
+            if (node.cond.value) {
+                addLines(Branch(BranchLabelOperand(label)))
+            }
+            // otherwise dont add instruction at all
+        } else {
+            val condReg = translateVar(node.cond as TacVar)
+
+            addLines(
+                Compare(condReg, IntImmediateOperand(1)),
+                Branch(EQ, BranchLabelOperand(label))
+            )
+        }
     }
 
     @TranslatorMethod
     private fun translateBranch(node: TacBranch) {
+        val currBlock = currentLabel
         val label = blockToLabelMap.computeIfAbsent(node.block) {
             translateBasicBlock(it)
         }
+        currentLabel = currBlock
         addLines(Branch(BranchLabelOperand(label)))
     }
 
