@@ -4,7 +4,7 @@ for (int i = 0; i < 10; i++)
 do
 if endLoop
 then
-break
+break loop
 else
 skip
 fi

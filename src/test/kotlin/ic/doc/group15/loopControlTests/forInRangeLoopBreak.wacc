@@ -4,7 +4,7 @@ for i in range 10
 do
 if endLoop
 then
-break
+break loop
 else
 skip
 fi

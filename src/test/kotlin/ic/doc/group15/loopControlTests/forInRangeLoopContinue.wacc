@@ -4,7 +4,7 @@ for i in range 10
 do
 if fastForward
 then
-continue
+continue loop
 else
 skip
 fi

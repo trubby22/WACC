@@ -5,7 +5,7 @@ while i < 10
 do
 if fastForward
 then
-continue
+continue loop
 else
 skip
 fi;
