@@ -2,7 +2,7 @@ package ic.doc.group15.ssa
 
 import ic.doc.group15.ast.*
 import ic.doc.group15.ssa.tac.ThreeAddressCode
-import ic.doc.group15.ssa.tac.Var
+import ic.doc.group15.ssa.tac.TacVar
 
 /**
  * A function contains a list of basic blocks forming the control flow graph (CFG) for
@@ -15,7 +15,7 @@ class IRFunction(val funcAST: FunctionDeclarationAST) : SsaTranslatable {
     val basicBlocks = mutableListOf<BasicBlock>()
     val exitBlock = ExitBasicBlock()
 
-    lateinit var variableSet: Set<Var>
+    lateinit var variableSet: Set<TacVar>
 
     override fun toString(): String {
         return funcAST.funcName

@@ -4,11 +4,29 @@ import ic.doc.group15.type.BasicType
 import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.Type
 
-sealed interface Operand {
+sealed interface TacOperand {
     fun type(): Type
 }
 
-interface Imm : Operand
+interface Imm : TacOperand
+
+data class IntImm(val value: Int) : Imm {
+    override fun type(): Type = IntType
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as IntImm
+
+        if (value != other.value) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return value
+    }
+}
 
 data class CharImm(val value: Char) : Imm {
     override fun type(): Type = CharType
@@ -17,6 +35,24 @@ data class CharImm(val value: Char) : Imm {
         if (javaClass != other?.javaClass) return false
 
         other as CharImm
+
+        if (value != other.value) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
+    }
+}
+
+data class BoolImm(val value: Boolean) : Imm {
+    override fun type(): Type = BoolType
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as BoolImm
 
         if (value != other.value) return false
 
@@ -46,46 +82,10 @@ data class StrImm(val value: String) : Imm {
     }
 }
 
-data class IntImm(val value: Int) : Imm {
-    override fun type(): Type = IntType
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as IntImm
-
-        if (value != other.value) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return value
-    }
-}
-
-data class BoolImm(val value: Boolean) : Imm {
-    override fun type(): Type = BoolType
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as BoolImm
-
-        if (value != other.value) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        return value.hashCode()
-    }
-}
-
-data class Var(
+data class TacVar(
     val id: Int,
     val type: Type
-) : Operand {
+) : TacOperand {
     // Can store WORD sized value by default, but can also be BYTE: check
     // assignment for actual type
     override fun type(): Type = type
@@ -93,7 +93,7 @@ data class Var(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as Var
+        other as TacVar
 
         if (id != other.id) return false
         if (type != other.type) return false

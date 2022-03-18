@@ -130,7 +130,7 @@ class CfgGenerator(
         val resultReg = cfgState.resultRegister
 
         // add branch instruction to entry block
-        val branchIfInst = BranchIf(resultReg, thenBlock)
+        val branchIfInst = TacBranchIf(resultReg, thenBlock)
         cfgState.currentBlock.addInstructions(branchIfInst)
 
         // construct then block
@@ -150,7 +150,7 @@ class CfgGenerator(
         }
 
         // Add unconditional branch statement to condition block
-        val branchInst = Branch(exitBlock)
+        val branchInst = TacBranch(exitBlock)
         cfgState.currentBlock.addInstructions(branchInst)
 
         // set current block as exit block
@@ -193,7 +193,7 @@ class CfgGenerator(
         val resultReg = cfgState.resultRegister
 
         // Branch to exit block if boolean condition is false
-        val branchIfInst = BranchIf(resultReg, exitBlock)
+        val branchIfInst = TacBranchIf(resultReg, exitBlock)
         cfgState.currentBlock.addInstructions(branchIfInst)
 
         // Add successors to current block for CFG analysis
@@ -208,7 +208,7 @@ class CfgGenerator(
         }
 
         // Add unconditional branch statement to condition block
-        val branchInst = Branch(condBlock)
+        val branchInst = TacBranch(condBlock)
         cfgState.currentBlock.addInstructions(branchInst)
 
         // set current block as exit block
@@ -234,7 +234,7 @@ class CfgGenerator(
 
     @TranslatorMethod
     private fun translateFunctionCall(node: CallAST, cfgState: CfgState) {
-        val paramRegs = mutableListOf<Operand>()
+        val paramRegs = mutableListOf<TacOperand>()
         for (arg in node.actuals) {
             translate(arg, cfgState)
             // Store the result for each param to a list
@@ -244,7 +244,7 @@ class CfgGenerator(
         val type = node.funcIdent.returnType
         val f = CustomFunc(node.funcName, type)
         val reg = cfgState.newVar(type)
-        val inst = AssignCall(reg, f, *paramRegs.toTypedArray())
+        val inst = TacAssignCall(reg, f, *paramRegs.toTypedArray())
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -274,7 +274,7 @@ class CfgGenerator(
         val v = (node.expr as VariableIdentifierAST).ident
         val addrReg = cfgState.varDefinedAt[v]!!
 
-        val inst = Call(Functions.FREE, addrReg)
+        val inst = TacCall(Functions.FREE, addrReg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -284,7 +284,7 @@ class CfgGenerator(
         translate(node.expr, cfgState)
         // Return value stored in latest register
         val resultReg = cfgState.resultRegister
-        val inst = Call(Functions.RETURN, resultReg)
+        val inst = TacCall(Functions.RETURN, resultReg)
         cfgState.currentBlock.addInstructions(inst)
 
         // set successor to function exit point
@@ -298,7 +298,7 @@ class CfgGenerator(
         translate(node.expr, cfgState)
         // Exit and return exit code stored in result register
         val resultReg = cfgState.resultRegister
-        val inst = Call(Functions.EXIT, resultReg)
+        val inst = TacCall(Functions.EXIT, resultReg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -308,7 +308,7 @@ class CfgGenerator(
 
         // Print value in register
         val reg = cfgState.resultRegister
-        val inst = Call(Functions.PRINT, reg)
+        val inst = TacCall(Functions.PRINT, reg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -318,7 +318,7 @@ class CfgGenerator(
 
         // Print value in register
         val resultReg = cfgState.resultRegister
-        val inst = Call(Functions.PRINTLN, resultReg)
+        val inst = TacCall(Functions.PRINTLN, resultReg)
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -336,7 +336,7 @@ class CfgGenerator(
         val reg = cfgState.resultRegister
 
         // Perform read instruction
-        val inst = Call(Functions.READ, reg)
+        val inst = TacCall(Functions.READ, reg)
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -345,7 +345,7 @@ class CfgGenerator(
     private fun translateNewPair(node: NewPairAST, cfgState: CfgState) {
         // Allocate memory for two addresses in pair construction
         val addrReg = cfgState.newVar(IntType)
-        val mallocInst = Allocate(addrReg, IntImm(2 * WORD))
+        val mallocInst = TacAllocate(addrReg, IntImm(2 * WORD))
         cfgState.currentBlock.addInstructions(mallocInst)
 
         listOf(node.fstExpr, node.sndExpr).forEachIndexed { index, expr ->
@@ -356,13 +356,13 @@ class CfgGenerator(
 
             // Allocate memory for each sub-expression and store expression value into memory
             val subAddrReg = cfgState.newVar(exprType)
-            val subMallocInst = Allocate(subAddrReg, IntImm(exprType.size()))
-            val storeValueInst = Store(subAddrReg, resultReg)
+            val subMallocInst = TacAllocate(subAddrReg, IntImm(exprType.size()))
+            val storeValueInst = TacStore(subAddrReg, resultReg)
 
             // Store address malloced for sub-expression into the base newpair address
             val baseAddrReg = cfgState.newVar(IntType)
-            val offsetInst = AssignBinOp(baseAddrReg, BinaryOp.PLUS, addrReg, IntImm(index * WORD))
-            val storeAddrInst = Store(baseAddrReg, subAddrReg)
+            val offsetInst = TacAssignBinOp(baseAddrReg, BinaryOp.PLUS, addrReg, IntImm(index * WORD))
+            val storeAddrInst = TacStore(baseAddrReg, subAddrReg)
 
             cfgState.currentBlock.addInstructions(
                 subMallocInst,
@@ -376,7 +376,7 @@ class CfgGenerator(
     @TranslatorMethod
     private fun translateIntLiteral(node: IntLiteralAST, cfgState: CfgState) {
         val reg = cfgState.newVar(IntType)
-        val inst = AssignValue(reg, IntImm(node.intValue))
+        val inst = TacAssignValue(reg, IntImm(node.intValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -384,7 +384,7 @@ class CfgGenerator(
     @TranslatorMethod
     private fun translateBoolLiteral(node: BoolLiteralAST, cfgState: CfgState) {
         val reg = cfgState.newVar(BoolType)
-        val inst = AssignValue(reg, BoolImm(node.boolValue))
+        val inst = TacAssignValue(reg, BoolImm(node.boolValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -392,7 +392,7 @@ class CfgGenerator(
     @TranslatorMethod
     private fun translateCharLiteral(node: CharLiteralAST, cfgState: CfgState) {
         val reg = cfgState.newVar(CharType)
-        val inst = AssignValue(reg, CharImm(node.charValue))
+        val inst = TacAssignValue(reg, CharImm(node.charValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -400,7 +400,7 @@ class CfgGenerator(
     @TranslatorMethod
     private fun translateStringLiteral(node: StringLiteralAST, cfgState: CfgState) {
         val reg = cfgState.newVar(StringType)
-        val inst = AssignValue(reg, StrImm(node.stringValue))
+        val inst = TacAssignValue(reg, StrImm(node.stringValue))
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -411,7 +411,7 @@ class CfgGenerator(
         val varReg = cfgState.varDefinedAt[v]!!
 
         val reg = cfgState.newVar(varReg.type)
-        val moveInst = AssignValue(reg, varReg)
+        val moveInst = TacAssignValue(reg, varReg)
 
         cfgState.currentBlock.addInstructions(moveInst)
     }
@@ -419,7 +419,7 @@ class CfgGenerator(
     @TranslatorMethod
     private fun translateNullPairLiteralAST(node: NullPairLiteralAST, cfgState: CfgState) {
         val reg = cfgState.newVar(IntType)
-        val inst = AssignValue(reg, IntImm(0))
+        val inst = TacAssignValue(reg, IntImm(0))
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -439,12 +439,12 @@ class CfgGenerator(
         // Allocate memory
         assert(node.type is ArrayType)
         val addrReg = cfgState.newVar(node.type)
-        val mallocInst = Allocate(addrReg, IntImm(mallocSize))
+        val mallocInst = TacAllocate(addrReg, IntImm(mallocSize))
 
         // First position used to store array length
         val lenReg = cfgState.newVar(IntType)
-        val passValInst = AssignValue(lenReg, IntImm(arrSize))
-        val storeLenInst = Store(lenReg, addrReg)
+        val passValInst = TacAssignValue(lenReg, IntImm(arrSize))
+        val storeLenInst = TacStore(lenReg, addrReg)
 
         // Add instructions
         cfgState.currentBlock.addInstructions(mallocInst, passValInst, storeLenInst)
@@ -458,8 +458,8 @@ class CfgGenerator(
 
             // Store value into array at corresponding position
             val offsetAddrReg = cfgState.newVar(IntType)
-            val offsetAddrInst = AssignBinOp(offsetAddrReg, BinaryOp.PLUS, addrReg, IntImm(offset))
-            val storeInst = Store(resultReg, offsetAddrReg)
+            val offsetAddrInst = TacAssignBinOp(offsetAddrReg, BinaryOp.PLUS, addrReg, IntImm(offset))
+            val storeInst = TacStore(resultReg, offsetAddrReg)
 
             // Add instructions
             cfgState.currentBlock.addInstructions(offsetAddrInst, storeInst)
@@ -477,7 +477,7 @@ class CfgGenerator(
 
         // Load value from address
         val valueReg = cfgState.newVar(node.elemType)
-        val loadInst = Load(valueReg, addrReg)
+        val loadInst = TacLoad(valueReg, addrReg)
 
         // Add instruction
         cfgState.currentBlock.addInstructions(loadInst)
@@ -500,7 +500,7 @@ class CfgGenerator(
 
         // Load the value in memory into variable
         val reg = cfgState.newVar(node.elemType)
-        val inst = Load(reg, addrReg)
+        val inst = TacLoad(reg, addrReg)
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -512,7 +512,7 @@ class CfgGenerator(
 
         // Load the value in memory into variable
         val reg = cfgState.newVar(node.elemType)
-        val inst = Load(reg, addrReg)
+        val inst = TacLoad(reg, addrReg)
 
         cfgState.currentBlock.addInstructions(inst)
     }
@@ -528,7 +528,7 @@ class CfgGenerator(
         val addrReg = cfgState.resultRegister
 
         // Add store instruction
-        val storeInst = Store(resultReg, addrReg)
+        val storeInst = TacStore(resultReg, addrReg)
         cfgState.currentBlock.addInstructions(storeInst)
     }
 
@@ -541,11 +541,11 @@ class CfgGenerator(
         val reg = cfgState.newVar(unOpExpr.expr.type)
 
         val inst = when (unOpExpr.operator) {
-            UnaryOp.BANG -> AssignCall(reg, Functions.BANG, resultReg)
-            UnaryOp.MINUS -> AssignValue(reg, resultReg)
-            UnaryOp.LEN -> AssignCall(reg, Functions.LEN, resultReg)
-            UnaryOp.ORD -> AssignCall(reg, Functions.ORD, resultReg)
-            UnaryOp.CHR -> AssignCall(reg, Functions.CHR, resultReg)
+            UnaryOp.BANG -> TacAssignCall(reg, Functions.BANG, resultReg)
+            UnaryOp.MINUS -> TacAssignValue(reg, resultReg)
+            UnaryOp.LEN -> TacAssignCall(reg, Functions.LEN, resultReg)
+            UnaryOp.ORD -> TacAssignCall(reg, Functions.ORD, resultReg)
+            UnaryOp.CHR -> TacAssignCall(reg, Functions.CHR, resultReg)
         }
 
         cfgState.currentBlock.addInstructions(inst)
@@ -564,7 +564,7 @@ class CfgGenerator(
         // Create a new variable to store the result of binary operation
         val reg = cfgState.newVar(op.returnType)
 
-        val inst = AssignBinOp(reg, op, x, y)
+        val inst = TacAssignBinOp(reg, op, x, y)
         cfgState.currentBlock.addInstructions(inst)
     }
 
@@ -578,7 +578,7 @@ class CfgGenerator(
         if (node is SndPairElemAST) {
             // Find the base address of second element of pair
             val secondElemAddrReg = cfgState.newVar(addrReg.type())
-            val addrInst = AssignBinOp(secondElemAddrReg, BinaryOp.PLUS, secondElemAddrReg, IntImm(WORD))
+            val addrInst = TacAssignBinOp(secondElemAddrReg, BinaryOp.PLUS, secondElemAddrReg, IntImm(WORD))
 
             cfgState.currentBlock.addInstructions(addrInst)
         }

@@ -1081,14 +1081,6 @@ class AstAssemblyGenerator(
 
     //region helpers
 
-    private fun addLines(vararg lines: Instruction) {
-        currentLabel.addLines(*lines)
-    }
-
-    private fun addLines(lines: Collection<Instruction>) {
-        currentLabel.addLines(lines)
-    }
-
     private fun transAssign(variable: Variable, currentScope: SymbolTable) {
         log("Calling transAssign")
         variableAction(variable, currentScope, store = true)

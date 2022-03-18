@@ -10,11 +10,11 @@ import kotlin.collections.ArrayDeque
 import kotlin.collections.set
 
 typealias Interval = Pair<Int, Int>
-data class LiveInterval(val v: Var, val interval: Interval)
+data class LiveInterval(val v: TacVar, val interval: Interval)
 
 data class LivenessResult(
-  val inOfVar: Map<ThreeAddressCode, Set<Var>>,
-  val outOfVar: Map<ThreeAddressCode, Set<Var>>,
+  val inOfVar: Map<ThreeAddressCode, Set<TacVar>>,
+  val outOfVar: Map<ThreeAddressCode, Set<TacVar>>,
   val predOfInst: Map<ThreeAddressCode, Set<ThreeAddressCode>>,
   val succOfInst: Map<ThreeAddressCode, Set<ThreeAddressCode>>
 )
@@ -28,8 +28,8 @@ data class RegAllocState(
 )
 
 data class RegAllocResult(
-  val regAssignment: Map<Var, Register>,
-  val stackAssignment: Map<Var, Int>
+  val regAssignment: Map<TacVar, Register>,
+  val stackAssignment: Map<TacVar, Int>
 )
 
 class LivenessAnalysis {
@@ -149,7 +149,7 @@ class LivenessAnalysis {
 
       // Initialise set of variables live on entry for each instruction
       val inOf = allInsts.associateBy({ it },
-        { emptySet<Var>() }).toMutableMap()
+        { emptySet<TacVar>() }).toMutableMap()
       // Initialise set of variables live on exit for each instruction
       val outOf = HashMap(inOf)
 
@@ -164,7 +164,7 @@ class LivenessAnalysis {
 
         // out[inst] := for all inst' in succ[inst], the result of union of in[inst']
         val newOut =
-          succOf[inst]!!.fold(emptySet<Var>()) { acc, elem -> acc union inOf[elem]!! }
+          succOf[inst]!!.fold(emptySet<TacVar>()) { acc, elem -> acc union inOf[elem]!! }
         outOf[inst] = newOut
 
         // in[inst] := use[inst] union (out[inst] - def[inst])
@@ -206,11 +206,11 @@ class LivenessAnalysis {
      * Compute the smallest subrange of the IR code containing all of
      * a variable's live ranges.
      */
-    fun computeLivenessIntervals(function: IRFunction): Map<Var, Interval> {
+    fun computeLivenessIntervals(function: IRFunction): Map<TacVar, Interval> {
       val (inOf, _, _, _) = apply(function)
 
       // Initialise interval of all variables
-      val intervals: MutableMap<Var, Interval> =
+      val intervals: MutableMap<TacVar, Interval> =
         function.variableSet.associateBy({ it },
           { Pair(Int.MAX_VALUE, Int.MIN_VALUE) }).toMutableMap()
 

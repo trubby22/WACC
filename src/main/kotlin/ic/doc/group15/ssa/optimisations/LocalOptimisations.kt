@@ -18,7 +18,7 @@ class OperationIdentity {
     companion object {
         fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
             // Unary functions
-            if (instruction is AssignCall) {
+            if (instruction is TacAssignCall) {
                 return when (instruction.f) {
                     Functions.BANG -> checkNotIdentity(instruction)
                     else -> instruction
@@ -26,7 +26,7 @@ class OperationIdentity {
             }
 
             // Skip if it is not a binary operation
-            if (instruction !is AssignBinOp) return instruction
+            if (instruction !is TacAssignBinOp) return instruction
 
             val (_, op, _, _) = instruction
 
@@ -43,176 +43,176 @@ class OperationIdentity {
             }
         }
 
-        private fun checkAdditionIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkAdditionIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             // v = 0 + a => v = a
-            if (lhs is IntImm && lhs.value == 0) return AssignValue(v, rhs)
+            if (lhs is IntImm && lhs.value == 0) return TacAssignValue(v, rhs)
 
             // v = a + 0 => v = a
-            if (rhs is IntImm && rhs.value == 0) return AssignValue(v, lhs)
+            if (rhs is IntImm && rhs.value == 0) return TacAssignValue(v, lhs)
 
             return instruction
         }
 
-        private fun checkSubtractionIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkSubtractionIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             // v = a - 0 => v = a
-            if (rhs is IntImm && rhs.value == 0) return AssignValue(v, lhs)
+            if (rhs is IntImm && rhs.value == 0) return TacAssignValue(v, lhs)
 
             // v = 0 - a => v = -a
-            if (lhs is IntImm && rhs is IntImm && lhs.value == 0) return AssignValue(v, IntImm(-rhs.value))
+            if (lhs is IntImm && rhs is IntImm && lhs.value == 0) return TacAssignValue(v, IntImm(-rhs.value))
 
             // v = a - a => v = 0
-            if (lhs is Var && rhs is Var && lhs.id == rhs.id) return AssignValue(v, IntImm(0))
+            if (lhs is TacVar && rhs is TacVar && lhs.id == rhs.id) return TacAssignValue(v, IntImm(0))
 
             return instruction
         }
 
-        private fun checkMultiplicationIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkMultiplicationIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             // v = 1 * a => v = a
             if (lhs is IntImm) {
                 // v = 1 * a => v = a
-                if (lhs.value == 1) return AssignValue(v, rhs)
+                if (lhs.value == 1) return TacAssignValue(v, rhs)
 
                 // v = 0 * a => v = 0
-                if (lhs.value == 0) return AssignValue(v, IntImm(0))
+                if (lhs.value == 0) return TacAssignValue(v, IntImm(0))
 
                 // v = -1 * a => v = -a
-                if (rhs is IntImm && lhs.value == -1) return AssignValue(v, IntImm(-rhs.value))
+                if (rhs is IntImm && lhs.value == -1) return TacAssignValue(v, IntImm(-rhs.value))
             }
 
             if (rhs is IntImm) {
                 // v = a * 1 => v = a
-                if (rhs.value == 1) return AssignValue(v, lhs)
+                if (rhs.value == 1) return TacAssignValue(v, lhs)
 
                 // v = a * 0 => v = 0
-                if (rhs.value == 0) return AssignValue(v, IntImm(0))
+                if (rhs.value == 0) return TacAssignValue(v, IntImm(0))
 
                 // v = a * -1 => v = -a
-                if (lhs is IntImm && rhs.value == -1) return AssignValue(v, IntImm(-lhs.value))
+                if (lhs is IntImm && rhs.value == -1) return TacAssignValue(v, IntImm(-lhs.value))
             }
 
             return instruction
         }
 
-        private fun checkDivisionIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkDivisionIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             if (rhs is IntImm) {
                 // v = a / 1 => v = a
-                if (rhs.value == 1) return AssignValue(v, lhs)
+                if (rhs.value == 1) return TacAssignValue(v, lhs)
 
                 // v = a / -1 => v = -a
-                if (lhs is IntImm && rhs.value == -1) return AssignValue(v, IntImm(-lhs.value))
+                if (lhs is IntImm && rhs.value == -1) return TacAssignValue(v, IntImm(-lhs.value))
             }
 
             return instruction
         }
 
-        private fun checkEqualsIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkEqualsIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             if (lhs is IntImm && rhs is IntImm) {
-                return AssignValue(v, BoolImm(lhs.value == rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value == rhs.value))
             }
 
             if (lhs is CharImm && rhs is CharImm) {
-                return AssignValue(v, BoolImm(lhs.value == rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value == rhs.value))
             }
 
             if (lhs is BoolImm && rhs is BoolImm) {
-                return AssignValue(v, BoolImm(lhs.value == rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value == rhs.value))
             }
 
             if (lhs is StrImm && rhs is StrImm) {
-                return AssignValue(v, BoolImm(lhs.value == rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value == rhs.value))
             }
 
-            if (lhs is Var && rhs is Var) {
-                return AssignValue(v, BoolImm(lhs.id == rhs.id))
+            if (lhs is TacVar && rhs is TacVar) {
+                return TacAssignValue(v, BoolImm(lhs.id == rhs.id))
             }
 
             return instruction
         }
 
-        private fun checkNotEqualsIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkNotEqualsIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             if (lhs is IntImm && rhs is IntImm) {
-                return AssignValue(v, BoolImm(lhs.value != rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value != rhs.value))
             }
 
             if (lhs is CharImm && rhs is CharImm) {
-                return AssignValue(v, BoolImm(lhs.value != rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value != rhs.value))
             }
 
             if (lhs is BoolImm && rhs is BoolImm) {
-                return AssignValue(v, BoolImm(lhs.value != rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value != rhs.value))
             }
 
             if (lhs is StrImm && rhs is StrImm) {
-                return AssignValue(v, BoolImm(lhs.value == rhs.value))
+                return TacAssignValue(v, BoolImm(lhs.value == rhs.value))
             }
 
-            if (lhs is Var && rhs is Var) {
-                return AssignValue(v, BoolImm(lhs.id != rhs.id))
+            if (lhs is TacVar && rhs is TacVar) {
+                return TacAssignValue(v, BoolImm(lhs.id != rhs.id))
             }
 
             return instruction
         }
 
-        private fun checkAndIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkAndIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             // v = (true && a) => v = a
-            if (lhs is BoolImm && lhs.value) return AssignValue(v, rhs)
+            if (lhs is BoolImm && lhs.value) return TacAssignValue(v, rhs)
 
             // v = (false && a) => v = false
-            if (lhs is BoolImm && !lhs.value) return AssignValue(v, BoolImm(false))
+            if (lhs is BoolImm && !lhs.value) return TacAssignValue(v, BoolImm(false))
 
             // v = (a && true) => v = a
-            if (rhs is BoolImm && rhs.value) return AssignValue(v, rhs)
+            if (rhs is BoolImm && rhs.value) return TacAssignValue(v, rhs)
 
             // v = (a && false) => v = false
-            if (rhs is BoolImm && !rhs.value) return AssignValue(v, BoolImm(false))
+            if (rhs is BoolImm && !rhs.value) return TacAssignValue(v, BoolImm(false))
 
             // v = (a && a) => v = a
-            if (lhs is Var && rhs is Var && lhs.id == rhs.id) return AssignValue(v, lhs)
+            if (lhs is TacVar && rhs is TacVar && lhs.id == rhs.id) return TacAssignValue(v, lhs)
 
             return instruction
         }
 
-        private fun checkOrIdentity(instruction: AssignBinOp): ThreeAddressCode {
+        private fun checkOrIdentity(instruction: TacAssignBinOp): ThreeAddressCode {
             val (v, _, lhs, rhs) = instruction
 
             // v = (true || a) => v = true
-            if (lhs is BoolImm && lhs.value) return AssignValue(v, BoolImm(true))
+            if (lhs is BoolImm && lhs.value) return TacAssignValue(v, BoolImm(true))
 
             // v = (false || a) => v = a
-            if (lhs is BoolImm && !lhs.value) return AssignValue(v, rhs)
+            if (lhs is BoolImm && !lhs.value) return TacAssignValue(v, rhs)
 
             // v = (a || true) => v = true
-            if (rhs is BoolImm && rhs.value) return AssignValue(v, BoolImm(true))
+            if (rhs is BoolImm && rhs.value) return TacAssignValue(v, BoolImm(true))
 
             // v = (a || false) => v = a
-            if (rhs is BoolImm && !rhs.value) return AssignValue(v, lhs)
+            if (rhs is BoolImm && !rhs.value) return TacAssignValue(v, lhs)
 
             // v = (a || a) => v = a
-            if (lhs is Var && rhs is Var && lhs.id == rhs.id) return AssignValue(v, lhs)
+            if (lhs is TacVar && rhs is TacVar && lhs.id == rhs.id) return TacAssignValue(v, lhs)
 
             return instruction
         }
 
-        private fun checkNotIdentity(instruction: AssignCall): ThreeAddressCode {
+        private fun checkNotIdentity(instruction: TacAssignCall): ThreeAddressCode {
             assert(instruction.args.size == 1)
             val arg = instruction.args[0]
 
             if (arg is BoolImm) {
-                return AssignValue(instruction.reg, BoolImm(!arg.value))
+                return TacAssignValue(instruction.dest, BoolImm(!arg.value))
             }
 
             return instruction
@@ -228,7 +228,7 @@ class ConstantFolding {
     companion object {
         fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
             // Unary functions
-            if (instruction is AssignCall) {
+            if (instruction is TacAssignCall) {
                 return when (instruction.f) {
                     Functions.CHR -> foldChr(instruction)
                     Functions.ORD -> foldOrd(instruction)
@@ -237,43 +237,43 @@ class ConstantFolding {
             }
 
             // Skip if it is not a binary operation
-            if (instruction !is AssignBinOp) return instruction
+            if (instruction !is TacAssignBinOp) return instruction
 
             val (v, op, lhs, rhs) = instruction
 
             if (lhs is IntImm && rhs is IntImm) {
                 return when (op) {
-                    BinaryOp.MULT -> AssignValue(v, IntImm(lhs.value * rhs.value))
-                    BinaryOp.DIV -> AssignValue(v, IntImm(lhs.value / rhs.value))
-                    BinaryOp.MOD -> AssignValue(v, IntImm(lhs.value % rhs.value))
-                    BinaryOp.PLUS -> AssignValue(v, IntImm(lhs.value + rhs.value))
-                    BinaryOp.MINUS -> AssignValue(v, IntImm(lhs.value - rhs.value))
-                    BinaryOp.GT -> AssignValue(v, BoolImm(lhs.value > rhs.value))
-                    BinaryOp.GTE -> AssignValue(v, BoolImm(lhs.value >= rhs.value))
-                    BinaryOp.LT -> AssignValue(v, BoolImm(lhs.value < rhs.value))
-                    BinaryOp.LTE -> AssignValue(v, BoolImm(lhs.value <= rhs.value))
-                    BinaryOp.EQUALS -> AssignValue(v, BoolImm(lhs.value == rhs.value))
-                    BinaryOp.NOT_EQUALS -> AssignValue(v, BoolImm(lhs.value != rhs.value))
+                    BinaryOp.MULT -> TacAssignValue(v, IntImm(lhs.value * rhs.value))
+                    BinaryOp.DIV -> TacAssignValue(v, IntImm(lhs.value / rhs.value))
+                    BinaryOp.MOD -> TacAssignValue(v, IntImm(lhs.value % rhs.value))
+                    BinaryOp.PLUS -> TacAssignValue(v, IntImm(lhs.value + rhs.value))
+                    BinaryOp.MINUS -> TacAssignValue(v, IntImm(lhs.value - rhs.value))
+                    BinaryOp.GT -> TacAssignValue(v, BoolImm(lhs.value > rhs.value))
+                    BinaryOp.GTE -> TacAssignValue(v, BoolImm(lhs.value >= rhs.value))
+                    BinaryOp.LT -> TacAssignValue(v, BoolImm(lhs.value < rhs.value))
+                    BinaryOp.LTE -> TacAssignValue(v, BoolImm(lhs.value <= rhs.value))
+                    BinaryOp.EQUALS -> TacAssignValue(v, BoolImm(lhs.value == rhs.value))
+                    BinaryOp.NOT_EQUALS -> TacAssignValue(v, BoolImm(lhs.value != rhs.value))
                     else -> instruction
                 }
             }
 
             if (lhs is CharImm && rhs is CharImm) {
                 return when (op) {
-                    BinaryOp.GT -> AssignValue(v, BoolImm(lhs.value > rhs.value))
-                    BinaryOp.GTE -> AssignValue(v, BoolImm(lhs.value >= rhs.value))
-                    BinaryOp.LT -> AssignValue(v, BoolImm(lhs.value < rhs.value))
-                    BinaryOp.LTE -> AssignValue(v, BoolImm(lhs.value <= rhs.value))
-                    BinaryOp.EQUALS -> AssignValue(v, BoolImm(lhs.value == rhs.value))
-                    BinaryOp.NOT_EQUALS -> AssignValue(v, BoolImm(lhs.value != rhs.value))
+                    BinaryOp.GT -> TacAssignValue(v, BoolImm(lhs.value > rhs.value))
+                    BinaryOp.GTE -> TacAssignValue(v, BoolImm(lhs.value >= rhs.value))
+                    BinaryOp.LT -> TacAssignValue(v, BoolImm(lhs.value < rhs.value))
+                    BinaryOp.LTE -> TacAssignValue(v, BoolImm(lhs.value <= rhs.value))
+                    BinaryOp.EQUALS -> TacAssignValue(v, BoolImm(lhs.value == rhs.value))
+                    BinaryOp.NOT_EQUALS -> TacAssignValue(v, BoolImm(lhs.value != rhs.value))
                     else -> instruction
                 }
             }
 
             if (lhs is BoolImm && rhs is BoolImm) {
                 return when (op) {
-                    BinaryOp.AND -> AssignValue(v, BoolImm(lhs.value && rhs.value))
-                    BinaryOp.OR -> AssignValue(v, BoolImm(lhs.value || rhs.value))
+                    BinaryOp.AND -> TacAssignValue(v, BoolImm(lhs.value && rhs.value))
+                    BinaryOp.OR -> TacAssignValue(v, BoolImm(lhs.value || rhs.value))
                     else -> instruction
                 }
             }
@@ -281,20 +281,20 @@ class ConstantFolding {
             return instruction
         }
 
-        private fun foldChr(instruction: AssignCall): ThreeAddressCode {
+        private fun foldChr(instruction: TacAssignCall): ThreeAddressCode {
             assert(instruction.args.size == 1)
             val arg = instruction.args[0]
 
-            if (arg is IntImm) return AssignValue(instruction.reg, CharImm(arg.value.toChar()))
+            if (arg is IntImm) return TacAssignValue(instruction.dest, CharImm(arg.value.toChar()))
 
             return instruction
         }
 
-        private fun foldOrd(instruction: AssignCall): ThreeAddressCode {
+        private fun foldOrd(instruction: TacAssignCall): ThreeAddressCode {
             assert(instruction.args.size == 1)
             val arg = instruction.args[0]
 
-            if (arg is CharImm) return AssignValue(instruction.reg, IntImm(arg.value.code))
+            if (arg is CharImm) return TacAssignValue(instruction.dest, IntImm(arg.value.code))
 
             return instruction
         }
@@ -305,30 +305,30 @@ class OperatorStrengthReduction {
     companion object {
         fun apply(instruction: ThreeAddressCode): ThreeAddressCode {
             // Skip if it is not a binary operation
-            if (instruction !is AssignBinOp) return instruction
+            if (instruction !is TacAssignBinOp) return instruction
 
             val (v, op, lhs, rhs) = instruction
 
             if (op == BinaryOp.MULT) {
                 if (lhs is IntImm) {
                     // (v = 2 * a) => v = a + a
-                    if (lhs.value == 2) return AssignBinOp(v, BinaryOp.PLUS, rhs, rhs)
+                    if (lhs.value == 2) return TacAssignBinOp(v, BinaryOp.PLUS, rhs, rhs)
 
                     // v = (constant multiple of 2) * a => v = a << n
                     if (isPowerOfTwo(lhs.value)) {
                         val pow = getExponentOfBaseTwo(lhs.value)
-                        return AssignCall(v, Functions.LSL, rhs, IntImm(pow))
+                        return TacAssignCall(v, Functions.LSL, rhs, IntImm(pow))
                     }
                 }
 
                 // (v = a * 2) => v = a + a
                 if (rhs is IntImm) {
-                    if (rhs.value == 2) return AssignBinOp(v, BinaryOp.PLUS, lhs, lhs)
+                    if (rhs.value == 2) return TacAssignBinOp(v, BinaryOp.PLUS, lhs, lhs)
 
                     // v = (constant multiple of 2) * a => v = a << n
                     if (isPowerOfTwo(rhs.value)) {
                         val pow = getExponentOfBaseTwo(rhs.value)
-                        return AssignCall(v, Functions.LSL, lhs, IntImm(pow))
+                        return TacAssignCall(v, Functions.LSL, lhs, IntImm(pow))
                     }
                 }
             }
@@ -338,7 +338,7 @@ class OperatorStrengthReduction {
                     // v = a / (constant multiple of 2) => v = a >> n
                     if (isPowerOfTwo(rhs.value)) {
                         val pow = getExponentOfBaseTwo(rhs.value)
-                        return AssignCall(v, Functions.ASR, lhs, IntImm(pow))
+                        return TacAssignCall(v, Functions.ASR, lhs, IntImm(pow))
                     }
                 }
             }
@@ -363,21 +363,21 @@ class LocalConstantPropagation {
     companion object {
         fun apply(instructions: List<ThreeAddressCode>): List<ThreeAddressCode> {
             // Store a mapping of variables to immediate values
-            val assignedMemo = mutableMapOf<Var, Imm>()
+            val assignedMemo = mutableMapOf<TacVar, Imm>()
             val simplifiedInstructions = mutableListOf<ThreeAddressCode>()
 
             for (inst in instructions) {
                 // Check if operands of an instruction are defined and substitute if so,
                 // while updating the variable in assignedMemo
                 val simplifiedInst = when (inst) {
-                    is AssignBinOp -> propagateBinOp(inst, assignedMemo)
-                    is Allocate -> propagateAlloc(inst, assignedMemo)
-                    is AssignCall -> propagateAssignCall(inst, assignedMemo)
-                    is AssignValue -> propagateAssignValue(inst, assignedMemo)
-                    is BranchIf -> propagateBranchIf(inst, assignedMemo)
-                    is Call -> propagateCall(inst, assignedMemo)
-                    is Load -> propagateLoad(inst, assignedMemo)
-                    is Store -> propagateStore(inst, assignedMemo)
+                    is TacAssignBinOp -> propagateBinOp(inst, assignedMemo)
+                    is TacAllocate -> propagateAlloc(inst, assignedMemo)
+                    is TacAssignCall -> propagateAssignCall(inst, assignedMemo)
+                    is TacAssignValue -> propagateAssignValue(inst, assignedMemo)
+                    is TacBranchIf -> propagateBranchIf(inst, assignedMemo)
+                    is TacCall -> propagateCall(inst, assignedMemo)
+                    is TacLoad -> propagateLoad(inst, assignedMemo)
+                    is TacStore -> propagateStore(inst, assignedMemo)
                     else -> inst
                 }
 
@@ -389,97 +389,97 @@ class LocalConstantPropagation {
         }
 
         private fun propagateBinOp(
-            instruction: AssignBinOp,
-            assignedMemo: Map<Var, Imm>
+            instruction: TacAssignBinOp,
+            assignedMemo: Map<TacVar, Imm>
         ): ThreeAddressCode {
             var (v, op, lhs, rhs) = instruction
 
             // Pattern match LHS
-            if (lhs is Var && assignedMemo[lhs] is Imm) {
+            if (lhs is TacVar && assignedMemo[lhs] is Imm) {
                 lhs = assignedMemo[lhs] as Imm
             }
 
             // Pattern match RHS
-            if (rhs is Var && assignedMemo[rhs] is Imm) {
+            if (rhs is TacVar && assignedMemo[rhs] is Imm) {
                 rhs = assignedMemo[rhs] as Imm
             }
 
-            return AssignBinOp(v, op, lhs, rhs)
+            return TacAssignBinOp(v, op, lhs, rhs)
         }
 
-        private fun propagateAlloc(instruction: Allocate, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+        private fun propagateAlloc(instruction: TacAllocate, assignedMemo: Map<TacVar, Imm>): ThreeAddressCode {
             var (v, amount) = instruction
 
-            if (amount is Var && assignedMemo[amount] is Imm) {
+            if (amount is TacVar && assignedMemo[amount] is Imm) {
                 amount = assignedMemo[amount] as Imm
             }
 
-            return Allocate(v, amount)
+            return TacAllocate(v, amount)
         }
 
         private fun propagateAssignCall(
-            instruction: AssignCall,
-            assignedMemo: Map<Var, Imm>
+            instruction: TacAssignCall,
+            assignedMemo: Map<TacVar, Imm>
         ): ThreeAddressCode {
-            val simplifiedArgs = mutableListOf<Operand>()
+            val simplifiedArgs = mutableListOf<TacOperand>()
 
             for (arg in instruction.args) {
-                if (arg is Var && assignedMemo[arg] is Imm) {
+                if (arg is TacVar && assignedMemo[arg] is Imm) {
                     simplifiedArgs.add(assignedMemo[arg] as Imm)
                 } else {
                     simplifiedArgs.add(arg)
                 }
             }
 
-            return AssignCall(instruction.reg, instruction.f, *simplifiedArgs.toTypedArray())
+            return TacAssignCall(instruction.dest, instruction.f, *simplifiedArgs.toTypedArray())
         }
 
-        private fun propagateAssignValue(instruction: AssignValue, assignedMemo: MutableMap<Var, Imm>): ThreeAddressCode {
+        private fun propagateAssignValue(instruction: TacAssignValue, assignedMemo: MutableMap<TacVar, Imm>): ThreeAddressCode {
             val (reg, value) = instruction
             if (value is Imm) assignedMemo[reg] = value
             return instruction
         }
 
-        private fun propagateBranchIf(instruction: BranchIf, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+        private fun propagateBranchIf(instruction: TacBranchIf, assignedMemo: Map<TacVar, Imm>): ThreeAddressCode {
             var (cond, block) = instruction
-            if (cond is Var && assignedMemo[cond] is BoolImm) {
+            if (cond is TacVar && assignedMemo[cond] is BoolImm) {
                 cond = assignedMemo[cond] as BoolImm
             }
-            return BranchIf(cond, block)
+            return TacBranchIf(cond, block)
         }
 
-        private fun propagateCall(instruction: Call, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
-            val simplifiedArgs = mutableListOf<Operand>()
+        private fun propagateCall(instruction: TacCall, assignedMemo: Map<TacVar, Imm>): ThreeAddressCode {
+            val simplifiedArgs = mutableListOf<TacOperand>()
 
             for (arg in instruction.args) {
-                if (arg is Var && assignedMemo[arg] is Imm) {
+                if (arg is TacVar && assignedMemo[arg] is Imm) {
                     simplifiedArgs.add(assignedMemo[arg] as Imm)
                 } else {
                     simplifiedArgs.add(arg)
                 }
             }
 
-            return Call(instruction.f, *simplifiedArgs.toTypedArray())
+            return TacCall(instruction.f, *simplifiedArgs.toTypedArray())
         }
 
-        private fun propagateLoad(instruction: Load, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+        private fun propagateLoad(instruction: TacLoad, assignedMemo: Map<TacVar, Imm>): ThreeAddressCode {
             var (v, addr) = instruction
 
-            if (addr is Var && assignedMemo[addr] is Imm) {
+            if (addr is TacVar && assignedMemo[addr] is Imm) {
                 addr = assignedMemo[addr] as Imm
             }
 
-            return Load(v, addr)
+            return TacLoad(v, addr)
         }
 
-        private fun propagateStore(instruction: Store, assignedMemo: Map<Var, Imm>): ThreeAddressCode {
+        private fun propagateStore(instruction: TacStore, assignedMemo: Map<TacVar, Imm>): ThreeAddressCode {
             var (v, addr) = instruction
 
-            if (addr is Var && assignedMemo[addr] is Imm) {
+            if (addr is TacVar && assignedMemo[addr] is Imm) {
                 addr = assignedMemo[addr] as Imm
             }
 
-            return Store(v, addr)
+            return TacStore(v, addr)
         }
     }
 }
@@ -493,7 +493,7 @@ class RemoveRedundantAssignments {
             val simplifiedInstructions = mutableListOf<ThreeAddressCode>()
 
             for (inst in instructions) {
-                if (inst is AssignValue) {
+                if (inst is TacAssignValue) {
                     val (reg, value) = inst
                     if (reg == value) continue
                 }
@@ -529,57 +529,57 @@ class RemoveTemporaries {
                 // Current instruction
                 val curr = it.next()
 
-                if (curr is AssignValue) {
+                if (curr is TacAssignValue) {
                     val (v, t) = curr
                     when (prev) {
-                        is Allocate -> {
+                        is TacAllocate -> {
                             val (reg, amount) = prev
                             if (reg == t) {
-                                val combineInst = Allocate(v, amount)
+                                val combineInst = TacAllocate(v, amount)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
                                 it.previous()
                             }
                         }
-                        is AssignBinOp -> {
+                        is TacAssignBinOp -> {
                             val (reg, op, lhs, rhs) = prev
                             if (reg == t) {
-                                val combineInst = AssignBinOp(v, op, lhs, rhs)
+                                val combineInst = TacAssignBinOp(v, op, lhs, rhs)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
                                 it.previous()
                             }
                         }
-                        is AssignCall -> {
-                            if (prev.reg == t) {
-                                val combineInst = AssignCall(v, prev.f, *prev.args)
+                        is TacAssignCall -> {
+                            if (prev.dest == t) {
+                                val combineInst = TacAssignCall(v, prev.f, *prev.args)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
                                 it.previous()
                             }
                         }
-                        is AssignValue -> {
+                        is TacAssignValue -> {
                             val (reg, value) = prev
                             if (reg == t) {
-                                val combineInst = AssignValue(v, value)
+                                val combineInst = TacAssignValue(v, value)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
                                 it.previous()
                             }
                         }
-                        is Load -> {
+                        is TacLoad -> {
                             val (reg, value) = prev
                             if (reg == t) {
-                                val combineInst = Load(v, value)
+                                val combineInst = TacLoad(v, value)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
                                 it.previous()
                             }
                         }
-                        is Store -> {
+                        is TacStore -> {
                             val (from, to) = prev
                             if (to == t) {
-                                val combineInst = Load(from, v)
+                                val combineInst = TacLoad(from, v)
                                 removeLastTwoElements(it)
                                 it.add(combineInst)
                                 it.previous()
@@ -605,26 +605,26 @@ class RemoveTemporaries {
 }
 
 fun main() {
-    val var1 = Var(1, BasicType.IntType)
-    val var2 = Var(2, BasicType.IntType)
-    val var3 = Var(3, BasicType.IntType)
-    val var4 = Var(4, BasicType.IntType)
-    val var5 = Var(5, BasicType.IntType)
-    val var6 = Var(6, BasicType.IntType)
+    val var1 = TacVar(1, BasicType.IntType)
+    val var2 = TacVar(2, BasicType.IntType)
+    val var3 = TacVar(3, BasicType.IntType)
+    val var4 = TacVar(4, BasicType.IntType)
+    val var5 = TacVar(5, BasicType.IntType)
+    val var6 = TacVar(6, BasicType.IntType)
     val instructions = listOf(
-        AssignBinOp(var1, BinaryOp.PLUS, IntImm(1), IntImm(1)),
-        AssignValue(var2, var1),
-        AssignValue(var3, var2),
-        AssignValue(var4, var3),
-        AssignBinOp(var5, BinaryOp.PLUS, IntImm(1), IntImm(1)),
-        AssignValue(var6, var5)
+        TacAssignBinOp(var1, BinaryOp.PLUS, IntImm(1), IntImm(1)),
+        TacAssignValue(var2, var1),
+        TacAssignValue(var3, var2),
+        TacAssignValue(var4, var3),
+        TacAssignBinOp(var5, BinaryOp.PLUS, IntImm(1), IntImm(1)),
+        TacAssignValue(var6, var5)
     )
     val simplify = RemoveTemporaries.apply(instructions)
     println(simplify)
 
     val redundant = listOf(
-        AssignValue(var1, var1),
-        AssignValue(var2, var2)
+        TacAssignValue(var1, var1),
+        TacAssignValue(var2, var2)
     )
     println(RemoveRedundantAssignments.apply(redundant))
 }

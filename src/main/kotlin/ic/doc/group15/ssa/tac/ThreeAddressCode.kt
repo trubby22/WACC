@@ -3,7 +3,6 @@ package ic.doc.group15.ssa.tac
 import ic.doc.group15.ast.BinaryOp
 import ic.doc.group15.ssa.BasicBlock
 import ic.doc.group15.ssa.SsaTranslatable
-import ic.doc.group15.ssa.Successor
 
 /**
  * Quadruple form - three address code maintains an unlimited amount of registers,
@@ -14,104 +13,104 @@ sealed interface ThreeAddressCode : SsaTranslatable {
     /**
      * Set of variables used by the current instruction.
      */
-    fun usesSet(): Set<Var>
+    fun usesSet(): Set<TacVar>
 
     /**
      * Set of variables defined by the current instruction.
      */
-    fun definesSet(): Set<Var>
+    fun definesSet(): Set<TacVar>
 }
 
 /**
  * Assignments
  */
-data class AssignBinOp(
-    val reg: Var,
+data class TacAssignBinOp(
+    val dest: TacVar,
     val op: BinaryOp,
-    val x: Operand,
-    val y: Operand
+    val x: TacOperand,
+    val y: TacOperand
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = setOf(x, y).filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = setOf(reg)
+    override fun usesSet(): Set<TacVar> = setOf(x, y).filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = setOf(dest)
 }
 
-data class AssignValue(
-    val reg: Var,
-    val x: Operand
+data class TacAssignValue(
+    val dest: TacVar,
+    val x: TacOperand
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = setOf(x).filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = setOf(reg)
+    override fun usesSet(): Set<TacVar> = setOf(x).filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = setOf(dest)
 }
 
-class AssignCall(
-    val reg: Var,
+class TacAssignCall(
+    val dest: TacVar,
     val f: Func,
-    vararg val args: Operand
+    vararg val args: TacOperand
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = args.filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = setOf(reg)
+    override fun usesSet(): Set<TacVar> = args.filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = setOf(dest)
 }
 
 /**
  * (Void) function calls
  */
-class Call(
+class TacCall(
     val f: Func,
-    vararg val args: Operand
+    vararg val args: TacOperand
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = args.filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = emptySet()
+    override fun usesSet(): Set<TacVar> = args.filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = emptySet()
 }
 
 /**
  * Branch statements
  */
 
-data class BranchIf(
-    val cond: Operand,
+data class TacBranchIf(
+    val cond: TacOperand,
     val block: BasicBlock
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = setOf(cond).filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = emptySet()
+    override fun usesSet(): Set<TacVar> = setOf(cond).filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = emptySet()
 }
 
-data class Branch(
+data class TacBranch(
     val block: BasicBlock
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = emptySet()
-    override fun definesSet(): Set<Var> = emptySet()
+    override fun usesSet(): Set<TacVar> = emptySet()
+    override fun definesSet(): Set<TacVar> = emptySet()
 }
 
 /**
  * Memory instructions (used for heap allocations/value storing)
  */
-data class Allocate(
-    val reg: Var,
-    val amount: Operand
+data class TacAllocate(
+    val reg: TacVar,
+    val amount: TacOperand
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = setOf(amount).filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = setOf(reg)
+    override fun usesSet(): Set<TacVar> = setOf(amount).filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = setOf(reg)
 }
 
-data class Load(
-    val reg: Var,
-    val x: Operand
+data class TacLoad(
+    val dest: TacVar,
+    val src: TacOperand
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = setOf(x).filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = setOf(reg)
+    override fun usesSet(): Set<TacVar> = setOf(src).filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = setOf(dest)
 }
 
-data class Store(
-    val reg: Var,
-    val x: Operand
+data class TacStore(
+    val dest: TacVar,
+    val src: TacOperand
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = setOf(x).filterIsInstance<Var>().toSet()
-    override fun definesSet(): Set<Var> = setOf(reg)
+    override fun usesSet(): Set<TacVar> = setOf(src).filterIsInstance<TacVar>().toSet()
+    override fun definesSet(): Set<TacVar> = setOf(dest)
 }
 
 data class Argument(
-    val reg: Var
+    val reg: TacVar
 ) : ThreeAddressCode {
-    override fun usesSet(): Set<Var> = emptySet()
-    override fun definesSet(): Set<Var> = setOf(reg)
+    override fun usesSet(): Set<TacVar> = emptySet()
+    override fun definesSet(): Set<TacVar> = setOf(reg)
 }

@@ -112,6 +112,17 @@ abstract class AssemblyGenerator<T : Any> protected constructor(
     }
 
     /**
+     * Add the provided assembly instructions to the current label.
+     */
+    protected fun addLines(vararg lines: Instruction) {
+        currentLabel.addLines(*lines)
+    }
+
+    protected fun addLines(lines: Collection<Instruction>) {
+        currentLabel.addLines(lines)
+    }
+
+    /**
      * Adds a utility function to the generated assembly file.
      */
     protected fun defineUtilFuncs(vararg funcs: UtilFunction) {
