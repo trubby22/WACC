@@ -47,8 +47,8 @@ SKIP_STAT: 'skip';
 END_STAT: ';';
 BEGIN: 'begin';
 END: 'end';
-CONTINUE: 'continue';
-BREAK: 'break';
+CONTINUE: 'continue loop';
+BREAK: 'break loop';
 
 //heap
 NEWPAIR: 'newpair';

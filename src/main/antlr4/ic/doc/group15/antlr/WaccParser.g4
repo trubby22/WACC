@@ -15,9 +15,11 @@ param: type ident;
 
 decl: type ident ASSIGN assign_rhs;
 
-stat_sequence: stat END_STAT stat_sequence;
+stat_sequence: stat (END_STAT stat_sequence)?;
 
 for_stat: FOR OPEN_PAREN decl END_STAT expr END_STAT stat CLOSE_PAREN DO stat_sequence DONE;
+
+for_range_stat: FOR ident INRANGE (int_liter COMMA int_liter) DO stat_sequence DONE;
 
 stat: SKIP_STAT                                                     #skipStat
     | decl                                                          #declarationStat
@@ -33,7 +35,7 @@ stat: SKIP_STAT                                                     #skipStat
     | IF expr THEN stat_sequence ELSE stat_sequence FI              #ifStat
     | WHILE expr DO stat_sequence DONE                              #whileStat
     | for_stat                                                      #forStat
-    | FOR ident INRANGE int_liter DO stat_sequence DONE             #forInRangeStat
+    | for_range_stat                                                #forInRangeStat
     | BEGIN stat_sequence END                                       #beginEndStat
     | RETURN expr?                                                  #returnStat
 ;

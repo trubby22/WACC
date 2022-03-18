@@ -28,6 +28,8 @@ class ParseTreeVisitor(
     private val functionsToVisit: MutableMap<String, FuncContext> = mutableMapOf()
     private val declaredFunctions: MutableMap<String, FunctionDeclarationAST> = mutableMapOf()
 
+    private var addStatToBlock = true
+
     //region statements_and_blocks
 
     override fun visitProgram(ctx: ProgramContext): ASTNode {
@@ -136,7 +138,7 @@ class ParseTreeVisitor(
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return scopeAST.addStatement(func)
+        return addStatement(func)
     }
 
     override fun visitParam(ctx: ParamContext): ASTNode {
@@ -180,7 +182,7 @@ class ParseTreeVisitor(
 
         val expr = visit(ctx.expr()) as ExpressionAST
 
-        return scopeAST.addStatement(PrintStatementAST(scopeAST, symbolTable, expr))
+        return addStatement(PrintStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitPrintlnStat(ctx: PrintlnStatContext): ASTNode {
@@ -188,7 +190,7 @@ class ParseTreeVisitor(
 
         val expr = visit(ctx.expr()) as ExpressionAST
 
-        return scopeAST.addStatement(PrintlnStatementAST(scopeAST, symbolTable, expr))
+        return addStatement(PrintlnStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitExitStat(ctx: ExitStatContext): ASTNode {
@@ -199,7 +201,7 @@ class ParseTreeVisitor(
             addError(ExitTypeError(ctx.expr().start, expr.type))
         }
 
-        return scopeAST.addStatement(ExitStatementAST(scopeAST, symbolTable, expr))
+        return addStatement(ExitStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitFreeStat(ctx: FreeStatContext): ASTNode {
@@ -211,13 +213,13 @@ class ParseTreeVisitor(
             addError(FreeTypeError(ctxExpr.start, expr.type))
         }
 
-        return scopeAST.addStatement(FreeStatementAST(scopeAST, symbolTable, expr))
+        return addStatement(FreeStatementAST(scopeAST, symbolTable, expr))
     }
 
     override fun visitSkipStat(ctx: SkipStatContext?): ASTNode {
         log("Visiting skip statement")
 
-        return scopeAST.addStatement(SkipStatementAST(scopeAST))
+        return addStatement(SkipStatementAST(scopeAST))
     }
 
     override fun visitCallStat(ctx: CallStatContext): ASTNode {
@@ -280,21 +282,21 @@ class ParseTreeVisitor(
 
         val stat = CallStatementAST(scopeAST, symbolTable, funcName, f, actuals)
         if (statement) {
-            scopeAST.addStatement(stat)
+            addStatement(stat)
         }
         return stat
     }
 
-    override fun visitContinueStat(ctx: ContinueStatContext?): ASTNode {
+    override fun visitContinueStat(ctx: ContinueStatContext): ASTNode {
         log("Visiting continue statement")
 
-        return scopeAST.addStatement(ContinueStatementAST(scopeAST))
+        return addStatement(ContinueStatementAST(scopeAST))
     }
 
-    override fun visitBreakStat(ctx: BreakStatContext?): ASTNode {
+    override fun visitBreakStat(ctx: BreakStatContext): ASTNode {
         log("Visiting break statement")
 
-        return scopeAST.addStatement(BreakStatementAST(scopeAST))
+        return addStatement(BreakStatementAST(scopeAST))
     }
 
     override fun visitBeginEndStat(ctx: BeginEndStatContext): ASTNode {
@@ -310,88 +312,95 @@ class ParseTreeVisitor(
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return scopeAST.addStatement(node)
+        return addStatement(node)
     }
 
     override fun visitFor_stat(ctx: For_statContext): ASTNode {
-        log("Visiting for statement")
+        log("Visiting for block")
 
         val oldScope = scopeAST
         val oldSt = symbolTable
 
-        log("|| Visiting for block")
+        val forBlock = ForBlockAST(scopeAST, symbolTable.subScope())
 
-        val forBlockOuterScope = ForBlockOuterScopeAST(scopeAST, symbolTable)
-
-        symbolTable = symbolTable.subScope()
-        scopeAST = forBlockOuterScope
-
-        val forBlock = ForBlockAST(scopeAST, symbolTable)
-        forBlockOuterScope.forBlock = forBlock
-
-        visit(ctx.decl()) as VariableDeclarationAST
-
-        symbolTable = symbolTable.subScope()
+        symbolTable = forBlock.symbolTable
         scopeAST = forBlock
 
         val condExpr = visit(ctx.expr()) as ExpressionAST
-        forBlock.condExpr = condExpr
 
-        forBlock.loopVarUpdate = visit(ctx.stat()) as StatementAST
+        addStatToBlock = false
+        forBlock.varDecl = visitDecl(ctx.decl()) as VariableDeclarationAST
+        forBlock.loopUpdate = visit(ctx.stat()) as StatementAST
+        addStatToBlock = true
+
+        visit(ctx.stat_sequence())
 
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return scopeAST.addStatement(forBlock)
+        return addStatement(forBlock)
     }
 
-    override fun visitForInRangeStat(ctx: ForInRangeStatContext): ASTNode {
-        return visitForInRange(ctx)
-    }
-
-    private fun visitForInRange(ctx: ForInRangeStatContext): ASTNode {
-        log("Visiting for in range statement")
+    override fun visitFor_range_stat(ctx: For_range_statContext): ASTNode {
+        log("Visiting for in range block")
 
         val oldScope = scopeAST
         val oldSt = symbolTable
 
-        log("|| Visiting for in range block")
+        val forBlock = ForBlockAST(scopeAST, symbolTable.subScope())
 
-        val forInRangeBlockOuterScope = ForInRangeBlockOuterScopeAST(scopeAST, symbolTable)
+        symbolTable = forBlock.symbolTable
+        scopeAST = forBlock
 
-        symbolTable = symbolTable.subScope()
-        scopeAST = forInRangeBlockOuterScope
+        // Parse the range
+        val startInt = visitInt_liter(ctx.int_liter(0)) as IntLiteralAST
+        val endInt = visitInt_liter(ctx.int_liter(1)) as IntLiteralAST // not inclusive
 
-        val forInRangeBlock = ForInRangeBlockAST(scopeAST, symbolTable)
-        forInRangeBlockOuterScope.forInRangeBlock = forInRangeBlock
-
-        val loopVariable = VariableIdentifierAST(symbolTable, ctx.ident().text, Variable(IntType))
-        val loopVarVal = IntLiteralAST(Integer.parseInt("0"))
-        val varDecl = VariableDeclarationAST(scopeAST, symbolTable, ctx.ident().text, loopVarVal, Variable(IntType))
-        forInRangeBlockOuterScope.varDecl = varDecl
-        symbolTable.add(ctx.ident().text, Variable(IntType))
-
-        symbolTable = symbolTable.subScope()
-        scopeAST = forInRangeBlock
-
-        val expr = BinaryOpExprAST(
+        // Create the declaration statement, which is just i = start
+        val varName = ctx.ident().text
+        val varIdent = Variable(IntType)
+        forBlock.varDecl = VariableDeclarationAST(
+            scopeAST,
             symbolTable,
-            loopVariable,
-            visit(ctx.int_liter()) as IntLiteralAST,
+            ctx.ident().text,
+            startInt,
+            varIdent
+        )
+        symbolTable.add(varName, varIdent)
+
+        // The identifier for "i"
+        val identAST = VariableIdentifierAST(
+            symbolTable,
+            varName,
+            varIdent
+        )
+
+        // Create the loop update, which is just i = i + 1
+        val incrementStat = AssignToIdentAST(
+            scopeAST,
+            identAST
+        )
+        incrementStat.rhs = BinaryOpExprAST(
+            symbolTable,
+            identAST,
+            IntLiteralAST(1),
+            BinaryOp.PLUS
+        )
+        forBlock.loopUpdate = incrementStat
+
+        // Create the condition expression, which is just i < end
+        val condExpr = BinaryOpExprAST(
+            symbolTable,
+            identAST,
+            endInt,
             BinaryOp.LT
         )
-        forInRangeBlock.condExpr = expr
-
-        visit(ctx.stat_sequence())
-
-        val loopVarIncrement = AssignToIdentAST(scopeAST, loopVariable)
-        loopVarIncrement.rhs = BinaryOpExprAST(symbolTable, loopVarVal, IntLiteralAST(1), BinaryOp.PLUS)
-        forInRangeBlock.loopVarIncrementStat = loopVarIncrement
+        forBlock.condExpr = condExpr
 
         symbolTable = oldSt
         scopeAST = oldScope
 
-        return scopeAST.addStatement(forInRangeBlock)
+        return addStatement(forBlock)
     }
 
     //endregion
@@ -437,7 +446,7 @@ class ParseTreeVisitor(
         )
         symbolTable.add(varName, varDecl.varIdent)
 
-        return scopeAST.addStatement(varDecl)
+        return addStatement(varDecl)
     }
 
     override fun visitAssignmentStat(ctx: AssignmentStatContext): ASTNode {
@@ -455,7 +464,7 @@ class ParseTreeVisitor(
 
         assignLhs.rhs = assignRhs
 
-        return scopeAST.addStatement(assignLhs)
+        return addStatement(assignLhs)
     }
 
     override fun visitIdentAssignLhs(ctx: IdentAssignLhsContext): ASTNode {
@@ -807,6 +816,13 @@ class ParseTreeVisitor(
         if (enableLogging) {
             println(error.toString())
         }
+    }
+
+    private fun addStatement(stat: StatementAST): StatementAST {
+        if (addStatToBlock) {
+            scopeAST.addStatement(stat)
+        }
+        return stat
     }
 
     //endregion

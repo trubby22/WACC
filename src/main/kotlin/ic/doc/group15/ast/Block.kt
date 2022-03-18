@@ -1,7 +1,6 @@
 package ic.doc.group15.ast
 
 import ic.doc.group15.SymbolTable
-import ic.doc.group15.assembly.BranchLabel
 import ic.doc.group15.type.*
 import java.util.*
 
@@ -31,8 +30,6 @@ class FunctionDeclarationAST(
     lateinit var funcIdent: FunctionType
 
     val formals: MutableList<ParameterAST> = mutableListOf()
-
-    var returnStat: ReturnStatementAST? = null
 }
 
 class IfBlockAST(
@@ -49,49 +46,49 @@ class ElseBlockAST(
     symbolTable: SymbolTable
 ) : BlockAST(parent, symbolTable)
 
-class WhileBlockAST(
-    parent: BlockAST,
-    symbolTable: SymbolTable,
-    val condExpr: ExpressionAST
-) : BlockAST(parent, symbolTable) {
-    lateinit var checkLabel: BranchLabel
-    lateinit var endLabel: BranchLabel
-}
-
-class ForBlockOuterScopeAST(
+abstract class LoopBlockAST protected constructor(
     parent: BlockAST,
     symbolTable: SymbolTable
 ) : BlockAST(parent, symbolTable) {
-    lateinit var forBlock: ForBlockAST
-    lateinit var varDecl: VariableDeclarationAST
+    lateinit var condExpr: ExpressionAST
+
+    constructor(
+        parent: BlockAST,
+        symbolTable: SymbolTable,
+        condExpr: ExpressionAST
+    ) : this(parent, symbolTable) {
+        this.condExpr = condExpr
+    }
+}
+
+class WhileBlockAST(
+    parent: BlockAST,
+    symbolTable: SymbolTable
+) : LoopBlockAST(parent, symbolTable) {
+
+    constructor(
+        parent: BlockAST,
+        symbolTable: SymbolTable,
+        condExpr: ExpressionAST
+    ) : this(parent, symbolTable) {
+        this.condExpr = condExpr
+    }
 }
 
 class ForBlockAST(
     parent: BlockAST,
-    symbolTable: SymbolTable
-) : BlockAST(parent, symbolTable) {
-    lateinit var condExpr: ExpressionAST
-    lateinit var loopVarUpdate: StatementAST
-    lateinit var loopVarUpdateLabel: BranchLabel
-    lateinit var endLabel: BranchLabel
-}
-
-class ForInRangeBlockOuterScopeAST(
-    parent: BlockAST,
-    symbolTable: SymbolTable
-) : BlockAST(parent, symbolTable) {
-    lateinit var forInRangeBlock: ForInRangeBlockAST
+    symbolTable: SymbolTable,
+) : LoopBlockAST(parent, symbolTable) {
     lateinit var varDecl: VariableDeclarationAST
-}
+    lateinit var loopUpdate: StatementAST
 
-class ForInRangeBlockAST(
-    parent: BlockAST,
-    symbolTable: SymbolTable
-) : BlockAST(parent, symbolTable) {
-    lateinit var condExpr: ExpressionAST
-    lateinit var loopVarIncrementStat: StatementAST
-    lateinit var loopVarIncrementLabel: BranchLabel
-    lateinit var endLabel: BranchLabel
+    constructor(
+        parent: BlockAST,
+        symbolTable: SymbolTable,
+        condExpr: ExpressionAST
+    ) : this(parent, symbolTable) {
+        this.condExpr = condExpr
+    }
 }
 
 open class BeginEndBlockAST(

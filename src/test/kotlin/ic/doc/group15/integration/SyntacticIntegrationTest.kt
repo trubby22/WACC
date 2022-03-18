@@ -3,7 +3,8 @@ package ic.doc.group15.integration
 import ic.doc.group15.antlr.WaccLexer
 import ic.doc.group15.antlr.WaccParser
 import ic.doc.group15.error.SyntacticErrorList
-import ic.doc.group15.visitor.ReturnChecker
+import ic.doc.group15.visitor.syntaxchecker.BreakContinueChecker
+import ic.doc.group15.visitor.syntaxchecker.ReturnChecker
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -497,6 +498,7 @@ class SyntacticIntegrationTest {
         val program = parser.program()
         val errors = SyntacticErrorList()
         ReturnChecker(errors, true).visit(program)
+        BreakContinueChecker(errors, true).visit(program)
         if (errors.hasErrors()) {
             errors.printErrors()
             return false

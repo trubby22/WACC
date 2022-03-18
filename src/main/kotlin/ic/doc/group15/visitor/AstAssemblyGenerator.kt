@@ -52,6 +52,13 @@ class AstAssemblyGenerator(
     private val offsetStackStore = LinkedList<Int>()
 
     /**
+     * Set by translation functions for loop blocks, so that continue and break translation
+     * functions can use them.
+     */
+    private lateinit var continueLabel: BranchLabel
+    private lateinit var breakLabel: BranchLabel
+
+    /**
      * Per WACC language specification, a program matches the grammar "begin func* stat end".
      * The AST representation decouples the statements from a SequenceAST to a mapping of lists of
      * StatementAST in the symbol table to avoid stack overflow from recursing a huge block of
@@ -357,16 +364,25 @@ class AstAssemblyGenerator(
     private fun translateWhileBlock(node: WhileBlockAST) {
         log("Translating WhileBlockAST")
 
+        // Set the state to be used next time we translate break or continue
+        val oldBreak = breakLabel
+        val oldContinue = continueLabel
+
+        // Create the labels we need, in this precise correct order
         val oldLabel = currentLabel
+        val loopLabel = newBranchLabel()
+        val checkLabel = newBranchLabel()
+        val endLabel = newBranchLabel()
+
+        breakLabel = endLabel
+        continueLabel = checkLabel
 
         // Translate block statements and add to loop label
-        val loopLabel = newBranchLabel()
         currentLabel = loopLabel
         blockPrologue(node)
         node.getStatements().forEach { translate(it) }
         blockEpilogue(node)
 
-        val checkLabel = newBranchLabel()
         currentLabel = oldLabel
 
         // Add branch instruction
@@ -383,143 +399,74 @@ class AstAssemblyGenerator(
             Compare(resultRegister, IntImmediateOperand(1)),
             Branch(EQ, BranchLabelOperand(loopLabel))
         )
+
+        // After the loop is over, reset the state and continue translating the program
+        currentLabel = endLabel
+        breakLabel = oldBreak
+        continueLabel = oldContinue
     }
 
     @TranslatorMethod
-    private fun translateForBlockOuterScope(node: ForBlockOuterScopeAST) {
-        log("Translating ForBlockOuterScopeAST")
-
-        blockPrologue(node)
-        translate(node.varDecl)
-        translate(node.forBlock)
-        blockEpilogue(node)
-    }
-
-    @TranslatorMethod
-    // one thing im not sure about is that i call translate node.forBlock in the
-    // translateForBlockOuterScope function so will the translator method go and visit each
-    // branch and then end up calling it again unnecessarily?
     private fun translateForBlock(node: ForBlockAST) {
         log("Translating ForBlockAST")
 
+        // Set the state to be used next time we translate break or continue
+        val oldBreak = breakLabel
+        val oldContinue = continueLabel
+
+        // Create the labels we need, in this precise correct order
         val oldLabel = currentLabel
-
-        val loopLabel = newBranchLabel() // creating loop label
-        currentLabel = loopLabel
-        blockPrologue(node)
-        node.statements.forEach { translate(it) }
-        val loopVarUpdateLabel = newBranchLabel()
-        node.loopVarUpdateLabel = loopVarUpdateLabel
-        translate(node.loopVarUpdate)
-        blockEpilogue(node)
-
+        val loopLabel = newBranchLabel()
+        val updateLabel = newBranchLabel()
         val checkLabel = newBranchLabel()
-
-        currentLabel = oldLabel
-        // Add branch instruction
-        addLines(
-            Branch(BranchLabelOperand(checkLabel))
-        )
-
-        // Translate condition statements and add to check label
-        currentLabel = checkLabel
-        translate(node.condExpr)
-
-        // Add compare and branch instruction
-        addLines(
-            Compare(resultRegister, IntImmediateOperand(1)),
-            Branch(EQ, BranchLabelOperand(loopLabel))
-        )
-
         val endLabel = newBranchLabel()
-        node.endLabel = endLabel
-    }
 
-    @TranslatorMethod
-    private fun translateForInRangeBlockOuterScope(node: ForInRangeBlockOuterScopeAST) {
-        log("Translating ForInRangeBlockOuterScopeAST")
+        breakLabel = endLabel
+        continueLabel = updateLabel
 
+        // Translate the loop variable declaration and branch to the loop check label
+        currentLabel = oldLabel
         blockPrologue(node)
         translate(node.varDecl)
-        translate(node.forInRangeBlock)
         blockEpilogue(node)
-    }
-
-    @TranslatorMethod
-    private fun transForInRangeBlock(node: ForInRangeBlockAST) {
-        log("Translating ForInRangeBlockAST")
-
-        val oldLabel = currentLabel
-
-        val loopLabel = newBranchLabel() // creating loop label
-        currentLabel = loopLabel
-        blockPrologue(node)
-        node.statements.forEach { translate(it) }
-        val varIncrementLabel = newBranchLabel()
-        node.loopVarIncrementLabel = varIncrementLabel
-        translate(node.loopVarIncrementStat)
-        blockEpilogue(node)
-
-        val checkLabel = newBranchLabel()
-
-        currentLabel = oldLabel
-        // Add branch instruction
         addLines(
             Branch(BranchLabelOperand(checkLabel))
         )
 
-        // Translate condition statements and add to check label
+        // Translate the loop block statements
+        currentLabel = loopLabel
+        node.getStatements().forEach { translate(it) }
+
+        // Add the loop update statement right after the loop label
+        currentLabel = updateLabel
+        translate(node.loopUpdate)
+
+        // Translate condition statement, and branch back to the loop label if the condition is met
         currentLabel = checkLabel
         translate(node.condExpr)
-
-        // Add compare and branch instruction
         addLines(
             Compare(resultRegister, IntImmediateOperand(1)),
             Branch(EQ, BranchLabelOperand(loopLabel))
         )
 
-        val endLabel = newBranchLabel()
-        node.endLabel = endLabel
+        // After the loop is over, reset the state and continue translating the program
+        currentLabel = endLabel
+        breakLabel = oldBreak
+        continueLabel = oldContinue
     }
 
     @TranslatorMethod
     fun translateContinueStatement(node: ContinueStatementAST) {
-        var enclosingLoop = node.parent
-        while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST ||
-                    enclosingLoop.parent is ForBlockAST ||
-                    enclosingLoop.parent is ForInRangeBlockAST)) {
-            enclosingLoop = enclosingLoop.parent
-        }
-
-        if (enclosingLoop == null) {
-            // throw big error because continue statements should DEFINITELY be within a loop
-        }
-
-        when (enclosingLoop) {
-            is WhileBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as WhileBlockAST).checkLabel)))
-            is ForBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForBlockAST).loopVarUpdateLabel)))
-            is ForInRangeBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForInRangeBlockAST).loopVarIncrementLabel)))
-        }
+        addLines(
+            Branch(BranchLabelOperand(continueLabel))
+        )
     }
 
     @TranslatorMethod
     fun translateBreakStatement(node: BreakStatementAST) {
-        var enclosingLoop = node.parent
-        while (enclosingLoop != null && !(enclosingLoop.parent is WhileBlockAST ||
-                    enclosingLoop.parent is ForBlockAST ||
-                    enclosingLoop.parent is ForInRangeBlockAST)) {
-            enclosingLoop = enclosingLoop.parent
-        }
-
-        if (enclosingLoop == null) {
-            // throw big error because continue statements should DEFINITELY be within a loop
-        }
-
-        when (enclosingLoop) {
-            is WhileBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as WhileBlockAST).endLabel)))
-            is ForBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForBlockAST).endLabel)))
-            is ForInRangeBlockAST -> addLines(Branch(BranchLabelOperand((enclosingLoop as ForInRangeBlockAST).endLabel)))
-        }
+        addLines(
+            Branch(BranchLabelOperand(breakLabel))
+        )
     }
 
     @TranslatorMethod
