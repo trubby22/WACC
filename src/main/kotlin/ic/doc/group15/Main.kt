@@ -108,10 +108,20 @@ fun main(args: ArgsList) {
     // Generate the assembly code and write it to the assembly file
     log("\nGenerating assembly code...\n")
     val writer = assemblyFile.bufferedWriter()
-    val assemblyGenerator = AstAssemblyGenerator(ast, enableLogging = enableLogging)
-    assemblyGenerator.generate(writer)
-    writer.close()
-    log("\nCompilation finished.")
+
+    if (args.hasOption(OPTIMISATION_LEVEL_2)) {
+        val cfgGen = CFGGenerator(ast, enableLogging = enableLogging)
+        val cfg = cfgGen.generate()
+
+        val tacGen = TACAssemblyGenerator(cfg, CFGState(), enableLogging = enableLogging, enableOptimisation = true)
+        tacGen.generate(writer)
+        writer.close()
+    } else {
+        val assemblyGenerator = AstAssemblyGenerator(ast, enableLogging = enableLogging)
+        assemblyGenerator.generate(writer)
+        writer.close()
+        log("\nCompilation finished.")
+    }
 
     // Print the assembly code if needed
     if (printAssembly) {
