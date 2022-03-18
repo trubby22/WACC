@@ -1,0 +1,7 @@
+begin
+int a = 5;
+for i in range 10
+do
+i = i + 1
+done
+end

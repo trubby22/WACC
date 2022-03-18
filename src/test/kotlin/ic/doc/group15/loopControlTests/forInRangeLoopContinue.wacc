@@ -1,0 +1,12 @@
+begin
+bool fastForward = true;
+for i in range 10
+do
+if fastForward
+then
+continue
+else
+skip
+fi
+done
+end

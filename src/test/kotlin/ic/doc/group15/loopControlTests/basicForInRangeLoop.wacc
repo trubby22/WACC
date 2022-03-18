@@ -1,0 +1,6 @@
+begin
+for i in range 10
+do
+skip
+done
+end

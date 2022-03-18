@@ -1,0 +1,14 @@
+begin
+bool fastForward = true;
+int i = 0;
+while i < 10
+do
+if fastForward
+then
+continue
+else
+skip
+fi;
+i = i + 1
+done
+end
