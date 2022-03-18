@@ -43,7 +43,7 @@ abstract class AssemblyGenerator<T : Any> protected constructor(
      *
      * Contains labels that can be branched to, and the main function.
      */
-    private val text: MutableMap<String, BranchLabel> = mutableMapOf()
+    protected val text: MutableMap<String, BranchLabel> = mutableMapOf()
     private val utilText: MutableMap<String, BranchLabel> = mutableMapOf()
 
     private val stringLabelGenerator = UniqueStringLabelGenerator()

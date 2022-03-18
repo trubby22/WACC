@@ -6,13 +6,11 @@ import ic.doc.group15.ssa.ControlFlowGraph
 import ic.doc.group15.ssa.IRFunction
 import ic.doc.group15.ssa.tac.*
 import ic.doc.group15.type.ArrayType
-import ic.doc.group15.type.BasicType.*
 import ic.doc.group15.type.BasicType.Companion.BoolType
 import ic.doc.group15.type.BasicType.Companion.CharType
 import ic.doc.group15.type.BasicType.Companion.IntType
 import ic.doc.group15.type.BasicType.Companion.StringType
 import ic.doc.group15.type.PairType
-import ic.doc.group15.type.ReturnableType
 import ic.doc.group15.type.VariableType
 import ic.doc.group15.util.WORD
 import ic.doc.group15.visitor.TranslatorMethod

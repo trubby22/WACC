@@ -153,6 +153,11 @@ open class TacAssemblyGenerator(
             blockToLabelMap[block] = newBranchLabel(label.name)
             blockToLabelMap[block]!!.addLines(instList)
         }
+
+        // Add label to text for code generation
+        for ((_, label) in blockToLabelMap) {
+            text[label.name] = label
+        }
     }
 
     private fun translateBasicBlock(block: BasicBlock, name: String? = null): BranchLabel {
